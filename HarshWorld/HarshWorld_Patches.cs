@@ -21,7 +21,7 @@ namespace HarshWorld
 		public ModLoadPriority Priority => ModLoadPriority.Low;
 		public void Initialize()
 		{
-			Harmony harmony = new Harmony("blacktea.harderdifficulty");
+			Harmony harmony = new Harmony("blacktea.harshworld");
 			harmony.PatchAll();
 		}
 
