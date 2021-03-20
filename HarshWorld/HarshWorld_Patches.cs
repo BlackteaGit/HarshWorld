@@ -32,6 +32,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(WorldRev3 __instance, List<ulong> ___flotillas)
 			{
+				//HWCONFIG.InterruptionFrequency = 250000;
 				if (Globals.Interruptions != null && Globals.Interruptions.Count() > 0 && HWCONFIG.InterruptionFrequency > 0)
 				{ 
 					if (PLAYER.currentSession != null && PLAYER.currentShip != null && PLAYER.currentShip.boostStage >= 1)
@@ -59,7 +60,7 @@ namespace HarshWorld
 							for (int i = 0; i < shipids.Length; i++)
 							{
 								var shipid = shipids[i];
-								if (PLAYER.currentShip.id != shipid && PLAYER.currentSession.allShips[shipid].cosm != null && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipid].position) < (signature + PLAYER.currentSession.allShips[shipid].scanRange) * (signature + PLAYER.currentSession.allShips[shipid].scanRange))
+								if (PLAYER.currentShip.id != shipid && PLAYER.currentSession.allShips[shipid].cosm != null && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipid].position) < ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView))
 								{
 									// random ambush
 									if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(250000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
@@ -170,7 +171,7 @@ namespace HarshWorld
 						}
 
 						// spawn random ambush on traveling with Higgs drive
-						if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(150000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+						if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
 						{
 							HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(), PLAYER.currentShip.position, PLAYER.currentShip.grid));
 							interrupted = true;
@@ -1174,23 +1175,6 @@ namespace HarshWorld
 			}
 		}
 
-
-		[HarmonyPatch(typeof(Crew), "chooseIdleTask")]
-		public class Crew__chooseIdleTask
-		{
-
-			[HarmonyPrefix]
-			private static void Prefix(Crew __instance)
-			{
-				if (__instance.currentCosm == null)
-				{
-					__instance.kill();
-				}
-			}
-
-		}
-
-
 		[HarmonyPatch(typeof(Crew), "_kill")]
 		public class Crew__kill
 		{
@@ -1604,8 +1588,7 @@ namespace HarshWorld
 					Globals.GlobalShipRemoveQueue = null;
 					Globals.offer = null;
 					Globals.demand = null;
-					Globals.PiratesCalled = false;
-					Globals.PiratesCalledHostile = false;
+					Globals.flags.Clear();
 				}
 			}
 		}
@@ -1645,7 +1628,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(CoOpSpRpG.Console __instance)
 			{
-				if ((Globals.PiratesCalled || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+				if ((Globals.flags[GlobalFlag.PiratesCalled] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 				{
 					PLAYER.currentShip.scanRange = CONFIG.minViewDist;
 					PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
@@ -1702,10 +1685,11 @@ namespace HarshWorld
 					{
 						if (interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
 						{
+							var direction = Vector2.Transform(interruption.Value.spawnPoints[RANDOM.getRandomNumber(interruption.Value.spawnPoints.Count<Vector2>())], interruption.Value.rotationMatrix);
 							foreach (var tupleship in interruption.Value.activeShips)
 							{
 								tupleship.Item2.Clear();
-								tupleship.Item2.AddRange(new List<string> { "We are going home.", "Enjoy your new ride.", "Let's go, boys.", "Powering engines.", "Can't believe the idot bought it." });
+								tupleship.Item2.AddRange(new List<string> { "We are going home.", "Enjoy your new ride.", "Let's go, boys.", "Powering engines.", "He actually bought it. What a moron." });
 								if (PLAYER.currentSession.allShips.TryGetValue(tupleship.Item1, out Ship ship))
 								{
 									if (ship.spawnIndex == 33 || ship.spawnIndex == 34)
@@ -1730,6 +1714,7 @@ namespace HarshWorld
 										{
 											foreach (var crew in ship.cosm.crew.Values)
 											{
+												crew.team.destination = ship.position + (ship.position + direction); //setting a destination to fly away
 												if (crew.team.threats.Contains(PLAYER.avatar.faction))
 													crew.team.threats.Remove(PLAYER.avatar.faction);  // hostile npcs will become friendly again.
 											}
@@ -1753,8 +1738,8 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.PiratesCalledHostile = false;
-					Globals.PiratesCalled = false;
+					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
+					Globals.flags[GlobalFlag.PiratesCalled] = false;
 					return "Thanks.";
 				};
 				DialogueTextMaker payvisit = delegate ()
@@ -1764,6 +1749,7 @@ namespace HarshWorld
 					{
 						if (interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
 						{
+							var direction = Vector2.Transform(interruption.Value.spawnPoints[RANDOM.getRandomNumber(interruption.Value.spawnPoints.Count<Vector2>())], interruption.Value.rotationMatrix);
 							foreach (var tupleship in interruption.Value.activeShips)
 							{
 								tupleship.Item2.Clear();
@@ -1774,6 +1760,7 @@ namespace HarshWorld
 									{
 										foreach (var crew in ship.cosm.crew.Values)
 										{
+											crew.team.destination = ship.position + (ship.position + direction); //setting a destination to fly away
 											if (crew.team.threats.Contains(PLAYER.avatar.faction))
 												crew.team.threats.Remove(PLAYER.avatar.faction);  // hostile npcs will become friendly again.
 										}
@@ -1782,8 +1769,8 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.PiratesCalledHostile = false;
-					Globals.PiratesCalled = false;
+					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
+					Globals.flags[GlobalFlag.PiratesCalled] = false;
 					return "...";
 				};
 				DialogueTextMaker waithostile = delegate ()
@@ -1808,7 +1795,7 @@ namespace HarshWorld
                             }
 						}
 					}
-					Globals.PiratesCalledHostile = true;
+					Globals.flags[GlobalFlag.PiratesCalledHostile] = true;
 					return "...";
 				};
 				DialogueTextMaker waitnonhostile = delegate ()
@@ -1835,14 +1822,14 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.PiratesCalledHostile = false;
+					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
 					return "Allright, I will see if I can get some money to pay you.";
 				};
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.PiratesCalled && !Globals.PiratesCalledHostile && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.PiratesCalled && Globals.PiratesCalledHostile && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.PiratesCalled && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && !Globals.flags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && Globals.flags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
 				dialogueTree.text = "Yes, your master told us that you blew up your ship and now stranded at your station.";
-				dialogueTree.addOption("Oh .. Uh .. yes. I mean, NO he ist NOT my master.", dialogueTree1, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count == 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible.
+				dialogueTree.addOption("Oh .. Uh .. yes. I mean, NO. He ist NOT my master.", dialogueTree1, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count == 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible.
 				dialogueTree.addOption("Actually we are more like partners. I am working for him and he is making bad jokes.", dialogueTree9, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count != 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible, if not, then this option without the ship offer
 
 				dialogueTree1.text = "Whatever. We have a ship for you. Thare is a catch though.";
@@ -1896,7 +1883,7 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(LogisticsScreenRev3), "doRightClick")] // preventing player from scrapping friendly pirate ship
+		[HarmonyPatch(typeof(LogisticsScreenRev3), "doRightClick")] // preventing player from scrapping friendly pirate ship in normal way.
 		public class LogisticsScreenRev3_doRightClick
 		{
 
@@ -1958,7 +1945,7 @@ namespace HarshWorld
 
 		*/
 		/*
-		[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame should be attached to vanilla method after it gets implemented
+		[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame should be attached to vanilla game method after it gets implemented
 		public class RootMenuRev2_actionConfirmDelete
 		{
 

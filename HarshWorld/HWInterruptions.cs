@@ -67,7 +67,13 @@ namespace HarshWorld
 
 		mo_gold_goliath_medium_ssc_t25,
 
-		friendly_pirates_call
+		friendly_pirates_call,
+
+		home_siege_pirate_t1,
+
+		home_siege_pirate_t2,
+
+		home_siege_pirate_t25
 
 	}
 	public enum ElementSpawnerType : uint
@@ -860,6 +866,82 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.friendly_pirates_call, interruptionTemplate); // friendly pirates bringing new ship
 			
+			interruptionTemplate = new InterruptionTemplate();
+			interruptionTemplate.AddWave(new List<int>
+			{
+				35, //tiny pirate // SSC Runner
+				35, //tiny pirate // SSC Runner
+				35, //tiny pirate // SSC Runner
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die."}, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				36, //small pirate // SSC Messager
+				37, //med pirate // SSC Courier
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				36, //small pirate // SSC Messager
+				36 //small pirate // SSC Messager
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+
+			interruptionTemplate.interruptersFaction = 4U;
+			interruptionTemplate.averageWaveInterval = 1f;//240f;
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			INTERRUPTION_BAG.AddTemplate(InterruptionType.home_siege_pirate_t1, interruptionTemplate); // homebase siege pirate T1
+
+			interruptionTemplate = new InterruptionTemplate();
+			interruptionTemplate.AddWave(new List<int>
+			{
+				37, //med pirate // SSC Courier
+				37, //med pirate // SSC Courier
+				37 //med pirate // SSC Courier
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				35, //tiny pirate // SSC Runner
+				37, //med pirate // SSC Courier
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				35, //tiny pirate // SSC Runner
+				53//Pirate cutthroat // SSC Hauler
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+
+			interruptionTemplate.interruptersFaction = 4U;
+			interruptionTemplate.averageWaveInterval = 1f;//240f;
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			INTERRUPTION_BAG.AddTemplate(InterruptionType.home_siege_pirate_t2, interruptionTemplate); // homebase siege pirate T2
+
+			interruptionTemplate = new InterruptionTemplate();
+			interruptionTemplate.AddWave(new List<int>
+			{
+				37, //med pirate // SSC Courier
+				37, //med pirate // SSC Courier
+				37 //med pirate // SSC Courier
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				53,//Pirate cutthroat // SSC Hauler
+				37, //med pirate // SSC Courier
+				53//Pirate cutthroat // SSC Hauler
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddWave(new List<int>
+			{
+				53,//Pirate cutthroat // SSC Hauler
+				53//Pirate cutthroat // SSC Hauler
+			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+
+			interruptionTemplate.interruptersFaction = 4U;
+			interruptionTemplate.averageWaveInterval = 1f;//240f;
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
+			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			INTERRUPTION_BAG.AddTemplate(InterruptionType.home_siege_pirate_t25, interruptionTemplate); // homebase siege pirate T2.5
+
 		}
 
 		public static void AddTemplate(InterruptionType type, InterruptionTemplate template)
@@ -1100,7 +1182,7 @@ namespace HarshWorld
 			"I can't wait to make you love me!",
 			"Let's see you pick someone my size!",
 			"This oughta be fun!",
-			"Ok, buddy, you asked for it!",
+			"Ok, buddy, you asked for this!",
 			"Me and you, lovers forever!",
 			"You bought a ticket for the pain train, choo choo!",
 			"This is the end for you!",
@@ -1523,7 +1605,7 @@ namespace HarshWorld
 		public string id = Guid.NewGuid().ToString();
 		//private Dictionary<AssetsNodeType, float> assetsNodes;
 		public float rotation;
-		private Matrix rotationMatrix;
+		public Matrix rotationMatrix;
 		private float returnTimer = 0f;
 		private float returnDuration = 600f;
 		private Dictionary<Wave, List<String>> waves;
@@ -1542,7 +1624,7 @@ namespace HarshWorld
 		private float signatureTimer;
 		private float accumulatedSignature;
 		public List<Tuple<ulong, List<String>>> activeShips;
-		private List<Vector2> spawnPoints;
+		public List<Vector2> spawnPoints;
 		//private List<Vector2> elementPositions;
 		//private InterruptionType interruptionType;
 		public InterruptionType templateUsed;
@@ -1888,7 +1970,7 @@ namespace HarshWorld
 			return value * radius;
 		}
 
-		private async Task DespawnEnqueuedShipAsync(Ship ship)
+		private void DespawnEnqueuedShip(Ship ship)
 		{
 			if (ship.cosm != null)
 			{
@@ -1910,6 +1992,92 @@ namespace HarshWorld
 			Globals.GlobalShipRemoveQueue.Enqueue(new Tuple<ulong, Point>(ship.id, ship.grid));
 		}
 
+		private void SpawnWave(Tuple<Wave, List<String>> wave, BattleSession session, Vector2 spawnPos, bool isDefensiveWave)
+		{
+			if (!Globals.GlobalDespawnQueue.IsEmpty)
+			{
+				while (Globals.GlobalDespawnQueue.TryDequeue(out var despawning))
+				{
+					if (PLAYER.currentSession.grid != despawning.Item2)
+					{
+							var weakdespawnsession = new WeakReference(PLAYER.currentWorld.getSession(despawning.Item2));
+							if (weakdespawnsession.IsAlive)
+							{
+								if ((weakdespawnsession.Target as BattleSession).allShips.TryGetValue(despawning.Item1, out var ship))
+								{
+									QuewedShipsToRecycle.Enqueue(ship);
+								}
+							}
+							else
+							{
+								var despawnsession = PLAYER.currentWorld.getSession(despawning.Item2);
+								despawnsession.allShips.TryGetValue(despawning.Item1, out var ship);
+								QuewedShipsToRecycle.Enqueue(ship);
+							}
+					}
+					else
+					{
+						PLAYER.currentSession.allShips.TryGetValue(despawning.Item1, out var ship);
+						QuewedShipsToRecycle.Enqueue(ship);
+						PLAYER.currentSession.allShips.Remove(despawning.Item1);
+					}
+				}
+			}
+				spawnPos += this.position;
+				var conversations = wave.Item2;
+				//Vector2 direction = this.position - spawnPos;
+				Vector2 direction = PLAYER.currentShip.position - spawnPos;
+				this.SpawnShip(wave.Item1.shipIds[0], spawnPos, direction, session, wave.Item1.goal, ref wave.Item1.loot, isDefensiveWave, conversations);
+				checked
+				{
+					if (wave.Item1.shipIds.Count > 1)
+					{
+						float step = (float)(6.2831853071795862 / (double)(wave.Item1.shipIds.Count - 1));
+						float radius = 200f;
+						for (int i = 1; i < wave.Item1.shipIds.Count; i++)
+						{
+							Vector2 vector = spawnPos + this.GetShipSpawnOffset(i, radius, step);
+							this.SpawnShip(wave.Item1.shipIds[i], vector, direction, session, wave.Item1.goal, ref wave.Item1.loot, isDefensiveWave, conversations);
+						}
+					}
+				}
+				if (!QuewedShipsToRecycle.IsEmpty)
+				{
+					while (QuewedShipsToRecycle.TryDequeue(out var ship))
+					{
+						try
+						{
+							DespawnEnqueuedShip(ship);
+						}
+						catch { }
+					}
+				}
+
+
+		}
+
+		private async Task DespawnEnqueuedShipAsync(Ship ship)
+		{
+			if (ship.cosm != null)
+			{
+				var allCrew = ship.cosm.crew.Values.ToArray();
+				for (int i = 0; i > allCrew.Length; i++)
+				{
+					Crew crew = allCrew[i];
+					crew.kill();
+				}
+				ship.clearAnims();
+				ship.disconnectConsoles();
+				ship.spaceJunk = true;
+			}
+			if (PLAYER.currentWorld != null)
+			{
+				PLAYER.currentWorld.returnShip(ship);
+			}
+			ship.removeThis = true;
+			Globals.GlobalShipRemoveQueue.Enqueue(new Tuple<ulong, Point>(ship.id, ship.grid));
+		}
+		
 		private async Task SpawnWaveAsync(Tuple<Wave, List<String>> wave, BattleSession session, Vector2 spawnPos, bool isDefensiveWave)
 		{
 			if (!Globals.GlobalDespawnQueue.IsEmpty)
@@ -2825,6 +2993,7 @@ namespace HarshWorld
 
 						if (this.initialWave != null && this.initialWave.Item1 != null && this.initWaveQueued == true)
 						{
+							//this.SpawnWave(this.initialWave, session, Vector2.Zero, true);// false);
 							this.SpawnWaveAsync(this.initialWave, session, Vector2.Zero, true).SafeFireAndForget();// false);
 							this.initWaveQueued = false;
 						}
@@ -2847,6 +3016,7 @@ namespace HarshWorld
 								this.currentWave++;
 								this.toSpawn = this.GetRandomWave();
 								Vector2 spawnPos = Vector2.Transform(this.spawnPoints[RANDOM.getRandomNumber(this.spawnPoints.Count<Vector2>())], this.rotationMatrix);
+								//this.SpawnWave(this.toSpawn, session, spawnPos, true);
 								this.SpawnWaveAsync(this.toSpawn, session, spawnPos, true).SafeFireAndForget();
 								this.wavesQueued -= 1;
 							}
@@ -2862,7 +3032,7 @@ namespace HarshWorld
 				this.doInterdict(elapsed);
 				if (this.activeShips.Count() == 0 && (this.wavesQueued == 0 || this.currentWave >= this.maxWaves) && this.initWaveQueued == false)
 					this.interdicting = false;
-				if (this.templateUsed == InterruptionType.friendly_pirates_call && Globals.PiratesCalled == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
+				if (this.templateUsed == InterruptionType.friendly_pirates_call && Globals.flags[GlobalFlag.PiratesCalled] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
 				{
 					foreach (var tupleship in this.activeShips)
 					{

@@ -56,13 +56,13 @@ namespace HarshWorld
 			DialogueTree dialogueTree6 = new DialogueTree();
 			DialogueTextMaker text = delegate ()
 			{
-				Globals.PiratesCalled = true;
+				Globals.flags[GlobalFlag.PiratesCalled] = true;
 				return "...";
 			};
 
 			dialogueTree.text = "Why am I not surprised? You have been blowing up ships left and right like a jackass...";
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.PiratesCalled && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.PiratesCalled && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.flags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.flags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
 			dialogueTree.addOption("Nevermind, I will solve this myself.", tree);
 
 			dialogueTree2.text = "Go to the shop, get yourself a mining tool and harvest some minerals from the crystal farm.";

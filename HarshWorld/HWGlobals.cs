@@ -6,7 +6,12 @@ using System.Collections.Generic;
 
 namespace HarshWorld
 {
-    class Globals
+	public enum GlobalFlag : uint
+	{
+		PiratesCalled,
+		PiratesCalledHostile
+	}
+	class Globals
     {
 		public static InterruptionBasic[] Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
 		public static Dictionary<string, Interruption> Interruptionbag = new Dictionary<string, Interruption>();
@@ -14,9 +19,7 @@ namespace HarshWorld
 		public static ConcurrentQueue<Tuple<ulong, Point>> GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 		public static Dictionary<InventoryItemType, int> offer = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<InventoryItemType, int> demand = new Dictionary<InventoryItemType, int>();
-		public static bool PiratesCalled;
-		public static bool PiratesCalledHostile;
-
+		public static Dictionary<GlobalFlag, bool> flags = new Dictionary<GlobalFlag, bool>();
 		public static void Initialize()
 		{
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
@@ -25,8 +28,9 @@ namespace HarshWorld
 			GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 			offer = new Dictionary<InventoryItemType, int>();
 			demand = new Dictionary<InventoryItemType, int>();
-			PiratesCalled = false;
-			PiratesCalledHostile = false;
+			flags = new Dictionary<GlobalFlag, bool>();
+			flags.Add(GlobalFlag.PiratesCalled, false);
+			flags.Add(GlobalFlag.PiratesCalledHostile, false);
 		}
 
 		public static int DifficultyFromCost(int cost)
