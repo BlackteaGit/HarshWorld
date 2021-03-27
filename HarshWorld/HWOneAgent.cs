@@ -56,13 +56,13 @@ namespace HarshWorld
 			DialogueTree dialogueTree6 = new DialogueTree();
 			DialogueTextMaker text = delegate ()
 			{
-				Globals.flags[GlobalFlag.PiratesCalled] = true;
+				Globals.eventflags[GlobalFlag.PiratesCalled] = true;
 				return "...";
 			};
 
 			dialogueTree.text = "Why am I not surprised? You have been blowing up ships left and right like a jackass...";
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.flags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.flags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.eventflags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !HWFriendlyPiratesCalledEvent.canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.eventflags[GlobalFlag.PiratesCalled] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !HWFriendlyPiratesCalledEvent.canBuildShip());
 			dialogueTree.addOption("Nevermind, I will solve this myself.", tree);
 
 			dialogueTree2.text = "Go to the shop, get yourself a mining tool and harvest some minerals from the crystal farm.";
@@ -70,7 +70,7 @@ namespace HarshWorld
 
 
 			dialogueTree3.text = "You can wait for them to regrow or I could call your pirate friends for help.";
-			dialogueTree2.addOption("I already mined them all out.", dialogueTree3, () => PLAYER.currentGame.completedQuests.Contains("phase_1_end") || PLAYER.debugMode);
+			dialogueTree2.addOption("I already mined them all out.", dialogueTree3, () => (PLAYER.currentGame.completedQuests.Contains("phase_1_end") && !Globals.eventflags[GlobalFlag.Sige1EventActive]) || PLAYER.debugMode);
 			dialogueTree2.addOption("This is a great idea, i will do that.", tree);
 
 
@@ -90,176 +90,6 @@ namespace HarshWorld
 
 			dialogueTree6.text = "I already called your pirate friends. Go to the bridge and wait for their response.";
 			dialogueTree6.addOption("...", dialogueTree5);
-		}
-
-		public static bool canBuildShip()
-		{
-			var hulls = CHARACTER_DATA.unlockedHulls();
-			foreach (string text in hulls)
-			{
-				var selectedDesigns = CHARACTER_DATA.storedDesigns(text);
-				foreach (string design in selectedDesigns)
-				{
-					var selectedCost = TILEBAG.designCost(CHARACTER_DATA.getBot(text, design));
-					if (canAfford(selectedCost))
-					{
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-		private static bool canAfford(Dictionary<InventoryItemType, int> selectedCost)
-		{
-			if (PLAYER.debugMode)
-			{
-				return false;
-			}
-			foreach (InventoryItemType inventoryItemType in selectedCost.Keys)
-			{
-				int num = selectedCost[inventoryItemType];
-				long resource = CHARACTER_DATA.getResource(inventoryItemType);
-				if (resource < (long)num)
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		public static List<InventoryItem> getRandomScrapLoot()
-		{
-			int quantity = Squirrel3RNG.Next(0, 4);
-			//int shipsUnlocked = CHARACTER_DATA.shipsUnlocked();
-			InventoryItem Item = null;//new InventoryItem();
-			List<InventoryItem> list = new List<InventoryItem>();
-
-			for (int i = 0; i < quantity; i++)
-			{
-				int selectItem = Squirrel3RNG.Next(1, 17);
-				if (selectItem == 1)
-				{
-					// graphene sheets
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.graphene_sheets);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 2)
-				{
-					// silicon
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.silicon);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 3)
-				{
-					// assorted parts
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.assorted_parts);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 4)
-				{
-					// snacks
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.snacks);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 5)
-				{
-					//structural components
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.structural_components);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 6)
-				{
-					// thermal plating
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.thermal_plating);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 7)
-				{
-					//armor plating
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.armor_plating);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 8)
-				{
-					//electronic components
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.electronic_components);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 9)
-				{
-					//blueprints
-					int num = Squirrel3RNG.Next(LOOTBAG.researchCategories.Length);
-					if (LOOTBAG.researchCategories[num].Count > 0)
-					{
-						int index = Squirrel3RNG.Next(LOOTBAG.researchCategories[num].Count);
-						uint id = LOOTBAG.researchCategories[num][index];
-						ResearchLoot inventoryItem = new ResearchLoot(id);
-						Item = inventoryItem;
-					}
-				}
-				if (selectItem == 10)
-				{
-					//field coils
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.field_coils);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 11)
-				{
-					//carbon nanotubes
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.carbon_nanotubes);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 12)
-				{
-					//structural components
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.structural_components);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 13)
-				{
-					//gold wire
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.gold_wire);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 14)
-				{
-					//titanium alloy
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.titanium_alloy);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 15)
-				{
-					//graphite
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.graphite);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (selectItem == 16)
-				{
-					//grey goo
-					InventoryItem inventoryItem = new InventoryItem(InventoryItemType.grey_goo);
-					inventoryItem.stackSize = 1U + (uint)Squirrel3RNG.Next((int)(ITEMBAG.getStackSize(inventoryItem.type) - 1U));
-					Item = inventoryItem;
-				}
-				if (Item != null)
-				{
-					list.Add(Item);
-				}	
-			}
-			return list;
 		}
 	}
 }

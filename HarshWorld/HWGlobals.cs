@@ -9,7 +9,10 @@ namespace HarshWorld
 	public enum GlobalFlag : uint
 	{
 		PiratesCalled,
-		PiratesCalledHostile
+		PiratesCalledHostile,
+		Sige1EventActive,
+		Sige1EventSpawnDialogueActive,
+		Sige1EventPlayerDead
 	}
 	class Globals
     {
@@ -19,7 +22,7 @@ namespace HarshWorld
 		public static ConcurrentQueue<Tuple<ulong, Point>> GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 		public static Dictionary<InventoryItemType, int> offer = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<InventoryItemType, int> demand = new Dictionary<InventoryItemType, int>();
-		public static Dictionary<GlobalFlag, bool> flags = new Dictionary<GlobalFlag, bool>();
+		public static Dictionary<GlobalFlag, bool> eventflags = new Dictionary<GlobalFlag, bool>();
 		public static void Initialize()
 		{
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
@@ -28,9 +31,12 @@ namespace HarshWorld
 			GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 			offer = new Dictionary<InventoryItemType, int>();
 			demand = new Dictionary<InventoryItemType, int>();
-			flags = new Dictionary<GlobalFlag, bool>();
-			flags.Add(GlobalFlag.PiratesCalled, false);
-			flags.Add(GlobalFlag.PiratesCalledHostile, false);
+			eventflags = new Dictionary<GlobalFlag, bool>();
+			eventflags.Add(GlobalFlag.PiratesCalled, false);
+			eventflags.Add(GlobalFlag.PiratesCalledHostile, false);
+			eventflags.Add(GlobalFlag.Sige1EventActive, false);
+			eventflags.Add(GlobalFlag.Sige1EventSpawnDialogueActive, false);
+			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
 		}
 
 		public static int DifficultyFromCost(int cost)

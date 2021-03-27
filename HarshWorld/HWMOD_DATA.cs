@@ -31,8 +31,7 @@ namespace HarshWorld
 			commandText = "create table IF NOT EXISTS globalshipremovequeue (UID BIGINT, gridx INT, gridy INT, PRIMARY KEY (UID))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
-			//commandText = "create table IF NOT EXISTS globalflags (piratescalled BOOL, piratescalledhostile BOOL)";
-			commandText = "create table IF NOT EXISTS globalflags (name varchar(20), value BOOL)";
+			commandText = "create table IF NOT EXISTS eventflags (name varchar(20), value BOOL)";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
 		}
@@ -43,10 +42,10 @@ namespace HarshWorld
 			{/*
 				if (MOD_DATA.modCon != null) // saving PiratesCalled flag
 				{
-					string commandText1 = "delete from globalflags";
+					string commandText1 = "delete from eventflags";
 					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
 					sqliteCommand1.ExecuteNonQuery();
-					string commandText2 = "insert or replace into globalflags (piratescalled, piratescalledhostile) values (@piratescalled, @piratescalledhostile)";
+					string commandText2 = "insert or replace into eventflags (piratescalled, piratescalledhostile) values (@piratescalled, @piratescalledhostile)";
 					SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
 					sqliteCommand2.Parameters.Add("@piratescalled", DbType.Boolean).Value = Globals.PiratesCalled;
 					sqliteCommand2.Parameters.Add("@piratescalledhostile", DbType.Boolean).Value = Globals.PiratesCalledHostile;
@@ -55,12 +54,12 @@ namespace HarshWorld
 				*/
 				if (MOD_DATA.modCon != null) // saving flags
 				{
-					string commandText1 = "delete from globalflags";
+					string commandText1 = "delete from eventflags";
 					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
 					sqliteCommand1.ExecuteNonQuery();
-					foreach (var flag in Globals.flags)
+					foreach (var flag in Globals.eventflags)
 					{
-					string commandText2 = "insert or replace into globalflags (name, value) values (@name, @value)";
+					string commandText2 = "insert or replace into eventflags (name, value) values (@name, @value)";
 					SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
 					sqliteCommand2.Parameters.Add("@name", DbType.String).Value = flag.Key;
 					sqliteCommand2.Parameters.Add("@value", DbType.Boolean).Value = flag.Value;
@@ -250,7 +249,7 @@ namespace HarshWorld
 		}
 		private static void getGlobalFlagsData()
 		{
-			string commandText = "select * from globalflags";
+			string commandText = "select * from eventflags";
 			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
 			while (sqliteDataReader.Read())
@@ -270,7 +269,7 @@ namespace HarshWorld
 					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " flag for HarshWorld mod. Please tell the mod author."); //error message for debug
 					return;
 				}
-				Globals.flags[type] = (bool)sqliteDataReader["value"];
+				Globals.eventflags[type] = (bool)sqliteDataReader["value"];
 			}
 		}
 		private static List<String> getConversationData(string id)

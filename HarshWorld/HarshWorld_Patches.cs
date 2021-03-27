@@ -179,6 +179,91 @@ namespace HarshWorld
 
 
 					}
+
+					if (PLAYER.currentSession != null && PLAYER.currentShip != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
+					{
+						// homebase siege1 pirate event
+						if ( Squirrel3RNG.Next(1, Math.Max((int)(450000 / HWCONFIG.InterruptionFrequency), 2)) == 1 || PLAYER.debugMode)
+						{
+							InterruptionType template = InterruptionType.home_siege_pirate_t1;
+							var currentdifficulty = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+							if (currentdifficulty <= 12)
+							{
+								switch (Squirrel3RNG.Next(3))
+								{
+									case 0:
+										template = InterruptionType.home_siege_pirate_t1;
+										break;
+									case 1:
+										template = InterruptionType.home_siege_pirate_t1;
+										break;
+									case 2:
+										template = InterruptionType.home_siege_pirate_t1;
+										break;
+									default:
+										template = InterruptionType.home_siege_pirate_t1;
+										break;
+								}
+							}
+							if (currentdifficulty > 12 && currentdifficulty <= 21)
+							{
+								switch (Squirrel3RNG.Next(4))
+								{
+									case 0:
+										template = InterruptionType.home_siege_pirate_t2;
+										break;
+									case 1:
+										template = InterruptionType.home_siege_pirate_t2;
+										break;
+									case 2:
+										template = InterruptionType.home_siege_pirate_t2;
+										break;
+									case 3:
+										template = InterruptionType.home_siege_pirate_t2;
+										break;
+									default:
+										template = InterruptionType.home_siege_pirate_t2;
+										break;
+								}
+							}
+							if (currentdifficulty > 21)
+							{
+								switch (Squirrel3RNG.Next(8))
+								{
+									case 0:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 1:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 2:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 3:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 4:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 5:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 6:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									case 7:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+									default:
+										template = InterruptionType.home_siege_pirate_t25;
+										break;
+								}
+							}
+							HWSPAWNMANAGER.addInterruption(new Interruption(template, PLAYER.currentShip.position, PLAYER.currentShip.grid));
+							Globals.eventflags[GlobalFlag.Sige1EventActive] = true;
+							Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] = true;
+						}
+					}
 				}
 			}
 		}
@@ -192,7 +277,7 @@ namespace HarshWorld
 			{
 				if (Globals.GlobalShipRemoveQueue != null && !Globals.GlobalShipRemoveQueue.IsEmpty)  // removing collected garbage ship ids (already set to despawn by the Interruption.DespawnEnqueqedShipAsync) from active sessions
 				{
-					List<Tuple<ulong, Point>> list = new List<Tuple<ulong, Point>>(); //todo rent List?
+					List<Tuple<ulong, Point>> list = new List<Tuple<ulong, Point>>();
 					while (Globals.GlobalShipRemoveQueue.TryDequeue(out var tuple))
 					{
 						if (__instance.grid == tuple.Item2)
@@ -1273,6 +1358,21 @@ namespace HarshWorld
 			}
 
 		}
+		/*
+		[HarmonyPatch(typeof(Crew), "testLOS")]
+		public class Crew_testLOS
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(Crew __instance, ref bool __result, Vector2 target, MicroCosm cosm) 
+			{
+				if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
+				{
+					__result = true;
+				}
+			}
+		}
+		*/
 
 		[HarmonyPatch(typeof(Phase1EndQuest), "test")] //SSC Shipyard quest, making npcs on the station hostile after alarm
 		public class Phase1EndQuest__test
@@ -1332,33 +1432,51 @@ namespace HarshWorld
 			{
 				if (!___waiting && PLAYER.avatar.state == CrewState.dead)
 				{
-					bool flag8 = PLAYER.avatar.inventory != null;
-					if (flag8)
+
+					if (Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
+					{
+						Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
+					}
+
+					if (PLAYER.avatar.inventory != null)
 					{
 						var inventory = PLAYER.avatar.inventory;
-						foreach (InventoryItem inventoryItem in inventory)
+						if (!Globals.eventflags[GlobalFlag.Sige1EventActive]) 
 						{
-							if (PLAYER.avatar.currentCosm != null)
+							foreach (InventoryItem inventoryItem in inventory)
 							{
-								if (PLAYER.avatar.currentCosm.ship != null)
+								if (PLAYER.avatar.currentCosm != null)
 								{
-									if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-										PLAYER.avatar.currentCosm.ship.threadDumpCargo(inventoryItem);
+									if (PLAYER.avatar.currentCosm.ship != null)
+									{
+										if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+											PLAYER.avatar.currentCosm.ship.threadDumpCargo(inventoryItem);
+									}
+									else
+									{
+										if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+											PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
+									}
 								}
 								else
 								{
 									if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
 										PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
 								}
-							}
-							else
-							{
-								if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-									PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
-							}
 
+							}
 						}
-
+						else //special condition for siege event
+						{
+							for (int i = 4; i < inventory.Length; i++)
+							{
+								InventoryItem inventoryItem = inventory[i];
+								if (inventoryItem != null)
+								{
+									PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1366,7 +1484,7 @@ namespace HarshWorld
 
 
 		[HarmonyPatch(typeof(Respawning), "updateInput")]
-		public class Respawning__updateInput // making player drop items on manual respawning
+		public class Respawning__updateInput // making player drop items on manual respawning (clearing inventory after items dropped)
 		{
 
 			[HarmonyPrefix]
@@ -1396,16 +1514,32 @@ namespace HarshWorld
 								{
 									//if (clickable2.action == 0)
 									//{
-									bool flag8 = PLAYER.avatar.inventory != null;
-									if (flag8)
+									if (PLAYER.avatar.inventory != null && PLAYER.avatar.currentCosm != null)
 									{
 										var inventory = PLAYER.avatar.inventory;
-										foreach (InventoryItem inventoryItem in inventory)
+										if (!Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
 										{
-											if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-												PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
-										}
+											foreach (InventoryItem inventoryItem in inventory)
+											{
 
+												if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+												{ 
+													PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
+												}
+
+											}
+										}
+										else
+										{
+											for (int i = 4; i < inventory.Length; i++)
+											{
+												InventoryItem inventoryItem = inventory[i];
+												if (inventoryItem != null)
+												{ 
+													PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
+												}
+											}
+										}
 									}
 									//}
 
@@ -1588,7 +1722,7 @@ namespace HarshWorld
 					Globals.GlobalShipRemoveQueue = null;
 					Globals.offer = null;
 					Globals.demand = null;
-					Globals.flags.Clear();
+					Globals.eventflags.Clear();
 				}
 			}
 		}
@@ -1628,27 +1762,81 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(CoOpSpRpG.Console __instance)
 			{
-				if ((Globals.flags[GlobalFlag.PiratesCalled] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
-				{
-					PLAYER.currentShip.scanRange = CONFIG.minViewDist;
-					PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
-					PLAYER.currentShip.tempView = 1f;
-					__instance.group = 0;
-					foreach (var interruption in Globals.Interruptionbag)
+				if(PLAYER.currentSession.GetType() == typeof(BattleSessionSP))
+				{ 
+					if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 					{
-						if(interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
+						PLAYER.currentShip.scanRange = CONFIG.minViewDist;
+						PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
+						PLAYER.currentShip.tempView = 1f;
+						PLAYER.currentShip.tempFireRate = 1f;
+						PLAYER.currentShip.tempGunAccuracy = 1f;
+						PLAYER.currentShip.tempBulletDuration = 1f;
+						PLAYER.currentShip.tempBulletSpeed = 1f;
+						PLAYER.currentShip.tempBulletDamageMod = 1f;
+						PLAYER.currentShip.tempMagazineSize = 1f;
+						PLAYER.currentShip.tempMissileHard = 1f;
+						PLAYER.currentShip.tempTurReload = 1f;
+						PLAYER.currentShip.tempTurTraverse = 1f;
+						__instance.group = 0;
+						if (PLAYER.currentShip.turrets == null) // new turrets assigned only once. Or assign new turrets to current console
 						{
-							return;
+							PLAYER.currentShip.turrets = TURRET_BAG.makeTurrets(new TurretType[] { TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket }); //give station weapons
 						}
+						if (PLAYER.currentShip.turrets != null)
+						{
+							foreach (Turret t in PLAYER.currentShip.turrets)
+							{
+								if (t != null)
+								{
+									t.ship = PLAYER.currentShip;
+								}
+							}
+						}
+
+						//give them ammo
+						if (PLAYER.currentShip.data == null)
+						{
+							PLAYER.currentShip.data = new CosmMetaData();
+						}
+						PLAYER.currentShip.data.reload = true;
 					}
-					HWSPAWNMANAGER.addInterruption(new Interruption(InterruptionType.friendly_pirates_call, PLAYER.currentShip.position, PLAYER.currentShip.grid));
-					//Globals.PiratesCalled = false;
-				}
-				else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
-				{
-					PLAYER.currentShip.scanRange = 0;
-					PLAYER.currentShip.signitureRadius = 0;
-					PLAYER.currentShip.tempView = 0;
+					else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+					{
+						PLAYER.currentShip.scanRange = 0;
+						PLAYER.currentShip.signitureRadius = 0;
+						PLAYER.currentShip.tempView = 0;
+						PLAYER.currentShip.tempFireRate = 0f;
+						PLAYER.currentShip.tempGunAccuracy = 0f;
+						PLAYER.currentShip.tempBulletDuration = 0f;
+						PLAYER.currentShip.tempBulletSpeed = 0f;
+						PLAYER.currentShip.tempBulletDamageMod = 0f;
+						PLAYER.currentShip.tempMagazineSize = 0f;
+						PLAYER.currentShip.tempMissileHard = 0f;
+						PLAYER.currentShip.tempTurReload = 0f;
+						PLAYER.currentShip.tempTurTraverse = 0f;
+					}
+					if ((Globals.eventflags[GlobalFlag.PiratesCalled] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+					{
+						PLAYER.currentShip.scanRange = CONFIG.minViewDist;
+						PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
+						PLAYER.currentShip.tempView = 1f;
+						__instance.group = 0;
+						foreach (var interruption in Globals.Interruptionbag)
+						{
+							if(interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
+							{
+								return;
+							}
+						}
+						HWSPAWNMANAGER.addInterruption(new Interruption(InterruptionType.friendly_pirates_call, PLAYER.currentShip.position, PLAYER.currentShip.grid));
+					}
+					else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
+					{
+						PLAYER.currentShip.scanRange = 0;
+						PLAYER.currentShip.signitureRadius = 0;
+						PLAYER.currentShip.tempView = 0;
+					}
 				}
 			}
 		}
@@ -1738,8 +1926,8 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
-					Globals.flags[GlobalFlag.PiratesCalled] = false;
+					Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
+					Globals.eventflags[GlobalFlag.PiratesCalled] = false;
 					return "Thanks.";
 				};
 				DialogueTextMaker payvisit = delegate ()
@@ -1769,8 +1957,8 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
-					Globals.flags[GlobalFlag.PiratesCalled] = false;
+					Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
+					Globals.eventflags[GlobalFlag.PiratesCalled] = false;
 					return "...";
 				};
 				DialogueTextMaker waithostile = delegate ()
@@ -1795,7 +1983,7 @@ namespace HarshWorld
                             }
 						}
 					}
-					Globals.flags[GlobalFlag.PiratesCalledHostile] = true;
+					Globals.eventflags[GlobalFlag.PiratesCalledHostile] = true;
 					return "...";
 				};
 				DialogueTextMaker waitnonhostile = delegate ()
@@ -1822,12 +2010,12 @@ namespace HarshWorld
 							}
 						}
 					}
-					Globals.flags[GlobalFlag.PiratesCalledHostile] = false;
+					Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
 					return "Allright, I will see if I can get some money to pay you.";
 				};
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && !Globals.flags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && Globals.flags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.flags[GlobalFlag.PiratesCalled] && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && !Globals.eventflags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && Globals.eventflags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+				lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
 				dialogueTree.text = "Yes, your master told us that you blew up your ship and now stranded at your station.";
 				dialogueTree.addOption("Oh .. Uh .. yes. I mean, NO. He ist NOT my master.", dialogueTree1, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count == 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible.
 				dialogueTree.addOption("Actually we are more like partners. I am working for him and he is making bad jokes.", dialogueTree9, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count != 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible, if not, then this option without the ship offer
@@ -1893,13 +2081,38 @@ namespace HarshWorld
 				if (opt == "Scrap" && ___selected.ownershipHistory.Contains(3UL) && ___selected.ownershipHistory.Contains(8UL))
 				{
 					___selected.performUndock(PLAYER.currentSession);
-					foreach (InventoryItem inventoryItem in HWOneAgent.getRandomScrapLoot())
+					foreach (InventoryItem inventoryItem in HWFriendlyPiratesCalledEvent.getRandomScrapLoot())
 					{
 						if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
 						PLAYER.currentShip.floatyText.Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
 					}
 					PLAYER.currentSession.despawnShip(___selected);
 					opt = "";
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(GameFile), "update")] // update loop for quest events.
+		public class GameFile_update
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(float elapsed)
+			{
+				HWBaseSiegeEvent.test(elapsed); // checking dialogue trigger
+			}
+		}
+
+		[HarmonyPatch(typeof(Turret), "tryFire")]
+		public class Turret_tryFire
+		{
+
+			[HarmonyPrefix]
+			private static void Prefix(Turret __instance, BattleSession session)
+			{
+				if(session.GetType() == typeof(BattleSessionSP) && Globals.eventflags[GlobalFlag.Sige1EventActive] && __instance.ship.id == PLAYER.currentGame.homeBaseId)
+				{
+					__instance.energy = __instance._maxEnergy;
 				}
 			}
 		}

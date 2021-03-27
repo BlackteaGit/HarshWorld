@@ -57,8 +57,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HWBaseSiegeEvent.cs" />
     <Compile Include="HWCONFIG.cs" />
     <Compile Include="HWFloatyText.cs" />
+    <Compile Include="HWFriendlyPiratesCalledEvent.cs" />
     <Compile Include="HWGlobals.cs" />
     <Compile Include="HarshWorld_Patches.cs" />
     <Compile Include="HWInterruptions.cs" />
