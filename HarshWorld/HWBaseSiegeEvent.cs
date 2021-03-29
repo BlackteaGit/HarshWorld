@@ -12,7 +12,10 @@ namespace HarshWorld
     {
 		private static DialogueSelectRev2 dialogue;
 		private static float intruderTimer = 0f;
-		private static ModTile consoleToHack = null;
+		private static float lootTimer = 0f;
+		private static ModTile targetModule = null;
+		private static ModTile targetConsole = null;
+		private static ModTile targetCargobay = null;
 
 		public static void interruptionUpdate(float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
@@ -29,7 +32,7 @@ namespace HarshWorld
 					intruderTimer = 0f;
 					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 					{
-						if (HWCONFIG.GlobalDifficulty > 0)
+						if (HWCONFIG.GlobalDifficulty > 0 && !Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
 						{
 							if (SCREEN_MANAGER.dialogue == null && !PROCESS_REGISTER.currentCosm.klaxonOverride)
 							{
@@ -105,7 +108,7 @@ namespace HarshWorld
 
 			if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && !PLAYER.animateRespawn)
 			{
-				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
+				//Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
 				PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.normal;
 				foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
 				{
@@ -118,7 +121,7 @@ namespace HarshWorld
 						}
 					}
 				}
-				consoleToHack = null;
+				targetModule = null;
 			}
 
 			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
@@ -137,26 +140,55 @@ namespace HarshWorld
 							if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
 							{
 								//crew.state = CrewState.idle;
-								if (PLAYER.animateRespawn)
-								{	
-									if(consoleToHack == null)
+								//if (PLAYER.animateRespawn)
+								//{	
+									if(targetModule == null)
 									{ 
 										foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
 										{
+
+											if (module.type == ModuleType.cargo_bay)
+											{
+												targetModule = targetCargobay = (module as CargoBay).tiles[0];
+												goto CargoBayFound;
+											}
+
+										}
+
+										CargoBayFound:
+										crew.setGoal(targetModule); //reset to stealing items every time lockdown initiated
+
+										foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
+										{
+
 											if (module.type == ModuleType.Console_Access)
 											{
-												consoleToHack = (module as ConsoleAccess).tiles[0];
-												goto Found;
+												targetConsole = (module as ConsoleAccess).tiles[0];
+												goto ConsoleFound;
 											}
 										}
-										Found:
-										crew.setGoal(consoleToHack);
+
+										ConsoleFound:;
 									}
 									else if(crew.state == CrewState.attacking)
 									{
-										crew.setGoal(consoleToHack);
+										crew.setGoal(targetModule); //reset to stealing items every time lockdown initiated
 									}
-								}	
+									Vector2 CBPos = new Vector2((float)(targetCargobay.X % crew.currentCosm.width * 16), (float)(targetCargobay.X / crew.currentCosm.width * 16));
+									var distance = Vector2.DistanceSquared(CBPos, crew.position);
+									if (crew.state != CrewState.attacking && crew.target == crew.position && distance < 66f * 66f ) //check if at cargo bay and try to steal item
+									{
+										lootTimer += elapsed;
+										if (lootTimer >= 1f)
+										{
+											lootTimer = 0f;
+											if (!StealRandomResource(crew)) //if some random ressourcers stolen, go to the console to transfer them to the ship.
+											{
+												crew.setGoal(targetConsole);
+											}
+										}
+									}
+								//}	
 							}
 						}
 					}
@@ -191,6 +223,37 @@ namespace HarshWorld
 				HWSPAWNMANAGER.DespawnInterruptionAsync(InterruptionInstance.id).SafeFireAndForget();
 			}
 
+		}
+
+		private static bool StealRandomResource(Crew crew)
+		{
+			var ressourses = CHARACTER_DATA.getAllResources();
+			var toSteal = ressourses.Keys.ToList()[Squirrel3RNG.Next(ressourses.Keys.ToList().Count)];
+			if(ressourses[toSteal] >= 1)
+			{ 
+				if(crew.containsItemOfType(toSteal))
+				{
+					return false;
+                }
+				CHARACTER_DATA.setResource(toSteal, ressourses[toSteal] - 1);
+				InventoryItem inventoryItem = new InventoryItem(toSteal);
+				inventoryItem.stackSize = 1;
+				crew.placeInFirstSlot(inventoryItem);
+				crew.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+				/*
+				String Tooltip;
+				if (ITEMBAG.defaultTip.ContainsKey(toSteal))
+				{
+					Tooltip = ITEMBAG.defaultTip[toSteal].tip;
+				}
+				else
+				{
+					Tooltip = "cargo";
+				}
+				crew.GetfloatyText().Enqueue("+ 1 " + Tooltip);
+				*/
+			}
+			return true;
 		}
 
 		private static bool ShipsOutOfRange(BattleSession session, Interruption InterruptionInstance)
