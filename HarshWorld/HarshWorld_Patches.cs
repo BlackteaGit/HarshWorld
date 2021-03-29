@@ -381,7 +381,7 @@ namespace HarshWorld
 			}
 		}
 
-
+		/*
 		[HarmonyPatch(typeof(FreelancerFactionRev2), "updateTraders")]
 		public class FreelancerFactionRev2_updateTraders //calculating demand for tradegoods
 		{
@@ -648,6 +648,212 @@ namespace HarshWorld
 				return false;
 			}
 		}
+		
+		[HarmonyPatch(typeof(FreelancerFactionRev2), "updateTrader")]
+		public class FreelancerFactionRev2_updateTrader //calculating demand for tradegoods
+		{
+
+			[HarmonyPrefix]
+			private static Boolean Prefix(FreelancerFactionRev2 __instance, ulong traderID, float elapsed)
+			{
+				if (!__instance.ships.ContainsKey(traderID))
+				{
+					return false;
+				}
+				__instance.traders.Enqueue(traderID);
+				if (__instance.jobs.ContainsKey(traderID))
+				{
+					TradeJob tradeJob = __instance.jobs[traderID];
+					NonPlayerShip nonPlayerShip = __instance.ships[traderID];
+					if (tradeJob.collected)
+					{
+						float num = tradeJob.destination.offerPrices[tradeJob.product];
+						if (num < tradeJob.buyPrice)
+						{
+							float num2 = EconomyNode.distance(tradeJob.destination, nonPlayerShip.position, nonPlayerShip.grid);
+							EconomyNode economyNode = tradeJob.destination;
+							foreach (EconomyNode economyNode2 in __instance.world.economy.demand[tradeJob.product])
+							{
+								float num3 = economyNode2.offerPrices[tradeJob.product];
+								int num4 = economyNode2.capacity[tradeJob.product] - (int)economyNode2.storage[tradeJob.product];
+								if (num3 > num)
+								{
+									float num5 = EconomyNode.distance(economyNode2, nonPlayerShip.position, nonPlayerShip.grid);
+									if (num5 <= num2 + 16f && (double)num4 > (double)nonPlayerShip.countInventory(tradeJob.product) * 1.2)
+									{
+										economyNode = economyNode2;
+										num2 = num5;
+										num = num3;
+									}
+								}
+							}
+							tradeJob.destination = economyNode;
+							tradeJob.sellPrice = economyNode.offerPrices[tradeJob.product];
+							__instance.jobs[traderID] = tradeJob;
+							return false;
+						}
+						if (nonPlayerShip.isDocked)
+						{
+							if (nonPlayerShip.trySellAll(tradeJob.destination, tradeJob.product))
+							{
+								nonPlayerShip.moveToLocation(nonPlayerShip.position + RANDOM.squareVector(500f), nonPlayerShip.grid);
+								__instance.jobs.Remove(traderID);
+								return false;
+							}
+							int num6 = 0;
+							if (__instance.searchCounts.ContainsKey(traderID))
+							{
+								num6 = __instance.searchCounts[traderID];
+							}
+							num6++;
+							if (num6 > 3)
+							{
+								try
+								{
+									int num7 = nonPlayerShip.countInventory(tradeJob.product);
+									List<EconomyNode> list = __instance.world.economy.demand[tradeJob.product];
+									EconomyNode economyNode3 = null;
+									float num8 = -1f;
+									foreach (EconomyNode economyNode4 in list)
+									{
+										if (economyNode4.capacity[tradeJob.product] - (int)economyNode4.storage[tradeJob.product] >= num7)
+										{
+											float num9 = EconomyNode.distance(economyNode4, nonPlayerShip.position, nonPlayerShip.grid);
+											if (num9 <= num8 || num8 < 0f)
+											{
+												economyNode3 = economyNode4;
+												num8 = num9;
+											}
+										}
+									}
+									if (economyNode3 != null)
+									{
+										tradeJob.destination = economyNode3;
+										tradeJob.sellPrice = economyNode3.offerPrices[tradeJob.product];
+										__instance.jobs[traderID] = tradeJob;
+										nonPlayerShip.dockAt(tradeJob.destination.position, tradeJob.destination.id, tradeJob.destination.grid);
+									}
+									else
+									{
+										num6++;
+									}
+								}
+								catch
+								{
+									num6++;
+								}
+							}
+							if (num6 <= 10)
+							{
+								return false;
+							}
+							try
+							{
+								nonPlayerShip.deleteCargoByType(tradeJob.product);
+								nonPlayerShip.moveToLocation(nonPlayerShip.position + RANDOM.squareVector(500f), nonPlayerShip.grid);
+								__instance.jobs.Remove(traderID);
+								return false;
+							}
+							catch
+							{
+								__instance.despawnShip(traderID);
+								return false;
+							}
+						}
+						nonPlayerShip.dockAt(tradeJob.destination.position, tradeJob.destination.id, tradeJob.destination.grid);
+						return false;
+					}
+					else
+					{
+						if (tradeJob.source.salesPrices[tradeJob.product] > tradeJob.buyPrice)
+						{
+							nonPlayerShip.moveToLocation(nonPlayerShip.position + RANDOM.squareVector(500f), nonPlayerShip.grid);
+							__instance.jobs.Remove(traderID);
+							return false;
+						}
+						if (nonPlayerShip.isDocked)
+						{
+							if (nonPlayerShip.tryBuyBudget(tradeJob.source, tradeJob.product))
+							{
+								tradeJob.collected = true;
+								__instance.jobs[traderID] = tradeJob;
+								nonPlayerShip.dockAt(tradeJob.destination.position, tradeJob.destination.id, tradeJob.destination.grid);
+								if (!Globals.offer.ContainsKey(tradeJob.product)) //counting all successfull purchases for a trading good.
+								{
+									Globals.offer.Add(tradeJob.product, 1);
+								}
+								else
+								{
+									Globals.offer[tradeJob.product] = Globals.offer.GetValueSafe(tradeJob.product) + 1;
+								}
+								return false;
+							}
+							nonPlayerShip.moveToLocation(nonPlayerShip.position + RANDOM.squareVector(500f), nonPlayerShip.grid);
+							__instance.jobs.Remove(traderID);
+							if (!Globals.demand.ContainsKey(tradeJob.product)) //counting all failed purchases for a trading good.
+							{
+								Globals.demand.Add(tradeJob.product, 1);
+							}
+							else
+							{
+								Globals.demand[tradeJob.product] = Globals.demand.GetValueSafe(tradeJob.product) + 1;
+							}
+							return false;
+						}
+						else
+						{
+							nonPlayerShip.dockAt(tradeJob.source.position, tradeJob.source.id, tradeJob.source.grid);
+						}
+					}
+					return false;
+				}
+				NonPlayerShip nonPlayerShip2 = __instance.ships[traderID];
+				var args = new object[] { nonPlayerShip2, 10 };
+				var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+
+				if (PLAYER.currentSession != null && nonPlayerShip2.grid == PLAYER.currentSession.grid)
+				{
+					typeof(FreelancerFactionRev2).GetMethod("findTradeRoute", flags, null, new Type[] { typeof(NonPlayerShip) }, null).Invoke(__instance, args);
+					return false;
+				}
+				args = new object[] { nonPlayerShip2, 1 };
+				typeof(FreelancerFactionRev2).GetMethod("findTradeRoute", flags, null, new Type[] { typeof(NonPlayerShip) }, null).Invoke(__instance, args);
+				return false;
+			}
+		}
+		*/
+
+		[HarmonyPatch(typeof(NonPlayerShip), "tryBuyBudget")] //counting every purchase attempt of to asses their market value
+		public class NonPlayerShip__tryBuyBudget
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(bool __result, EconomyNode node, InventoryItemType type)
+			{
+				if (__result)
+				{
+					if (!Globals.offer.ContainsKey(type)) //counting all successfull purchases for a trading good.
+					{
+						Globals.offer.Add(type, 1);
+					}
+					else
+					{
+						Globals.offer[type] = Globals.offer.GetValueSafe(type) + 1;
+					}
+				}
+				else
+				{
+					if (!Globals.demand.ContainsKey(type)) //counting all failed purchases for a trading good.
+					{
+						Globals.demand.Add(type, 1);
+					}
+					else
+					{
+						Globals.demand[type] = Globals.demand.GetValueSafe(type) + 1;
+					}
+				}
+			}
+		}
 
 
 		[HarmonyPatch(typeof(Ship), "updateCargo")]   //disabling the random cargo stealing from undamaged ships by activated scoop
@@ -780,7 +986,6 @@ namespace HarshWorld
 				return false;
 			}
 		}
-
 
 		[HarmonyPatch(typeof(Ship), "aggro")]
 		public class Ship_aggro

@@ -31,7 +31,7 @@ namespace HarshWorld
 			commandText = "create table IF NOT EXISTS globalshipremovequeue (UID BIGINT, gridx INT, gridy INT, PRIMARY KEY (UID))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
-			commandText = "create table IF NOT EXISTS eventflags (name varchar(20), value BOOL)";
+			commandText = "create table IF NOT EXISTS eventflags (name varchar(20), value BOOL, PRIMARY KEY (name))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
 		}
