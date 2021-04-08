@@ -1121,21 +1121,6 @@ namespace HarshWorld
 			}
 
 		}
-		/*
-		[HarmonyPatch(typeof(Crew), "testLOS")]
-		public class Crew_testLOS
-		{
-
-			[HarmonyPostfix]
-			private static void Postfix(Crew __instance, ref bool __result, Vector2 target, MicroCosm cosm) 
-			{
-				if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
-				{
-					__result = true;
-				}
-			}
-		}
-		*/
 
 		[HarmonyPatch(typeof(Phase1EndQuest), "test")] //SSC Shipyard quest, making npcs on the station hostile after alarm
 		public class Phase1EndQuest__test
@@ -1234,7 +1219,7 @@ namespace HarshWorld
 							for (int i = 4; i < inventory.Length; i++)
 							{
 								InventoryItem inventoryItem = inventory[i];
-								if (inventoryItem != null)
+								if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
 								{
 									PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
 								}
@@ -1280,7 +1265,7 @@ namespace HarshWorld
 									if (PLAYER.avatar.inventory != null && PLAYER.avatar.currentCosm != null)
 									{
 										var inventory = PLAYER.avatar.inventory;
-										if (!Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
+										if (!Globals.eventflags[GlobalFlag.Sige1EventActive])
 										{
 											foreach (InventoryItem inventoryItem in inventory)
 											{
@@ -1292,12 +1277,13 @@ namespace HarshWorld
 
 											}
 										}
-										else
-										{
+										else  //special condition for siege event
+										{											
+											PLAYER.avatar.heldItem = null;
 											for (int i = 4; i < inventory.Length; i++)
 											{
 												InventoryItem inventoryItem = inventory[i];
-												if (inventoryItem != null)
+												if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
 												{ 
 													PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
 												}
@@ -1542,9 +1528,10 @@ namespace HarshWorld
 						PLAYER.currentShip.tempTurReload = 1f;
 						PLAYER.currentShip.tempTurTraverse = 1f;
 						__instance.group = 0;
-						if (PLAYER.currentShip.turrets == null) // new turrets assigned only once. Or assign new turrets to current console
+						if (PLAYER.currentShip.turrets == null || __instance.turrets == null || PLAYER.currentShip.turrets.ToList().TrueForAll(Element => Element == null)) // new turrets assigned only once. Or assign new turrets to current console
 						{
 							PLAYER.currentShip.turrets = TURRET_BAG.makeTurrets(new TurretType[] { TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket }); //give station weapons
+							__instance.turrets = PLAYER.currentShip.turrets;
 						}
 						if (PLAYER.currentShip.turrets != null)
 						{
@@ -1556,7 +1543,7 @@ namespace HarshWorld
 								}
 							}
 						}
-
+						//__instance.turrets = PLAYER.currentShip.turrets;
 						//give them ammo
 						if (PLAYER.currentShip.data == null)
 						{
@@ -1866,7 +1853,7 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(Turret), "tryFire")]
+		[HarmonyPatch(typeof(Turret), "tryFire")] //auto refill ammo of homestation guns if siege effect active
 		public class Turret_tryFire
 		{
 
@@ -1876,6 +1863,79 @@ namespace HarshWorld
 				if(session.GetType() == typeof(BattleSessionSP) && Globals.eventflags[GlobalFlag.Sige1EventActive] && __instance.ship.id == PLAYER.currentGame.homeBaseId)
 				{
 					__instance.energy = __instance._maxEnergy;
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(WidgetJournal), "LoadQuests")] //managing questlog
+		public class WidgetJournal_LoadQuests
+		{
+			[HarmonyPostfix]
+			private static void Postfix(WidgetJournal __instance, JournalEntry ___focusedEntry, int ___journalTrackerWidth)
+			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+				JournalEntry entry = null;
+				if (PLAYER.currentGame != null)
+				{
+					if (Globals.eventflags[GlobalFlag.Sige1EventActive])
+					{
+						JournalEntry journalEntry = (JournalEntry)__instance.ScrollCanvas.AddJournalEntry("Track base", SCREEN_MANAGER.white, 4, 2, ___journalTrackerWidth - 20, 56, SortType.vertical,
+						new JournalEntry.ClickJournalEvent(__instance.DisplayDetails), new JournalEntry.ClickJournalMapEvent((inp) =>
+						{
+							JournalEntry jEntry = (JournalEntry)inp;
+							if (jEntry.quest != null && jEntry.quest.tip != null && jEntry.trackButton != null)
+							{
+								jEntry.quest.tracked = !jEntry.quest.tracked;
+							}
+						}));
+						__instance.entriesRef.Add(journalEntry);
+						HWBaseSiegeEvent.SetupEntry(journalEntry);
+						HWBaseSiegeEvent.getDistance(journalEntry);
+						if (___focusedEntry != null && ___focusedEntry.quest == null && ___focusedEntry.name == journalEntry.name)
+						{
+							entry = ___focusedEntry;
+						}
+					}
+				}
+				var selectorCanvas = typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance) as Canvas;
+				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas").GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type with reflection
+				var args = new object[] { selectorCanvas };
+				switch (selectorID)
+				{
+					case 0:
+						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+						break;
+					case 1:
+						typeof(WidgetJournal).GetMethod("SortByDistance", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+						break;
+					case 2:
+						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+						break;
+					default:
+						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+						break;
+				}
+				__instance.DisplayDetails(entry);
+
+			}
+		}
+		/*
+		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questlog if HWBaseSiegeEvent quest set to NULL
+		public class WidgetJournal_DisplayDetails
+		{
+			[HarmonyPostfix]
+			private static void Prefix(WidgetJournal __instance, JournalEntry entry)
+			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+				if (entry != null)
+				{		
+					if (entry.quest == null && entry.name == HWBaseSiegeEvent.tip.tip)
+					{
+						var args = new object[] { HWBaseSiegeEvent.tip.description };
+						var descriptionText = typeof(WidgetJournal).GetField("descriptionText", flags).GetValue(__instance);
+						typeof(GuiElement).Assembly.GetType("CoOpSpRpG.TextBoxStatic").GetMethod("SetText", flags, null, new Type[] { typeof(string) }, null).Invoke(descriptionText, args); // accessing private field of an internal type instance with reflection
+						typeof(WidgetJournal).GetField("descriptionText", flags).SetValue(__instance, descriptionText);
+					}
 				}
 			}
 		}
