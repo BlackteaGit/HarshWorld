@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Module = CoOpSpRpG.Module;
 
 namespace HarshWorld
 {
@@ -16,7 +17,7 @@ namespace HarshWorld
 		private static DialogueSelectRev2 dialogue;
 		private static float intruderTimer = 0f;
 		private static float lootTimer = 0f;
-		private static ModTile targetModule = null;
+		public static ModTile targetModule = null;
 		private static ModTile targetConsole = null;
 		private static ModTile targetCargobay = null;
 		private static ModTile cloneVats = null;
@@ -26,7 +27,7 @@ namespace HarshWorld
 		private static Vector2 CVPos;
 		private static Vector2 ALPos;
 		public static ToolTip tip;
-		private static Dictionary<InventoryItemType, int> ressourses = null;
+		public static bool seconddeath = false; //replace for a check if player is respawning from ingammemenu button
 
 		public class HWBaseSiegeEventQuest : TriggerEvent
 		{
@@ -53,8 +54,7 @@ namespace HarshWorld
 		}
 
 		public static void interruptionUpdate(float elapsed, BattleSession session, Interruption InterruptionInstance)
-		{	
-
+		{
 			position = InterruptionInstance.position;
 			grid = InterruptionInstance.grid;
 			
@@ -65,16 +65,10 @@ namespace HarshWorld
 				tip.setDescription("Find out what the attackers want and get rid of them.");
 			}
 
-			if (ressourses == null)
-			{
-				ressourses = CHARACTER_DATA.getAllResources();
-			}
-
 			if (InterruptionInstance.activeShips.Count() == 0 && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false)
 			{
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false;
 			}
-
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive])
 			{
 				intruderTimer += elapsed;
@@ -89,7 +83,6 @@ namespace HarshWorld
 							{
 								intrudersDialogue();  //Spawning intruders with dialogue
 								SCREEN_MANAGER.widgetChat.AddMessage("Intruders detected.", MessageTarget.Ship);
-								PROCESS_REGISTER.currentCosm.klaxonOverride = true;
 							}
 							else if(PROCESS_REGISTER.currentCosm.klaxonOverride) //Spawning intruders
 							{
@@ -127,36 +120,39 @@ namespace HarshWorld
 					}
 				}
 
-				
+				if(CheckHostileIntrudersCount(session) > 0)
+				{
+					if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations)
+					{
+						PROCESS_REGISTER.currentCosm.klaxonOverride = true;
+					}
+					else
+					{
+						PROCESS_REGISTER.currentCosm.klaxonOverride = false;
+					}
+
+				}
 
 				if(PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && PLAYER.avatar.state != CrewState.dead)
 				{
 					if (PLAYER.animateRespawn)
 					{
-						if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations)
+						if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations && !seconddeath)
 						{
-							SCREEN_MANAGER.widgetChat.AddMessage("Station operator missing. Initiating emergency lockdown.", MessageTarget.Ship);
-							/*
-							if (!PLAYER.avatar.currentCosm.crew.Values.ToList().TrueForAll(element => Vector2.DistanceSquared(element.position, PLAYER.avatar.position) > 1f * 1f))
-							{
-								SCREEN_MANAGER.widgetChat.AddMessage("Enemies near cloning facility detected, activating annihilation protocols.", MessageTarget.Ship);
-							}
-							*/
-							PROCESS_REGISTER.currentCosm.klaxonOverride = false;
+							SCREEN_MANAGER.widgetChat.AddMessage("Station operator missing. Initiating emergency lockdown. Latching airlocks.", MessageTarget.Ship);
 							PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.battlestations;
-							/*
+							
 							foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
 							{
-								if (module.type == ModuleType.door)
+								if (module.type == ModuleType.airlock)
 								{
-									if (!(module as Door).locked)
+									if (!(module as Airlock).locked)
 									{
-										(module as Door).open = false;
-										(module as Door).locked = true;
+										(module as Airlock).locked = true;
 									}
 								}
 							}
-							*/
+							
 						}
 					}
 				}
@@ -204,7 +200,7 @@ namespace HarshWorld
 						break;
 					}
 				}
-				var distanceToCV = Vector2.DistanceSquared(CVPos, PLAYER.avatar.position);
+				var playerdistanceToCV = Vector2.DistanceSquared(CVPos, PLAYER.avatar.position);
 
 				for (int i = 0; i < PLAYER.avatar.currentCosm.crew.Values.Count; i++) //managing intruders
 				{
@@ -213,43 +209,78 @@ namespace HarshWorld
 					{
 						if (crew.team.threats.Contains(PLAYER.avatar.faction) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) < 100000f * 100000f) //goals for hostile intruders
 						{
-							if (!Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
+							if (!Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //Stage before player died once
 							{
 								if(PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal) //default setting
 								{
-									PROCESS_REGISTER.currentCosm.klaxonOverride = true;
 									crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 								}								
-								if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && distanceToCV > 45000) //player is in lockdown and not in CV room
+							}
+							if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //player died once
+							{
+
+								if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //default setting
 								{
-									PROCESS_REGISTER.currentCosm.klaxonOverride = true;
 									crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 								}
-								if (hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 45000 && crew.target != crew.position)
+
+								if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && playerdistanceToCV > 45000 && hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //player is in lockdown and not in CV room
 								{
-									crew.setGoal(targetAirlock);
+									crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 								}
-							}
-							if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //player presumed dead
-							{
-								if (PLAYER.animateRespawn || PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations)
+
+								if (PLAYER.animateRespawn)
 								{
 									if (targetModule == null)
 									{
-										targetModule = targetCargobay;
-										crew.setGoal(targetModule); //reset to stealing items every time player is respawning
+										if(!hasStolenResources(crew))
+										{ 
+											targetModule = targetCargobay;
+											crew.setGoal(targetModule); //reset to stealing items every time player is respawning
+										}
+										else
+										{
+											targetModule = targetConsole;
+											crew.setGoal(targetModule); //reset to stealing items every time player is respawning
+										}
 									}
 									else if (crew.state == CrewState.attacking)
 									{
 										crew.setGoal(targetModule); //reset to stealing items every time player is respawning
 									}
 								}
-								/*
-								if (hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 45000 && crew.target != crew.position)
+								
+								if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000 )
 								{
 									crew.setGoal(targetAirlock);
 								}
-								*/
+
+								if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
+								{
+									crew.setGoal(targetConsole);
+								}
+
+								if (crew.state == CrewState.attacking && playerdistanceToCV <= 45000)
+								{
+									if (targetModule == null)
+									{
+										if (!hasStolenResources(crew))
+										{
+											targetModule = targetCargobay;
+											crew.setGoal(targetModule); 
+										}
+										else
+										{
+											targetModule = targetConsole;
+											crew.setGoal(targetModule); 
+										}
+									}
+									else
+									{
+										crew.setGoal(targetModule);
+									}
+								}
+
 								if (crew.state != CrewState.attacking && crew.target == crew.position && targetCargobay != null && targetConsole != null && targetAirlock != null) //check if at target position of his current goal
 								{
 									CBPos = new Vector2((float)(targetCargobay.X % crew.currentCosm.width * 16), (float)(targetCargobay.X / crew.currentCosm.width * 16));
@@ -257,55 +288,89 @@ namespace HarshWorld
 									ALPos = new Vector2((float)(targetAirlock.X % crew.currentCosm.width * 16), (float)(targetAirlock.X / crew.currentCosm.width * 16));
 									var distanceToCB = Vector2.DistanceSquared(CBPos, crew.position);									
 									var distanceToCS = Vector2.DistanceSquared(CSPos, crew.position);
-									var distanceToAL = Vector2.DistanceSquared(ALPos, crew.position);
+									var distanceToAL = Vector2.DistanceSquared(ALPos, crew.position);									
 									if (distanceToCB < 4400f) //check if target position is cargobay and try to steal item
-										{ 
-											lootTimer += elapsed;
-											if (lootTimer >= 1f)
+									{ 
+										lootTimer += elapsed;
+										if (lootTimer >= 1f)
+										{
+											lootTimer = 0f;
+											if (!stealRandomResource(crew)) //if some random ressourcers successfuly stolen, go to the airlock to transfer them to the ship.
 											{
-												lootTimer = 0f;
-												if (!stealRandomResource(crew)) //if some random ressourcers successfuly stolen, go to the airlock to transfer them to the ship.
-												{
+												if(PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal)
+												{ 
 													crew.setGoal(targetAirlock);
+												}
+												else
+												{
+													crew.setGoal(targetConsole);
 												}
 											}
 										}
-									if (distanceToCS < 27000f) //check if target position is console
+										goto Finish;
+									}
+									if (distanceToCS < 50000f)//27000f) //check if target position is console
 									{
-										//crew.attackTarget(PLAYER.avatar);//set goal to move towards player
+										if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations)
+										{
+											if (Squirrel3RNG.Next(1000) == 1)
+											{
+												crew.GetfloatyText().Enqueue("hacking");
+											}
+										}
+										else
+										{
+											crew.setGoal(targetAirlock);
+										}
+										goto Finish;
 									}
 									if (distanceToAL < 27000f) //check if target position is airlock
 									{
-										if(transRestToShip(crew)) // try transfering stolen ressources back to the ship
+										if(transResToShip(crew)) // try transfering stolen ressources back to the ship
 										{
 											crew._kill();//"leave" the station
 										}
+										goto Finish;
 									}
+									if (targetModule == null)
+									{
+										if (!hasStolenResources(crew))
+										{
+											targetModule = targetCargobay;
+											crew.setGoal(targetModule); 
+										}
+										else
+										{
+											targetModule = targetAirlock;
+											crew.setGoal(targetModule);
+										}
+									}
+									else
+									{
+										crew.setGoal(targetModule);
+									}
+								Finish:;
 								}
-
 							}
 						}
 					}
 				}
 			}
 			
-			if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && !PLAYER.animateRespawn && PLAYER.avatar.heldItem != null)
+			if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && !PLAYER.animateRespawn && PLAYER.avatar.heldItem != null)//if hacking complete, not the held item target will become airlock
 			{
-				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
-				//PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.normal;
-				/*
 				foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
 				{
-					if (module.type == ModuleType.door)
+					if (module.type == ModuleType.airlock)
 					{
-						if ((module as Door).locked)
+						if ((module as Airlock).locked)
 						{
-							(module as Door).open = true;
-							(module as Door).locked = false;
+							(module as Airlock).locked = false;
 						}
 					}
 				}
-				*/
+				PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.normal;
+				SCREEN_MANAGER.widgetChat.AddMessage("Emergency lockdown deactivated. Airlocks unlatched.", MessageTarget.Ship);
 				targetModule = null;
 			}
 
@@ -341,12 +406,29 @@ namespace HarshWorld
 
 		private static bool hasStolenResources(Crew crew)
 		{
-			foreach (var item in ressourses.Keys)
-			{ 
-				if(crew.containsItemOfType(item))
+			if (crew.inventory == null)
+			{
+				if (crew.speed != 175f)
 				{
+					crew.speed = 175f;
+				}
+				return false;
+			}
+			for (int i = 0; i < crew.inventory.Length; i++)
+			{
+				if (crew.inventory[i] != null && crew.inventory[i].type != InventoryItemType.grey_goo && crew.inventory[i].type != InventoryItemType.repair_gun && crew.inventory[i].type != InventoryItemType.fire_extinguisher
+				&& crew.inventory[i].type != InventoryItemType.fire_extinguisher_2 && crew.inventory[i].type != InventoryItemType.gun)
+				{
+					if (crew.speed == 175f)
+					{
+						crew.speed = 100f;
+					}
 					return true;
 				}
+			}
+			if (crew.speed != 175f)
+			{
+				crew.speed = 175f;
 			}
 			return false;
         }
@@ -354,34 +436,35 @@ namespace HarshWorld
 		{
 			var ressourses = CHARACTER_DATA.getAllResources();
 			var toSteal = ressourses.Keys.ToList()[Squirrel3RNG.Next(ressourses.Keys.ToList().Count)];
+			if(ressourses.Values.ToList().TrueForAll(amount => amount <= 0))
+			{
+				return false;
+			}
 			if(ressourses[toSteal] >= 1)
 			{ 
-				if(crew.containsItemOfType(toSteal))
+				if(crew.containsItemOfType(toSteal, 5))
 				{
 					return false;
                 }
+				else if(crew.containsItemOfType(toSteal) && ressourses[toSteal] == 1)
+				{
+					CHARACTER_DATA.setResource(toSteal, ressourses[toSteal] - 1);
+					InventoryItem Item = new InventoryItem(toSteal);
+					Item.stackSize = 1;
+					crew.placeInFirstSlot(Item);
+					crew.GetfloatyText().Enqueue("+" + Item.stackSize.ToString() + " " + Item.toolTip.tip);
+					return false;
+				}
 				CHARACTER_DATA.setResource(toSteal, ressourses[toSteal] - 1);
 				InventoryItem inventoryItem = new InventoryItem(toSteal);
 				inventoryItem.stackSize = 1;
 				crew.placeInFirstSlot(inventoryItem);
 				crew.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
-				/*
-				String Tooltip;
-				if (ITEMBAG.defaultTip.ContainsKey(toSteal))
-				{
-					Tooltip = ITEMBAG.defaultTip[toSteal].tip;
-				}
-				else
-				{
-					Tooltip = "cargo";
-				}
-				crew.GetfloatyText().Enqueue("+ 1 " + Tooltip);
-				*/
 			}
 			return true;
 		}
 
-		private static bool transRestToShip (Crew crew)
+		private static bool transResToShip (Crew crew)
 		{
 			return false;
         }
@@ -578,7 +661,7 @@ namespace HarshWorld
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree result = new DialogueTree();
-			dialogueTree.text = "I see you died again? I activated the lockdown protocol and blocked the door to the cloning room. For now the enemy doesen't know that you are not dead, so don't make any noise and eqip your weapon if you are reday. I will deactivate the lockdown as soon as you do.";
+			dialogueTree.text = "I see you died again? I activated the lockdown protocol and blocked the airlocks. They will be trying to hack them open. Try to kill them before they can leave with your ressources.";
 			dialogueTree.addOption("...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;

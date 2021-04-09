@@ -1183,7 +1183,14 @@ namespace HarshWorld
 
 					if (Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
 					{
+						
+						if(Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
+						{
+							HWBaseSiegeEvent.seconddeath = true;
+						}
+						
 						Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
+						HWBaseSiegeEvent.targetModule = null;
 					}
 
 					if (PLAYER.avatar.inventory != null)
@@ -1472,6 +1479,7 @@ namespace HarshWorld
 					Globals.offer = null;
 					Globals.demand = null;
 					Globals.eventflags.Clear();
+					HWBaseSiegeEvent.targetModule = null;
 				}
 			}
 		}
@@ -1920,7 +1928,7 @@ namespace HarshWorld
 			}
 		}
 		/*
-		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questlog if HWBaseSiegeEvent quest set to NULL
+		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questjournal if HWBaseSiegeEvent quest set to NULL
 		public class WidgetJournal_DisplayDetails
 		{
 			[HarmonyPostfix]
@@ -1981,7 +1989,7 @@ namespace HarshWorld
 
 		*/
 		/*
-		[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame should be attached to vanilla game method after it gets implemented
+		[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame to be attached to vanilla game method after it gets implemented
 		public class RootMenuRev2_actionConfirmDelete
 		{
 
