@@ -1182,13 +1182,7 @@ namespace HarshWorld
 				{
 
 					if (Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
-					{
-						
-						if(Globals.eventflags[GlobalFlag.Sige1EventPlayerDead])
-						{
-							HWBaseSiegeEvent.seconddeath = true;
-						}
-						
+					{					
 						Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
 						HWBaseSiegeEvent.targetModule = null;
 					}
