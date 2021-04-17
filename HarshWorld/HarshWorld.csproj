@@ -76,5 +76,9 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\ReflectionAnalyzers.0.1.22-dev\analyzers\dotnet\cs\Gu.Roslyn.Extensions.dll" />
+    <Analyzer Include="..\packages\ReflectionAnalyzers.0.1.22-dev\analyzers\dotnet\cs\ReflectionAnalyzers.dll" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -247,7 +247,7 @@ namespace HarshWorld
 				Globals.GlobalShipRemoveQueue.Enqueue(new Tuple<ulong, Point>(uid, point));
 			}
 		}
-		private static void getGlobalFlagsData()
+		private static void getGlobalFlagsData() //loading global event flags
 		{
 			string commandText = "select * from eventflags";
 			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);

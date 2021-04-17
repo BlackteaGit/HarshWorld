@@ -12,7 +12,8 @@ namespace HarshWorld
 		PiratesCalledHostile,
 		Sige1EventActive,
 		Sige1EventSpawnDialogueActive,
-		Sige1EventPlayerDead
+		Sige1EventPlayerDead,
+		Sige1EventLockdown
 	}
 	class Globals
     {
@@ -37,6 +38,7 @@ namespace HarshWorld
 			eventflags.Add(GlobalFlag.Sige1EventActive, false);
 			eventflags.Add(GlobalFlag.Sige1EventSpawnDialogueActive, false);
 			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
+			eventflags.Add(GlobalFlag.Sige1EventLockdown, false);
 		}
 
 		public static int DifficultyFromCost(int cost)

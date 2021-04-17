@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework.Input;
 using WTFModLoader;
 using WTFModLoader.Manager;
 using System.Linq;
-using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
 using System.Data.SQLite;
@@ -1122,6 +1121,24 @@ namespace HarshWorld
 
 		}
 
+		[HarmonyPatch(typeof(Crew), "testLOS")] //fixing the crew fiering out of range bug
+		public class Crew_testLOS
+		{
+			[HarmonyPostfix]
+			private static void Postfix(Crew __instance, ref bool __result, Vector2 target, MicroCosm cosm)
+			{
+				if (__instance.heldItem != null && __instance.heldItem.GetType() == typeof(Gun))
+				{
+					float num = (__instance.heldItem as Gun).range;
+					float num2 = Vector2.Distance(__instance.position, target);
+					if (num2 > num)
+					{
+						__result = false;
+					}
+				}
+			}
+		}
+
 		[HarmonyPatch(typeof(Phase1EndQuest), "test")] //SSC Shipyard quest, making npcs on the station hostile after alarm
 		public class Phase1EndQuest__test
 		{
@@ -1280,7 +1297,7 @@ namespace HarshWorld
 										}
 										else  //special condition for siege event
 										{											
-											PLAYER.avatar.heldItem = null;
+											//PLAYER.avatar.heldItem = null;
 											for (int i = 4; i < inventory.Length; i++)
 											{
 												InventoryItem inventoryItem = inventory[i];
@@ -1841,6 +1858,11 @@ namespace HarshWorld
 					PLAYER.currentSession.despawnShip(___selected);
 					opt = "";
 				}
+				if (opt != "" && !___selected.ownershipHistory.Contains(PLAYER.avatar.faction) && Globals.eventflags[GlobalFlag.Sige1EventActive]) //disable menu interaction with not owned ships while being under Siege
+				{
+					SCREEN_MANAGER.widgetChat.AddMessage("Access to ship systems denied.", MessageTarget.Ship);
+					opt = "";
+				}
 			}
 		}
 
@@ -1900,7 +1922,7 @@ namespace HarshWorld
 					}
 				}
 				var selectorCanvas = typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance) as Canvas;
-				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas").GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type with reflection
+				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas", throwOnError: true).GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type with reflection
 				var args = new object[] { selectorCanvas };
 				switch (selectorID)
 				{

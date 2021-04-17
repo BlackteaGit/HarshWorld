@@ -2324,71 +2324,75 @@ namespace HarshWorld
 			Ship ship = SHIPBAG.makeEnemy(id);
 			ship.id = PLAYER.currentWorld.getUID();
 			ship.setFaction((ulong)this.interruptersFaction);
+			ship.position = position;
 			bool flag = PLAYER.currentShip != null;
 			if (flag)
 			{
 				ship.aggro(PLAYER.currentShip.id, session);
 			}
-			ship.position = position;
 			ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(direction);
-			CrewTeam crewTeam = new CrewTeam();
-			crewTeam.ownedShip = ship.id;
-			crewTeam.destinationGrid = session.grid;
-			crewTeam.destination = position + direction;
-			crewTeam.goalType = goalType;
-			checked
+			if (ship.cosm != null && ship.cosm.crew.Count > 0)
 			{
-				foreach (FactionControllerRev2 factionControllerRev in PLAYER.currentWorld.factions)
+				CrewTeam crewTeam = new CrewTeam();
+				crewTeam.ownedShip = ship.id;
+				crewTeam.destinationGrid = session.grid;
+				crewTeam.destination = position + direction;
+				crewTeam.goalType = goalType;
+				checked
 				{
-					bool flag2 = factionControllerRev.faction == ship.faction;
-					if (flag2)
+					foreach (FactionControllerRev2 factionControllerRev in PLAYER.currentWorld.factions)
 					{
-						bool flag3 = factionControllerRev.threats != null;
-						if (flag3)
+						bool flag2 = factionControllerRev.faction == ship.faction;
+						if (flag2)
 						{
-							for (int i = 0; i < factionControllerRev.threats.Length; i++)
+							bool flag3 = factionControllerRev.threats != null;
+							if (flag3)
 							{
-								crewTeam.threats.Add(factionControllerRev.threats[i]);
+								for (int i = 0; i < factionControllerRev.threats.Length; i++)
+								{
+									crewTeam.threats.Add(factionControllerRev.threats[i]);
+								}
 							}
+							break;
 						}
-						break;
 					}
-				}
-				if (isDefensiveWave && this.templateUsed != InterruptionType.friendly_pirates_call) // special setting for InterruptionType.friendly_pirates_call event
-				{
-					crewTeam.threats.Add(2UL);
-				}
-				bool flag4 = goalType == ConsoleGoalType.warp_jump;
-				if (flag4)
-				{
-					ship.boostStage = 4;
-					ship.velocity = Vector2.Normalize(direction) * (250f * HWCONFIG.GlobalDifficulty); 
-				}
-				bool flag5 = ship.cosm != null && !ship.cosm.crew.IsEmpty;
-				if (flag5)
-				{
-					for (int i = 0; i < ship.cosm.crew.Values.Count; i++)
+					if (isDefensiveWave && this.templateUsed != InterruptionType.friendly_pirates_call) // special setting for InterruptionType.friendly_pirates_call event
 					{
-						Crew crew = ship.cosm.crew.Values.ToArray()[i];
-						crew.team = crewTeam;
+						crewTeam.threats.Add(2UL);
 					}
-				}
-				ship.cosm.rearm = true;
-				if (loot != null && loot.Count > 0)
-				{
-					ship.provision(ref loot);
-				}
-				else
-				{
-					if (ship.data != null)
+					bool flag4 = goalType == ConsoleGoalType.warp_jump;
+					if (flag4)
 					{
-						this.getRandomLoot(ship);
+						ship.boostStage = 4;
+						ship.velocity = Vector2.Normalize(direction) * (250f * HWCONFIG.GlobalDifficulty);
+					}
+					bool flag5 = ship.cosm != null && !ship.cosm.crew.IsEmpty;
+					if (flag5)
+					{
+						for (int i = 0; i < ship.cosm.crew.Values.Count; i++)
+						{
+							Crew crew = ship.cosm.crew.Values.ToArray()[i];
+							crew.team = crewTeam;
+							crew.faction = (ulong)this.interruptersFaction;
+						}
+					}
+					ship.cosm.rearm = true;
+					if (loot != null && loot.Count > 0)
+					{
+						ship.provision(ref loot);
 					}
 					else
 					{
-						ship.data = new CosmMetaData();
-						ship.data.buildStorage(ship);
-						this.getRandomLoot(ship);
+						if (ship.data != null)
+						{
+							this.getRandomLoot(ship);
+						}
+						else
+						{
+							ship.data = new CosmMetaData();
+							ship.data.buildStorage(ship);
+							this.getRandomLoot(ship);
+						}
 					}
 				}
 				ship.cosm.init();
@@ -3055,11 +3059,10 @@ namespace HarshWorld
 						{
 							if (session.allShips.TryGetValue(this.activeShips[j].Item1, out Ship ship2))
 							{
-								bool flag6 = ship2.faction == CONFIG.deadShipFaction;
-								if (flag6)
+								if (ship2.faction == CONFIG.deadShipFaction)
 								{
 									this.activeShips.Remove(this.activeShips[j]);
-								}
+								}								
 							}
 							else
 							{
