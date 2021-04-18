@@ -895,7 +895,7 @@ namespace HarshWorld
 			}
 			else
 			{
-				if (crew.containsItemOfType(InventoryItemType.exotic_matter, (int)Item.stackSize))
+				if (crew.containsItemOfType(Item.type, (int)Item.stackSize))
 				{
 					return false;  // stealing successful (do not attempt furter stealing)
 				}

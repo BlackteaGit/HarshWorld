@@ -1030,30 +1030,71 @@ namespace HarshWorld
 			private static void Postfix(Crew __instance)
 			{
 
-
-
-				if (!__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
+				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
 				{
-					bool flag7 = __instance.currentCosm != null && __instance.currentCosm.ship != null;
-					if (flag7)
+					if (__instance.currentCosm != null && __instance.currentCosm.ship != null)
 					{
-						bool flag8 = __instance.inventory != null && __instance.currentCosm != null && __instance.currentCosm.ship != null;
-						if (flag8)
+						if (__instance.inventory != null)
 						{
-							var inventory = __instance.inventory;
-							foreach (InventoryItem inventoryItem in inventory)
+							if(__instance.currentCosm.ship.id == PLAYER.currentGame.homeBaseId) // if death happens on player's homebase
 							{
-								if (Squirrel3RNG.Next(7) == 1)
-									__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
-
+								var inventory = __instance.inventory;
+								foreach (InventoryItem inventoryItem in inventory)
+								{
+									if(inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
+									{
+										if(PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+										{
+											PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
+										}
+										CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
+									}
+									else if(ITEMBAG.isResource.Contains(inventoryItem.type))
+									{
+										var inventoryItemType = inventoryItem.type;
+										uint num = (uint)inventoryItem.stackSize;
+										long amount = CHARACTER_DATA.getResource(inventoryItemType) + (long)((ulong)num);
+										CHARACTER_DATA.setResource(inventoryItemType, amount);
+										if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+										{
+											PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+										}
+									}
+									else
+									{
+										if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+										{
+											if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
+											{
+												PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+											}
+											else
+											{
+												__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+											}
+										}
+										else
+										{
+											__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+										}
+									}
+								}
 							}
-
+							else // if death happens not on player's homebase
+							{ 
+								var inventory = __instance.inventory;
+								foreach (InventoryItem inventoryItem in inventory)
+								{
+									if (Squirrel3RNG.Next(7) == 1)
+										__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+								}
+							}
 						}
 					}
 				}
 
 
-				if (!__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
+				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
 				{
 					if (__instance.currentCosm != null && __instance.currentCosm.crew != null)
 					{
