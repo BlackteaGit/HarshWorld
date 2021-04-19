@@ -29,7 +29,9 @@ namespace HarshWorld
 		private static Vector2 ALPos;
 		public static ToolTip tip;
 		public static bool seconddeath = false; //replace for a check if player is respawning from ingammemenu button
+		private static bool thirddeath = false;
 		private static bool unlockAirlocks = false;
+		
 
 		public class HWBaseSiege1EventQuest : TriggerEvent //placeholder event class, only for quest description in questjournal
 		{
@@ -68,7 +70,32 @@ namespace HarshWorld
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false;
 			}
 
-			// event logic if siege event active
+			if(Globals.eventflags[GlobalFlag.Sige1EventActive] && CheckHostileIntrudersCount(session) <= 0) //all intruders are killed or left the station and some have stolen goods in inventory
+			{
+				for(int i = 0; i < InterruptionInstance.activeShips.Count; i++)
+				{
+					if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out Ship ship))
+					{
+						if (ship.id != PLAYER.currentShip.id)
+						{
+							for(int c = 0; c < ship.cosm.crew.Values.ToList().Count; c++ )
+							{
+								if ( hasStolenResources(ship.cosm.crew.Values.ToList()[c]))
+								{
+									//win condition for besiegers, they consider looting player's homebase a success and no longer profitable and fly away
+									seconddeath = true; //intruders will no longer spawn on homebase
+									// *code to fly away until they reach a certain point and despawn*
+									goto finished;
+								}
+                            }
+							
+						}
+					}
+				}
+				finished:;
+            }
+
+			// updating event if win/lose conditions not met
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 			{
 				if (tip == null) //initialasing quest description with phase 1 (before lockdown)
@@ -97,13 +124,13 @@ namespace HarshWorld
 				}
 
 				//if player is on the homebase
-				if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId) 
+				if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && PLAYER.avatar.currentCosm != null && PLAYER.avatar.currentCosm.crew != null) 
 				{
 					homeBaseInteriorLogic(elapsed, session, InterruptionInstance);
 				}
 			}
 
-			if (Globals.eventflags[GlobalFlag.Sige1EventActive] == false )// || ShipsOutOfRange(session, InterruptionInstance)) //despawn conditions
+			if (!Globals.eventflags[GlobalFlag.Sige1EventActive])// || ShipsOutOfRange(session, InterruptionInstance)) //despawn conditions
 			{
 				foreach (var tupleship in InterruptionInstance.activeShips)
 				{
@@ -285,16 +312,24 @@ namespace HarshWorld
 
 			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && PLAYER.avatar.state != CrewState.dead)
 			{
-				if (PLAYER.animateRespawn) //initialising phase 2 (lockdown) on the first player death
+				if (PLAYER.animateRespawn) 
 				{
-					if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations && !seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true)
+					if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations && (!seconddeath || thirddeath) && PROCESS_REGISTER.currentCosm.klaxonOverride == true) //progressing to phase 2 (lockdown)
 					{
 						SCREEN_MANAGER.widgetChat.AddMessage("Station operator livesigns not detected. Hostiles detected.", MessageTarget.Ship);
 						SCREEN_MANAGER.widgetChat.AddMessage("Initiating emergency lockdown. Latching airlocks.", MessageTarget.Ship);
 						PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.battlestations;
 						Globals.eventflags[GlobalFlag.Sige1EventLockdown] = true;
-						seconddeath = true;
-						LockdownDialogue();
+						seconddeath = true;										
+						if(!thirddeath)
+						{ 
+							LockdownDialogue();
+						}
+						else
+						{
+							LockdownDialogue2();
+						}
+						thirddeath = false;
 						foreach (Module module in PROCESS_REGISTER.currentCosm.modules)
 						{
 							if (module.type == ModuleType.airlock)
@@ -419,12 +454,12 @@ namespace HarshWorld
 						if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //player died once, phase 1 completed
 						{
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //default setting
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && hasStolenResources(crew) && testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //default setting
 							{
 								crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && playerdistanceToCV > 45000 && hasStolenResources(crew) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //player is in lockdown and not in CV room
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && playerdistanceToCV > 45000 && hasStolenResources(crew) && testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //player is in lockdown and not in CV room
 							{
 								crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 							}
@@ -450,12 +485,12 @@ namespace HarshWorld
 								}
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
 							{
 								crew.setGoal(POIAirlock);
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && crew.state == CrewState.attacking && hasStolenResources(crew) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
 							{
 								crew.setGoal(POIConsole);
 							}
@@ -660,7 +695,14 @@ namespace HarshWorld
 									{
 										if (POIdockSpot.docked.parent != null && !transToShip(crew, POIdockSpot.docked.parent)) // try transfering crew to the ship
 										{
+											try
+											{ 
 											POIdockSpot.docked.parent.performUndock(session); //if transfering crew failed for some reason
+											}
+											catch
+											{
+
+                                            }
 											POIdockSpot.docked = null;
 											// TODO >>>>>>>> test >>>>>>>>>>>>>						
 										}
@@ -716,7 +758,8 @@ namespace HarshWorld
 												Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)
 																											 //debug message														
 												SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
-												seconddeath = false;
+												seconddeath = true;
+												thirddeath = true;
 												targetModule = POIConsole;
 												crew.setGoal(targetModule);
 											}
@@ -795,7 +838,44 @@ namespace HarshWorld
 
 		}
 
-			private static bool hasStolenResources(Crew crew) //checking if crew has some stolen goods in inventory, encumbering (reducing speed) if that is the case
+		private static bool testLOS(Crew crew, Vector2 target, MicroCosm cosm)
+		{
+			if (crew.heldItem != null && crew.heldItem.GetType() == typeof(Gun))
+			{
+				float n = (crew.heldItem as Gun).range;
+				float n2 = Vector2.Distance(crew.position, target);
+				if (n2 > n)
+				{
+					return false;
+				}
+			}
+			float num = 0f;
+			float num2 = Vector2.Distance(crew.position, target);
+			if (num2 == 0f)
+			{
+				return true;
+			}
+			Vector2 value = Vector2.Normalize(target - crew.position) * 8f;
+			Vector2 vector = crew.position;
+			while (num < num2)
+			{
+				vector += value;
+				num += 8f;
+				int num3 = (int)(vector.X / 16f);
+				int num4 = (int)(vector.Y / 16f);
+				if (num3 >= 0 && num3 < cosm.width && num4 >= 0 && num4 < cosm.height)
+				{
+					int num5 = num3 + num4 * cosm.width;
+					if (cosm.tiles[num5].airBlocking && cosm.tiles[num5].A > 0)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		private static bool hasStolenResources(Crew crew) //checking if crew has some stolen goods in inventory, encumbering (reducing speed) if that is the case
 		{
 			if (crew.inventory == null)
 			{
@@ -1192,7 +1272,21 @@ namespace HarshWorld
 			{
 			}
 		}
-		private static void ShiphackedDialogue() //phase 2 initial dialogue (lockfown)
+
+		private static void LockdownDialogue2() 
+		{
+			PLAYER.currentSession.pause();
+			DialogueTree dialogueTree = new DialogueTree();
+			DialogueTree dialogueTree2 = new DialogueTree();
+			DialogueTree result = new DialogueTree();
+			dialogueTree.text = "It looks like your efforts to manage this situation are lacking any results. Maybe you should focus on damaging their ships so they can't transport our goods away and have to leave.";
+			dialogueTree.addOption("...", dialogueTree2);
+			dialogueTree2.text = "Have you tried to talking to them? Anyway I managed to lock down the airlocks again. Don't think it will hold them up for long though.";
+			dialogueTree2.addOption("...", result);
+			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
+			SCREEN_MANAGER.dialogue = dialogue;
+		}
+		private static void ShiphackedDialogue() 
 		{
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();

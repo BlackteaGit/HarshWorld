@@ -1041,41 +1041,47 @@ namespace HarshWorld
 								var inventory = __instance.inventory;
 								foreach (InventoryItem inventoryItem in inventory)
 								{
-									if(inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
-									{
-										if(PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+									if(inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+									{ 
+										if(inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
 										{
-											PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
+											if(PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+											{
+												PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
+											}
+											CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
 										}
-										CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
-									}
-									else if(ITEMBAG.isResource.Contains(inventoryItem.type))
-									{
-										var inventoryItemType = inventoryItem.type;
-										uint num = (uint)inventoryItem.stackSize;
-										long amount = CHARACTER_DATA.getResource(inventoryItemType) + (long)((ulong)num);
-										CHARACTER_DATA.setResource(inventoryItemType, amount);
-										if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+										else if(ITEMBAG.isResource.Contains(inventoryItem.type))
 										{
-											PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
-										}
-									}
-									else
-									{
-										if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
-										{
-											if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
+											var inventoryItemType = inventoryItem.type;
+											uint num = (uint)inventoryItem.stackSize;
+											long amount = CHARACTER_DATA.getResource(inventoryItemType) + (long)((ulong)num);
+											CHARACTER_DATA.setResource(inventoryItemType, amount);
+											if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
 											{
 												PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
-											}
-											else
-											{
-												__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
 											}
 										}
 										else
 										{
-											__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+											if (Squirrel3RNG.Next(7) == 1)
+											{ 
+												if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+												{
+													if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
+													{
+														PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+													}
+													else
+													{
+														__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+													}
+												}
+												else
+												{
+													__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+												}
+											}
 										}
 									}
 								}
@@ -1085,8 +1091,11 @@ namespace HarshWorld
 								var inventory = __instance.inventory;
 								foreach (InventoryItem inventoryItem in inventory)
 								{
-									if (Squirrel3RNG.Next(7) == 1)
-										__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+									if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+									{
+										if (Squirrel3RNG.Next(7) == 1)
+											__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+									}
 								}
 							}
 						}
@@ -1096,7 +1105,7 @@ namespace HarshWorld
 
 				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
 				{
-					if (__instance.currentCosm != null && __instance.currentCosm.crew != null)
+					if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
 					{
 						for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)
 						{
@@ -1128,7 +1137,7 @@ namespace HarshWorld
 
 				if (__instance.isPlayer)
 				{
-					if (__instance.currentCosm != null && __instance.currentCosm.crew != null)
+					if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
 					{
 						for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)//foreach (Crew crew in __instance.currentCosm.crew.Values)
 						{

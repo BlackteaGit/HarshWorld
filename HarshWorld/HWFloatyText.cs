@@ -24,10 +24,10 @@ namespace HarshWorld
 		{
 			while (crew.GetfloatyText().TryDequeue(out string t))
 			{
-				bool flag = PLAYER.avatar != null && crew.currentCosm == PLAYER.avatar.currentCosm && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 5000f * 5000f;
+				bool flag = PLAYER.avatar != null && crew.currentCosm == PLAYER.avatar.currentCosm && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 10000f * 10000f;
 				if (flag)
 				{
-					crew.presentFloatyText(t, crew.position);
+					crew.presentFloatyText(t, crew.position + RANDOM.squareVector((float)crew.bbox.Width));
 				}
 			}
 		}
