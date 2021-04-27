@@ -34,24 +34,21 @@ namespace HarshWorld
 			commandText = "create table IF NOT EXISTS eventflags (name varchar(20), value BOOL, PRIMARY KEY (name))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
+			commandText = "create table IF NOT EXISTS globalints (name varchar(20), value INT, PRIMARY KEY (name))";
+			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			sqliteCommand.ExecuteNonQuery();
+			commandText = "create table IF NOT EXISTS globalfloats (name varchar(20), value FLOAT, PRIMARY KEY (name))";
+			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			sqliteCommand.ExecuteNonQuery();
+			commandText = "create table IF NOT EXISTS globalstrings (name varchar(20), value TEXT, PRIMARY KEY (name))";
+			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			sqliteCommand.ExecuteNonQuery();
 		}
 
 		public static void writeModData()
 		{
 			try
-			{/*
-				if (MOD_DATA.modCon != null) // saving PiratesCalled flag
-				{
-					string commandText1 = "delete from eventflags";
-					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
-					sqliteCommand1.ExecuteNonQuery();
-					string commandText2 = "insert or replace into eventflags (piratescalled, piratescalledhostile) values (@piratescalled, @piratescalledhostile)";
-					SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
-					sqliteCommand2.Parameters.Add("@piratescalled", DbType.Boolean).Value = Globals.PiratesCalled;
-					sqliteCommand2.Parameters.Add("@piratescalledhostile", DbType.Boolean).Value = Globals.PiratesCalledHostile;
-					sqliteCommand2.ExecuteNonQuery();	
-				}
-				*/
+			{
 				if (MOD_DATA.modCon != null) // saving flags
 				{
 					string commandText1 = "delete from eventflags";
@@ -64,6 +61,48 @@ namespace HarshWorld
 					sqliteCommand2.Parameters.Add("@name", DbType.String).Value = flag.Key;
 					sqliteCommand2.Parameters.Add("@value", DbType.Boolean).Value = flag.Value;
 					sqliteCommand2.ExecuteNonQuery();
+					}
+				}
+				if (MOD_DATA.modCon != null) // saving ints
+				{
+					string commandText1 = "delete from globalints";
+					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
+					sqliteCommand1.ExecuteNonQuery();
+					foreach (var integer in Globals.globalints)
+					{
+						string commandText2 = "insert or replace into globalints (name, value) values (@name, @value)";
+						SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
+						sqliteCommand2.Parameters.Add("@name", DbType.String).Value = integer.Key;
+						sqliteCommand2.Parameters.Add("@value", DbType.Int32).Value = integer.Value;
+						sqliteCommand2.ExecuteNonQuery();
+					}
+				}
+				if (MOD_DATA.modCon != null) // saving floats
+				{
+					string commandText1 = "delete from globalfloats";
+					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
+					sqliteCommand1.ExecuteNonQuery();
+					foreach (var doubl in Globals.globalfloats)
+					{
+						string commandText2 = "insert or replace into globalfloats (name, value) values (@name, @value)";
+						SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
+						sqliteCommand2.Parameters.Add("@name", DbType.String).Value = doubl.Key;
+						sqliteCommand2.Parameters.Add("@value", DbType.Double).Value = doubl.Value;
+						sqliteCommand2.ExecuteNonQuery();
+					}
+				}
+				if (MOD_DATA.modCon != null) // saving strings
+				{
+					string commandText1 = "delete from globalstrings";
+					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
+					sqliteCommand1.ExecuteNonQuery();
+					foreach (var str in Globals.globalstrings)
+					{
+						string commandText2 = "insert or replace into globalstrings (name, value) values (@name, @value)";
+						SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
+						sqliteCommand2.Parameters.Add("@name", DbType.String).Value = str.Key;
+						sqliteCommand2.Parameters.Add("@value", DbType.String).Value = str.Value;
+						sqliteCommand2.ExecuteNonQuery();
 					}
 				}
 				if (Globals.GlobalShipRemoveQueue != null && MOD_DATA.modCon != null) // saving recycle shipIds queue
@@ -155,6 +194,9 @@ namespace HarshWorld
 		public static void loadModData()
 		{
 			getGlobalFlagsData();
+			getGlobalIntsData();
+			getGlobalFloatsData();
+			getGlobalStringsData();
 			getGlobalShipRemoveQueueData();
 			string commandText = "select * from interruptions";
 			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
@@ -272,6 +314,87 @@ namespace HarshWorld
 				Globals.eventflags[type] = (bool)sqliteDataReader["value"];
 			}
 		}
+
+
+
+		private static void getGlobalIntsData() //loading global ints
+		{
+			string commandText = "select * from globalints";
+			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
+			while (sqliteDataReader.Read())
+			{
+				string template = "unknown";
+				try
+				{
+					template = sqliteDataReader["name"].ToString();
+				}
+				catch
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				if (!Enum.TryParse(template, true, out GlobalInt type))
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				Globals.globalints[type] = (int)sqliteDataReader["value"];
+			}
+		}
+
+		private static void getGlobalFloatsData() //loading global floats
+		{
+			string commandText = "select * from globalfloats";
+			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
+			while (sqliteDataReader.Read())
+			{
+				string template = "unknown";
+				try
+				{
+					template = sqliteDataReader["name"].ToString();
+				}
+				catch
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				if (!Enum.TryParse(template, true, out GlobalFloat type))
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				Globals.globalfloats[type] = (float)sqliteDataReader["value"];
+			}
+		}
+
+		private static void getGlobalStringsData() //loading global strings
+		{
+			string commandText = "select * from globalstrings";
+			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
+			while (sqliteDataReader.Read())
+			{
+				string template = "unknown";
+				try
+				{
+					template = sqliteDataReader["name"].ToString();
+				}
+				catch
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				if (!Enum.TryParse(template, true, out GlobalString type))
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					return;
+				}
+				Globals.globalstrings[type] = sqliteDataReader["value"].ToString();
+			}
+		}
+
 		private static List<String> getConversationData(string id)
 		{
 			List<String> list = new List<String>();

@@ -1540,7 +1540,6 @@ namespace HarshWorld
 					Globals.offer = null;
 					Globals.demand = null;
 					Globals.eventflags.Clear();
-					HWBaseSiegeEvent.targetModule = null;
 				}
 			}
 		}
@@ -1661,7 +1660,7 @@ namespace HarshWorld
 		}
 
 
-		[HarmonyPatch(typeof(HailAnimation), "smallTalkLoop")] // adding dialogue option for hailing friendly Pirates to deliver a free ship for player
+		[HarmonyPatch(typeof(HailAnimation), "smallTalkLoop")] // adding dialogue options to homebase bar
 		public class HailAnimation_smallTalkLoop
 		{
 
@@ -1991,6 +1990,24 @@ namespace HarshWorld
 				}
 				__instance.DisplayDetails(entry);
 
+			}
+		}
+
+		[HarmonyPatch(typeof(AgentTracker), "getBarAgents")] //adding agents to bar screen
+		public class AgentTracker_getBarAgents
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(AgentTracker __instance, ref List<BarAgentDrawer> __result, ulong stationID, Point grid)
+			{
+				if (stationID == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
+				{
+					Crew crew = HWBaseSiegeEvent.getFriendlyIntruder(PLAYER.currentSession);
+					if(crew != null)
+					{
+						__result.Add(new BarAgentDrawer(new GenericIntruder(crew.name)));
+					}
+				}
 			}
 		}
 		/*

@@ -1747,7 +1747,7 @@ namespace HarshWorld
 		//private List<Vector2> elementPositions;
 		//private InterruptionType interruptionType;
 		public InterruptionType templateUsed;
-		private uint interruptersFaction = 3U;
+		public uint interruptersFaction = 3U;
 		private ElementSpawnerType elementConfiguration;
 		public bool assetsSpawned = false;
 		private TimeSpan spawnStamp;
@@ -1758,7 +1758,7 @@ namespace HarshWorld
 		private int maxmessages = 0;
 		public bool interdicting = false;
 		public bool shuffle = false;
-		private float interdictTimer = 0f;
+		public float interdictTimer = 0f;
 		private float speakTimer = 0f;
 		private Vector2 interdictionSpot;
 		public List<ActiveEffect> activeEffects;
@@ -2325,8 +2325,7 @@ namespace HarshWorld
 			ship.id = PLAYER.currentWorld.getUID();
 			ship.setFaction((ulong)this.interruptersFaction);
 			ship.position = position;
-			bool flag = PLAYER.currentShip != null;
-			if (flag)
+			if (PLAYER.currentShip != null)
 			{
 				ship.aggro(PLAYER.currentShip.id, session);
 			}
@@ -2360,8 +2359,7 @@ namespace HarshWorld
 					{
 						crewTeam.threats.Add(2UL);
 					}
-					bool flag4 = goalType == ConsoleGoalType.warp_jump;
-					if (flag4)
+					if (goalType == ConsoleGoalType.warp_jump)
 					{
 						ship.boostStage = 4;
 						ship.velocity = Vector2.Normalize(direction) * (250f * HWCONFIG.GlobalDifficulty);

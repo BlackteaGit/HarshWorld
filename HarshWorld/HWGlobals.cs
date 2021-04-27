@@ -15,6 +15,17 @@ namespace HarshWorld
 		Sige1EventPlayerDead,
 		Sige1EventLockdown
 	}
+
+	public enum GlobalInt : uint
+	{
+	}
+
+	public enum GlobalFloat : uint
+	{
+	}
+	public enum GlobalString: uint
+	{
+	}
 	class Globals
     {
 		public static InterruptionBasic[] Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
@@ -24,6 +35,9 @@ namespace HarshWorld
 		public static Dictionary<InventoryItemType, int> offer = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<InventoryItemType, int> demand = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<GlobalFlag, bool> eventflags = new Dictionary<GlobalFlag, bool>();
+		public static Dictionary<GlobalInt, int> globalints = new Dictionary<GlobalInt, int>();
+		public static Dictionary<GlobalFloat, float> globalfloats = new Dictionary<GlobalFloat, float>();
+		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
 		public static void Initialize()
 		{
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
@@ -39,6 +53,11 @@ namespace HarshWorld
 			eventflags.Add(GlobalFlag.Sige1EventSpawnDialogueActive, false);
 			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
 			eventflags.Add(GlobalFlag.Sige1EventLockdown, false);
+			globalints = new Dictionary<GlobalInt, int>();
+			globalfloats = new Dictionary<GlobalFloat, float>();
+			globalstrings = new Dictionary<GlobalString, string>();
+			HWBaseSiegeEvent.initialize();
+			SCREEN_MANAGER.widgetChat = new WidgetChat();
 		}
 
 		public static int DifficultyFromCost(int cost)
