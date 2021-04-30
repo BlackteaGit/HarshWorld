@@ -1390,22 +1390,20 @@ namespace HarshWorld
 										if (!Directory.Exists(savedir))
 										{
 											Directory.CreateDirectory(savedir);
-										}
+										}										
 										if (!File.Exists(savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite"))
 										{
 											SQLiteConnection.CreateFile(savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite");
 											MOD_DATA.modCon = new SQLiteConnection("Data Source=" + savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite;Version=3;");
 											MOD_DATA.modCon.Open();
 											MOD_DATA.createAllTables();
-
 										}
 										else
 										{
 
 											MOD_DATA.modCon = new SQLiteConnection("Data Source=" + savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite;Version=3;");
 											MOD_DATA.modCon.Open();
-											MOD_DATA.createAllTables();
-
+											MOD_DATA.createAllTables();											
 										}
 										if (!File.Exists(savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE_config" + ".ini"))
 										{
@@ -1450,6 +1448,7 @@ namespace HarshWorld
 									if (PLAYER.currentWorld != null)
 									{
 										Globals.Initialize();
+										MOD_DATA.updateSaveFile();
 										MOD_DATA.loadModData();
 									}
 								}
@@ -1480,7 +1479,6 @@ namespace HarshWorld
 					MOD_DATA.modCon = new SQLiteConnection("Data Source=" + savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite;Version=3;");
 					MOD_DATA.modCon.Open();
 					MOD_DATA.createAllTables();
-
 				}
 				else
 				{
@@ -1488,7 +1486,6 @@ namespace HarshWorld
 					MOD_DATA.modCon = new SQLiteConnection("Data Source=" + savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE" + ".sqlite;Version=3;");
 					MOD_DATA.modCon.Open();
 					MOD_DATA.createAllTables();
-
 				}
 				if (!File.Exists(savedir + "\\" + __instance.loadSelectName + "_HW_MODSAVE_config" + ".ini"))
 				{
@@ -1634,7 +1631,7 @@ namespace HarshWorld
 						PLAYER.currentShip.tempTurReload = 0f;
 						PLAYER.currentShip.tempTurTraverse = 0f;
 					}
-					if ((Globals.eventflags[GlobalFlag.PiratesCalled] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+					if ((Globals.eventflags[GlobalFlag.PiratesCalledForShip] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 					{
 						PLAYER.currentShip.scanRange = CONFIG.minViewDist;
 						PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
@@ -1667,7 +1664,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
 			{
-				if(Globals.eventflags[GlobalFlag.PiratesCalled])
+				if(Globals.eventflags[GlobalFlag.PiratesCalledForShip])
 				{ 
 					HWFriendlyPiratesCalledEvent.addHailDialogue(ref lobby, ___representative, ___results);
 				}

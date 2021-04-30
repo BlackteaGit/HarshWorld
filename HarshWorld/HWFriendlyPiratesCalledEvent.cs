@@ -13,7 +13,7 @@ namespace HarshWorld
 
 		public static void interruptionUpdate (float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
-			if (Globals.eventflags[GlobalFlag.PiratesCalled] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session, InterruptionInstance))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
+			if (Globals.eventflags[GlobalFlag.PiratesCalledForShip] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session, InterruptionInstance))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
 			{
 				foreach (var tupleship in InterruptionInstance.activeShips)
 				{
@@ -294,8 +294,8 @@ namespace HarshWorld
 						}
 					}
 				}
-				Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
-				Globals.eventflags[GlobalFlag.PiratesCalled] = false;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] = false;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShip] = false;
 				return "Thanks.";
 			};
 			DialogueTextMaker payvisit = delegate ()
@@ -325,8 +325,8 @@ namespace HarshWorld
 						}
 					}
 				}
-				Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
-				Globals.eventflags[GlobalFlag.PiratesCalled] = false;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] = false;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShip] = false;
 				return "...";
 			};
 			DialogueTextMaker waithostile = delegate ()
@@ -351,7 +351,7 @@ namespace HarshWorld
 						}
 					}
 				}
-				Globals.eventflags[GlobalFlag.PiratesCalledHostile] = true;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] = true;
 				return "...";
 			};
 			DialogueTextMaker waitnonhostile = delegate ()
@@ -378,12 +378,12 @@ namespace HarshWorld
 						}
 					}
 				}
-				Globals.eventflags[GlobalFlag.PiratesCalledHostile] = false;
+				Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] = false;
 				return "Allright, I will see if I can get some money to pay you.";
 			};
-			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && !Globals.eventflags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && Globals.eventflags[GlobalFlag.PiratesCalledHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
-			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalled] && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
+			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalledForShip] && !Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree8, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalledForShip] && Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] && (___representative.currentCosm.ship.spawnIndex != 33 || ___representative.currentCosm.ship.spawnIndex != 34));
+			lobby.addOption("Hey I am glad you are here, I have an emergency.", dialogueTree14, () => ___representative.faction == 8UL && Globals.eventflags[GlobalFlag.PiratesCalledForShip] && (___representative.currentCosm.ship.spawnIndex == 33 || ___representative.currentCosm.ship.spawnIndex == 34));
 			dialogueTree.text = "Yes, your master told us that you blew up your ship and now stranded at your station.";
 			dialogueTree.addOption("Oh .. Uh .. yes. I mean, NO. He ist NOT my master.", dialogueTree1, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count == 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible.
 			dialogueTree.addOption("Actually we are more like partners. I am getting things done and he is making bad jokes.", dialogueTree9, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count != 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible, if not, then this option without the ship offer

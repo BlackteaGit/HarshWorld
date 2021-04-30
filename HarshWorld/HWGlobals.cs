@@ -8,20 +8,22 @@ namespace HarshWorld
 {
 	public enum GlobalFlag : uint
 	{
-		PiratesCalled,
-		PiratesCalledHostile,
+		PiratesCalledForShip,
+		PiratesCalledForShipHostile,
 		Sige1EventActive,
 		Sige1EventSpawnDialogueActive,
 		Sige1EventPlayerDead,
-		Sige1EventLockdown
+		Sige1EventLockdown,
+		PiratesCalledForDefense
 	}
 
 	public enum GlobalInt : uint
 	{
 	}
 
-	public enum GlobalFloat : uint
+	public enum GlobalDouble : uint
 	{
+		ModVersion
 	}
 	public enum GlobalString: uint
 	{
@@ -36,7 +38,7 @@ namespace HarshWorld
 		public static Dictionary<InventoryItemType, int> demand = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<GlobalFlag, bool> eventflags = new Dictionary<GlobalFlag, bool>();
 		public static Dictionary<GlobalInt, int> globalints = new Dictionary<GlobalInt, int>();
-		public static Dictionary<GlobalFloat, float> globalfloats = new Dictionary<GlobalFloat, float>();
+		public static Dictionary<GlobalDouble, double> globaldoubles = new Dictionary<GlobalDouble, double>();
 		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
 		public static void Initialize()
 		{
@@ -47,19 +49,20 @@ namespace HarshWorld
 			offer = new Dictionary<InventoryItemType, int>();
 			demand = new Dictionary<InventoryItemType, int>();
 			eventflags = new Dictionary<GlobalFlag, bool>();
-			eventflags.Add(GlobalFlag.PiratesCalled, false);
-			eventflags.Add(GlobalFlag.PiratesCalledHostile, false);
+			eventflags.Add(GlobalFlag.PiratesCalledForShip, false);
+			eventflags.Add(GlobalFlag.PiratesCalledForShipHostile, false);
 			eventflags.Add(GlobalFlag.Sige1EventActive, false);
 			eventflags.Add(GlobalFlag.Sige1EventSpawnDialogueActive, false);
 			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
 			eventflags.Add(GlobalFlag.Sige1EventLockdown, false);
+			eventflags.Add(GlobalFlag.PiratesCalledForDefense, false);
 			globalints = new Dictionary<GlobalInt, int>();
-			globalfloats = new Dictionary<GlobalFloat, float>();
+			globaldoubles = new Dictionary<GlobalDouble, double>();
+			globaldoubles.Add(GlobalDouble.ModVersion, 0.9d);
 			globalstrings = new Dictionary<GlobalString, string>();
 			HWBaseSiegeEvent.initialize();
 			SCREEN_MANAGER.widgetChat = new WidgetChat();
 		}
-
 		public static int DifficultyFromCost(int cost)
 		{
 			int difficulty = 0;

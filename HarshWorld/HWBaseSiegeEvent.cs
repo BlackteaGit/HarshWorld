@@ -34,7 +34,7 @@ namespace HarshWorld
 		public static int seed = 0;
 		public static bool seconddeath = false;
 		private static bool thirddeath = false;
-		private static bool unlockAirlocks = false;
+		public static bool unlockAirlocks = false;
 		private static bool buildShip = false;
 		private static bool stealShip = false;
 		private static bool leaving = false;
@@ -1561,12 +1561,11 @@ namespace HarshWorld
 			catch
 			{
 			}
-
 			//resetting all current worldsave flags to defaults on every spawn of the event
 			initialize();
 	}
 
-		private static void LockdownDialogue() //phase 2 initial dialogue (lockfown)
+		private static void LockdownDialogue() //phase 2 initial dialogue (lockdown)
 		{
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();
@@ -1613,7 +1612,6 @@ namespace HarshWorld
 			dialogueTree.addOption("...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
-			
 		}
 
 		public static void addHailDialogue(ref DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
@@ -1687,7 +1685,7 @@ namespace HarshWorld
 			dialogueTree4.addOption("How about me puttin' " + getPayOffCost().ToString() + " bullets in your ass instead?", dialogueTree2);
 
 			dialogueTree5.text = "Good decision. We'll be watching you.";
-			dialogueTree5.addOption("...", dialogueTree2);
+			dialogueTree5.addOption("Just leave.", dialogueTree2);
 			dialogueTree5.action = delegate ()
 			{
 				InventoryItem Item = new InventoryItem(InventoryItemType.exotic_matter);
@@ -1773,7 +1771,7 @@ namespace HarshWorld
 			DialogueTree result = new DialogueTree();
 			dialogueTree.addOption("Join me", dialogueTree2, () => (PLAYER.currentGame.team.openSlots > 0));
 			dialogueTree.addOption("Nevermind", result);
-			dialogueTree.text = "With pleasure";
+			dialogueTree2.text = "With pleasure";
 			dialogueTree2.addOption("Let's go", result);
 			dialogueTree2.action = delegate ()
 			{

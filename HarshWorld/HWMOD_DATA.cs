@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using System.Data;
 using System.Collections.Concurrent;
 using CoOpSpRpG;
+using System.IO;
 
 namespace HarshWorld
 {
@@ -37,7 +38,7 @@ namespace HarshWorld
 			commandText = "create table IF NOT EXISTS globalints (name varchar(20), value INT, PRIMARY KEY (name))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
-			commandText = "create table IF NOT EXISTS globalfloats (name varchar(20), value FLOAT, PRIMARY KEY (name))";
+			commandText = "create table IF NOT EXISTS globaldoubles (name varchar(20), value FLOAT, PRIMARY KEY (name))";
 			sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			sqliteCommand.ExecuteNonQuery();
 			commandText = "create table IF NOT EXISTS globalstrings (name varchar(20), value TEXT, PRIMARY KEY (name))";
@@ -79,12 +80,12 @@ namespace HarshWorld
 				}
 				if (MOD_DATA.modCon != null) // saving floats
 				{
-					string commandText1 = "delete from globalfloats";
+					string commandText1 = "delete from globaldoubles";
 					SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
 					sqliteCommand1.ExecuteNonQuery();
-					foreach (var doubl in Globals.globalfloats)
+					foreach (var doubl in Globals.globaldoubles)
 					{
-						string commandText2 = "insert or replace into globalfloats (name, value) values (@name, @value)";
+						string commandText2 = "insert or replace into globaldoubles (name, value) values (@name, @value)";
 						SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
 						sqliteCommand2.Parameters.Add("@name", DbType.String).Value = doubl.Key;
 						sqliteCommand2.Parameters.Add("@value", DbType.Double).Value = doubl.Value;
@@ -188,6 +189,78 @@ namespace HarshWorld
 			}
 			catch
 			{
+			}
+		}
+
+		public static void updateSaveFile()
+		{
+			double modversion = 0;
+			string connectionString = MOD_DATA.modCon.ConnectionString;
+			string file = MOD_DATA.modCon.DataSource;
+			string commandText = "select * from globaldoubles";
+			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
+			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
+			while (sqliteDataReader.Read())
+			{
+				string template = "unknown";
+				try
+				{
+					template = sqliteDataReader["name"].ToString();
+				}
+				catch
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load HarshWorld mod datasave."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
+					return;
+				}
+				if (!Enum.TryParse(template, true, out GlobalDouble type))
+				{
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
+					return;
+				}
+				if(type == GlobalDouble.ModVersion)
+				modversion = (double)sqliteDataReader["value"];
+			}
+			if(modversion > 0 && modversion < Globals.globaldoubles[GlobalDouble.ModVersion])
+			{
+				SCREEN_MANAGER.alerts.Enqueue("Updating HarshWorld mod datasave to the current version of the mod."); //error message for debug
+				string commandText2 = "insert or replace into globaldoubles (name, value) values (@name, @value)";
+				SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
+				sqliteCommand2.Parameters.Add("@name", DbType.String).Value = GlobalDouble.ModVersion;
+				sqliteCommand2.Parameters.Add("@value", DbType.Double).Value = Globals.globaldoubles[GlobalDouble.ModVersion];
+				sqliteCommand2.ExecuteNonQuery();
+			}
+			if (modversion > Globals.globaldoubles[GlobalDouble.ModVersion])
+			{
+				SCREEN_MANAGER.alerts.Enqueue("HarshWorld mod datasave v" + modversion.ToString() +" is not compatible to current mod v" + Globals.globaldoubles[GlobalDouble.ModVersion].ToString());
+				SCREEN_MANAGER.alerts.Enqueue("All mod related progress will be reset.");
+
+				string savedir = Directory.GetCurrentDirectory() + "\\worldsaves";
+				String ModSaveFile = System.IO.Path.GetFullPath(System.IO.Path.Combine(savedir, System.IO.Path.Combine(@file + ".sqlite")));
+
+				if (System.IO.File.Exists(ModSaveFile))
+				{
+					String BackupFile = System.IO.Path.GetFullPath(System.IO.Path.Combine(savedir, System.IO.Path.Combine(@file + ".sqlite" + ".old")));
+					File.Copy(ModSaveFile, BackupFile, true);
+				}
+				string commandText1 = "PRAGMA writable_schema = 1;";
+				SQLiteCommand sqliteCommand1 = new SQLiteCommand(commandText1, MOD_DATA.modCon);
+				sqliteCommand1.ExecuteNonQuery();
+				string commandText2 = "delete from sqlite_master where type in ('table', 'index', 'trigger');";
+				SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
+				sqliteCommand2.ExecuteNonQuery();
+				string commandText3 = "PRAGMA writable_schema = 0;";
+				SQLiteCommand sqliteCommand3 = new SQLiteCommand(commandText3, MOD_DATA.modCon);
+				sqliteCommand3.ExecuteNonQuery();
+				string commandText4 = "VACUUM;";
+				SQLiteCommand sqliteCommand4 = new SQLiteCommand(commandText4, MOD_DATA.modCon);
+				sqliteCommand4.ExecuteNonQuery();
+				string commandText5 = "PRAGMA INTEGRITY_CHECK;";
+				SQLiteCommand sqliteCommand5 = new SQLiteCommand(commandText5, MOD_DATA.modCon);
+				sqliteCommand5.ExecuteNonQuery();
+				createAllTables();
+				SCREEN_MANAGER.alerts.Enqueue("Old datasave renamed to '" + file + ".old" + "'");
 			}
 		}
 
@@ -303,12 +376,14 @@ namespace HarshWorld
 				}
 				catch
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load flags from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load HarshWorld mod datasave."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				if (!Enum.TryParse(template, true, out GlobalFlag type))
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " flag for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				Globals.eventflags[type] = (bool)sqliteDataReader["value"];
@@ -331,12 +406,14 @@ namespace HarshWorld
 				}
 				catch
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load HarshWorld mod datasave."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				if (!Enum.TryParse(template, true, out GlobalInt type))
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				Globals.globalints[type] = (int)sqliteDataReader["value"];
@@ -345,7 +422,7 @@ namespace HarshWorld
 
 		private static void getGlobalFloatsData() //loading global floats
 		{
-			string commandText = "select * from globalfloats";
+			string commandText = "select * from globaldoubles";
 			SQLiteCommand sqliteCommand = new SQLiteCommand(commandText, MOD_DATA.modCon);
 			SQLiteDataReader sqliteDataReader = sqliteCommand.ExecuteReader();
 			while (sqliteDataReader.Read())
@@ -357,15 +434,17 @@ namespace HarshWorld
 				}
 				catch
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load HarshWorld mod datasave."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
-				if (!Enum.TryParse(template, true, out GlobalFloat type))
+				if (!Enum.TryParse(template, true, out GlobalDouble type))
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
-				Globals.globalfloats[type] = (float)sqliteDataReader["value"];
+				Globals.globaldoubles[type] = (double)sqliteDataReader["value"];
 			}
 		}
 
@@ -383,12 +462,14 @@ namespace HarshWorld
 				}
 				catch
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load data from savefile for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load HarshWorld mod datasave."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				if (!Enum.TryParse(template, true, out GlobalString type))
 				{
-					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod. Please tell the mod author."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Failed to load " + template + " data for HarshWorld mod."); //error message for debug
+					SCREEN_MANAGER.alerts.Enqueue("Please contact the mod author."); //error message for debug
 					return;
 				}
 				Globals.globalstrings[type] = sqliteDataReader["value"].ToString();
