@@ -13,8 +13,10 @@ namespace HarshWorld
 {
     public static class HWBaseSiegeEvent
 	{
+		public static Interruption interruption = null;
 		private static Vector2 eventposition;
 		private static Point grid;
+		public static uint eventfaction = 3U;
 		private static DialogueSelectRev2 dialogue;
 		private static float intruderTimer = 0f;
 		private static float lootTimer = 0f;
@@ -29,16 +31,17 @@ namespace HarshWorld
 		private static Vector2 CVPos;
 		private static Vector2 ALPos;
 		public static ToolTip tip;
+		public static int seed = 0;
 		public static bool seconddeath = false;
 		private static bool thirddeath = false;
 		private static bool unlockAirlocks = false;
 		private static bool buildShip = false;
 		private static bool stealShip = false;
 		private static bool leaving = false;
-		
-		
+
 		public static void initialize ()
 		{
+			interruption = null;
 			intruderTimer = 0f;
 			lootTimer = 0f;
 			targetModule = null;
@@ -53,8 +56,19 @@ namespace HarshWorld
 			buildShip = false;
 			stealShip = false;
 			leaving = false;
+			seed = 0;
 		}
-		public class HWBaseSiege1EventQuest : TriggerEvent //placeholder event class, only for quest description in questjournal
+
+		public static int getSeed(string source)
+		{
+			int result = 0;
+			foreach (char c in source)
+			{
+				result += Convert.ToInt32(c);
+			}
+			return result;
+		}
+		public class HWBaseSiege1EventQuest : TriggerEvent //placeholder event class for quest description in questjournal
 		{
 			public static string staticName = "homebase_siege";
 			public HWBaseSiege1EventQuest()
@@ -81,22 +95,30 @@ namespace HarshWorld
 		public static void interruptionUpdate(float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
 			bool leave = false;
-			bool intrudersonboard = false;
-			eventposition = InterruptionInstance.position;
+			if (interruption == null)
+			{
+				interruption = InterruptionInstance;
+			}
+            if (seed == 0)
+            {
+                seed = getSeed(InterruptionInstance.id);
+            }
+            eventposition = InterruptionInstance.position;
 			grid = InterruptionInstance.grid;
+			eventfaction = InterruptionInstance.interruptersFaction;
 
-
-			 if (Globals.eventflags[GlobalFlag.Sige1EventActive] && CheckHostileIntrudersCount(session) <= 0)
-			 {
-				intrudersonboard = false;
-			 }
-			 else
-			 {
-				intrudersonboard = true;
-			 }
-			//winnining conditions
-			//all ships and intruders are killed
-			if (InterruptionInstance.activeShips.Count() == 0 && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false && !intrudersonboard)
+            bool intrudersonboard;
+            if (Globals.eventflags[GlobalFlag.Sige1EventActive] && CheckHostileIntrudersCount(session) <= 0)
+            {
+                intrudersonboard = false;
+            }
+            else
+            {
+                intrudersonboard = true;
+            }
+            //winnining conditions
+            //all ships and intruders are killed
+            if (InterruptionInstance.activeShips.Count() == 0 && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false && !intrudersonboard)
 			{
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false;
 			}
@@ -692,6 +714,7 @@ namespace HarshWorld
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+//TODO surrender dialogue >>>>>>
 											}
 										}
 									}
@@ -756,6 +779,7 @@ namespace HarshWorld
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+//TODO surrender dialogue >>>>>>
 											}
 											if (hasStolenResources(crew) || stealShip)
 											{
@@ -1342,6 +1366,15 @@ namespace HarshWorld
 			return intruder;
 		}
 
+		private static ulong getPayOffCost()
+		{
+			int activeships = 1;
+			if(interruption != null)
+			{
+				activeships = interruption.activeShips.Count();
+			}
+			return (ulong)Math.Max(1200,(CHARACTER_DATA.credits * 0.1 * activeships * HWCONFIG.GlobalDifficulty));
+		}
 		public static bool test(float elapsed)
 		{
 
@@ -1564,9 +1597,9 @@ namespace HarshWorld
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree dialogueTree2 = new DialogueTree();
 			DialogueTree result = new DialogueTree();
-			dialogueTree.text = "It looks like your efforts to manage this situation are lacking any results. Maybe you should focus on damaging their ships so they can't transport our goods away and have to leave.";
+			dialogueTree.text = "It looks like your efforts to manage this situation are not very effective. Maybe you should focus on damaging their ships so they have no choice but to leave.";
 			dialogueTree.addOption("...", dialogueTree2);
-			dialogueTree2.text = "Have you tried to talking to them? Anyway I managed to lock down the airlocks again. Don't think it will hold them up for long though.";
+			dialogueTree2.text = "Have you even tried hailing them yet? Anyway I managed to lock down the airlocks again. It won't hold them for long.";
 			dialogueTree2.addOption("...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
@@ -1581,6 +1614,146 @@ namespace HarshWorld
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
 			
+		}
+
+		public static void addHailDialogue(ref DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
+		{
+			DialogueTree dialogueTree = new DialogueTree();
+			DialogueTree dialogueTree1 = new DialogueTree();
+			DialogueTree dialogueTree2 = new DialogueTree();
+			dialogueTree2.action = new ResponseImmediateAction(() => ___results.ForEach(i => i()));
+			___results.Add(new ResponseImmediateAction(PLAYER.currentSession.unpause));
+			DialogueTree dialogueTree3 = new DialogueTree();
+			DialogueTree dialogueTree4 = new DialogueTree();
+			DialogueTree dialogueTree5 = new DialogueTree();
+			DialogueTree dialogueTree6 = new DialogueTree();
+			DialogueTree dialogueTree7 = new DialogueTree();
+
+			lobby.addOption("Who are you and what are you doing here?", dialogueTree, () => ___representative.faction == eventfaction && Globals.eventflags[GlobalFlag.Sige1EventActive]);
+			dialogueTree.text = "We are here to take your stuff.";
+			if (eventfaction == 4U)
+			{ 
+				switch (new Random(seed).Next(3))
+				{
+					case 0:
+						dialogueTree.text = "We are protectors of this sector, and you haven't been paying your part of the protection fee. We are here to collect.";
+						dialogueTree.addOption("What fee? I didn't ask for your protection.", dialogueTree3);
+						dialogueTree.addOption("Sure, I will pay you. What do you want?", dialogueTree4);
+						dialogueTree.addOption("You are messing with a wrong person here.", dialogueTree2);
+						break;
+					case 1:
+						dialogueTree.text = "We're the free spacefarers, and we are seizing your property for our needs.";
+						dialogueTree.addOption("On whose authority? You can't just take what you want.", dialogueTree3);
+						dialogueTree.addOption("Wait, let's not rush into a conflict here. We can surely work out a better solution.", dialogueTree4);
+						dialogueTree.addOption("You can start by seizing my bullets assholes.", dialogueTree2);
+						break;
+					case 2:
+						dialogueTree.text = "We arr, here to ravish yer booty! Open up yer bay, will ye";
+						dialogueTree.addOption("Are you serious? I'm sensing some bad vibes here.", dialogueTree3);
+						dialogueTree.addOption("No, please! Take my credits instead.", dialogueTree4);
+						dialogueTree.addOption("So you have chosen... death.", dialogueTree2);
+						break;
+				}
+			}
+			if (eventfaction == 3U)
+			{
+				switch (new Random(seed).Next(3))
+				{
+					case 0:
+						dialogueTree.text = "We are the Seven Stars Coalition, and we are here to terminate the illegal activities comming off this station.";
+						dialogueTree.addOption("...", dialogueTree3);
+						break;
+					case 1:
+						dialogueTree.text = "We are here to seize your property for the Seven Stars Coalition.";
+						dialogueTree.addOption("...", dialogueTree3);
+						break;
+					case 2:
+						dialogueTree.text = "The Seven Stars Coalition sent us to collect your tax fee.";
+						dialogueTree.addOption("...", dialogueTree3);
+						break;
+				}
+			}
+			dialogueTree1.text = "We're taking yer station apart and see what we can find.";
+			dialogueTree1.addOption("We'll see about that.", dialogueTree2);
+			dialogueTree1.addOption("No, wait. I'll pay you.", dialogueTree5, () => (CHARACTER_DATA.credits >= getPayOffCost()));
+
+			dialogueTree3.text = "We've been watchin ye gathering stolen goods on this station, it's a crime.";
+			dialogueTree3.addOption("What do you want then?", dialogueTree4);
+			dialogueTree3.addOption("I'm just wasting my time by talking to you.", dialogueTree2);
+
+			dialogueTree4.text = "Pay us " + getPayOffCost().ToString() + " credits, and we're gone.";
+			dialogueTree4.addOption("Allright, no need for hostility, here you go.", dialogueTree5, () => (CHARACTER_DATA.credits >= getPayOffCost())); //check if can be payed
+			dialogueTree4.addOption("I don't have the money.", dialogueTree1);
+			dialogueTree4.addOption("How about me puttin' " + getPayOffCost().ToString() + " bullets in your ass instead?", dialogueTree2);
+
+			dialogueTree5.text = "Good decision. We'll be watching you.";
+			dialogueTree5.addOption("...", dialogueTree2);
+			dialogueTree5.action = delegate ()
+			{
+				InventoryItem Item = new InventoryItem(InventoryItemType.exotic_matter);
+				InventoryItem Item2 = new InventoryItem(InventoryItemType.dense_exotic_matter);
+				Item.stackSize = 0;
+				Item2.stackSize = 0;
+				ulong topay = getPayOffCost();
+				while(topay >= Item.refineValue)
+				{
+					if(topay >= Item2.refineValue)
+					{
+						Item2.stackSize ++;
+						topay -= Item2.refineValue;
+					}
+					if (topay >= Item.refineValue && topay < Item2.refineValue)
+					{
+						Item.stackSize++;
+						topay -= Item.refineValue;
+					}
+				}
+				if(Item.stackSize > 0)
+				{ 
+					___representative.placeInFirstSlot(Item);
+				}
+				if (Item2.stackSize > 0)
+				{
+					___representative.placeInFirstSlot(Item2);
+				}
+				CHARACTER_DATA.credits -= getPayOffCost();
+				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
+				interruption.maxWaves = interruption.currentWave;
+				if (PLAYER.currentShip != null && PLAYER.currentShip.cosm?.crew != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+				{
+					for (int i = 0; i < PLAYER.currentShip.cosm.crew.Values.Count; i++)
+					{
+						var crew = PLAYER.currentShip.cosm.crew.Values.ToList()[i];
+						if (!crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
+						{
+							if (crew.team.threats.Contains(PLAYER.avatar.faction))
+							{
+								crew._kill();
+							}
+						}
+					}
+				}
+				else
+				{
+					foreach (Station station in PLAYER.currentSession.stations)
+					{
+						if (station.id == PLAYER.currentGame.homeBaseId && station.cosm?.crew != null)
+						{
+							for (int i = 0; i < station.cosm.crew.Values.Count; i++)
+							{
+								var crew = station.cosm.crew.Values.ToList()[i];
+								if (!crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
+								{
+									if (crew.team.threats.Contains(PLAYER.avatar.faction))
+									{
+										crew._kill();
+									}
+								}
+							}
+						}
+					}
+				}
+			};
 		}
 	}
 
