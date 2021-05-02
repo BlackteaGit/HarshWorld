@@ -76,7 +76,7 @@ namespace HarshWorld
 				this.name = HWBaseSiege1EventQuest.staticName;
 				this.tip = new ToolTip();
 				this.tip.tip = "Defend your homestation";
-				tip.setDescription("Find out what the attackers want and get rid of them.");
+				tip.setDescription("Find out what the intruders want and get rid of them.");
 			}
 
 			public override bool test(float elapsed)
@@ -85,7 +85,7 @@ namespace HarshWorld
 				{
 					this.tip = new ToolTip();
 					this.tip.tip = "Defend your homestation";
-					tip.setDescription("Find out what the attackers want and get rid of them.");
+					tip.setDescription("Find out what the intruders want and get rid of them.");
 					return true;
 				}
 				return false;
@@ -155,7 +155,7 @@ namespace HarshWorld
 			{
 				tip = new ToolTip();
 				tip.tip = "Defend your homestation";
-				tip.setDescription("Find out what the attackers want and get rid of them.");
+				tip.setDescription("Find out what the intruders want and get rid of them.");
 			}
 
 			// updating event if win/lose conditions not met
@@ -371,7 +371,7 @@ namespace HarshWorld
 					}
 				}
 				tip.tip = "Defend your homestation";
-				tip.setDescription("Kill the attackers before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
+				tip.setDescription("Kill the intruders before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
 				try
 				{
 					if (SCREEN_MANAGER.questJournal != null)
@@ -384,10 +384,10 @@ namespace HarshWorld
 				}
 			}
 
-			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the attackers escape with your ressources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
+			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the intruders escape with your ressources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
 			{
 				tip.tip = "Defend your homestation";
-				tip.setDescription("Do not let the attackers escape with your ressources.");
+				tip.setDescription("Do not let the intruders escape with your ressources.");
 				try
 				{
 					if (SCREEN_MANAGER.questJournal != null)
@@ -403,12 +403,12 @@ namespace HarshWorld
 
 			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && PLAYER.avatar.state != CrewState.dead)
 			{
-				if (PLAYER.animateRespawn) 
+				if (PLAYER.animateRespawn)
 				{
 					if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations && (!seconddeath || thirddeath) && PROCESS_REGISTER.currentCosm.klaxonOverride == true) //progressing to phase 2 (lockdown)
 					{
-						SCREEN_MANAGER.widgetChat.AddMessage("Station operator livesigns not detected. Hostiles detected.", MessageTarget.Ship);
-						SCREEN_MANAGER.widgetChat.AddMessage("Initiating emergency lockdown. Latching airlocks.", MessageTarget.Ship);
+						SCREEN_MANAGER.widgetChat.AddMessage("Initiating emergency lockdown.", MessageTarget.Ship);
+						SCREEN_MANAGER.widgetChat.AddMessage("Airlocks latched.", MessageTarget.Ship);
 						PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.battlestations;
 						Globals.eventflags[GlobalFlag.Sige1EventLockdown] = true;
 						seconddeath = true;										
@@ -432,7 +432,7 @@ namespace HarshWorld
 							}
 						}
 						tip.tip = "Defend your homestation";
-						tip.setDescription("Kill the attackers before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
+						tip.setDescription("Kill the intruders before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
 					}
 				}
 			}
@@ -714,6 +714,8 @@ namespace HarshWorld
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+												
+												intrudersSurrenderDialogue(new GenericIntruder(crew.name));
 //TODO surrender dialogue >>>>>>
 											}
 										}
@@ -779,6 +781,7 @@ namespace HarshWorld
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+												intrudersSurrenderDialogue(new GenericIntruder(crew.name));
 //TODO surrender dialogue >>>>>>
 											}
 											if (hasStolenResources(crew) || stealShip)
@@ -858,15 +861,30 @@ namespace HarshWorld
 												targetModule = POIConsole;
 												crew.setGoal(targetModule);
 											}
-											else if (seconddeath != false)
+											else if (seconddeath)
 											{
-												Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)
-//debug message														
-												SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
-												seconddeath = true;
-												thirddeath = true;
-												targetModule = POIConsole;
-												crew.setGoal(targetModule);
+												if(!thirddeath)
+												{ 
+													Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)												
+													SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
+													seconddeath = true;
+													thirddeath = true;
+													targetModule = POIConsole;
+													crew.setGoal(targetModule);
+												}
+												else
+												{
+													if (thirddeath)
+													{
+														targetModule = POIConsole;
+														crew.setGoal(targetModule);
+													}
+													else
+													{
+														targetModule = POIAirlock;
+														crew.setGoal(targetModule);
+													}
+												}
 											}
 											else
 											{
@@ -899,13 +917,13 @@ namespace HarshWorld
 											}
 											else
 											{
-												if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] == false && seconddeath == true)
+												if (thirddeath)
 												{
-													crew.setGoal(POIConsole); // if phase 3, but missing ship already detected as missing
+													crew.setGoal(POIConsole);
 												}
 												else
 												{
-													crew.setGoal(POIAirlock);// if phase 3, but missing ship not detected as missing
+													crew.setGoal(POIAirlock);
 												}
 											}
 										}
@@ -940,16 +958,31 @@ namespace HarshWorld
                                                 targetModule = POIConsole;
                                                 crew.setGoal(targetModule);
                                             }
-                                            else if (seconddeath != false)
+                                            else if (seconddeath)
                                             {
-                                                Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)
-//debug message														
-                                                SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
-                                                seconddeath = true;
-                                                thirddeath = true;
-                                                targetModule = POIConsole;
-                                                crew.setGoal(targetModule);
-                                            }
+												if (!thirddeath)
+												{
+													Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)												
+													SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
+													seconddeath = true;
+													thirddeath = true;
+													targetModule = POIConsole;
+													crew.setGoal(targetModule);
+												}
+												else
+												{
+													if (thirddeath)
+													{
+														targetModule = POIConsole;
+														crew.setGoal(targetModule);
+													}
+													else
+													{
+														targetModule = POIAirlock;
+														crew.setGoal(targetModule);
+													}
+												}
+											}
 											else
 											{
 												targetModule = POIAirlock;
@@ -981,13 +1014,13 @@ namespace HarshWorld
 											}
 											else
 											{
-												if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] == false && seconddeath == true)
-												{
-													crew.setGoal(POIConsole); // if phase 3, but missing ship already detected as missing
+												if(thirddeath)
+												{ 
+													crew.setGoal(POIConsole);
 												}
 												else
 												{
-													crew.setGoal(POIAirlock);// if phase 3, but missing ship not detected as missing
+													crew.setGoal(POIAirlock);
 												}
 											}
 										}
@@ -1612,6 +1645,32 @@ namespace HarshWorld
 			dialogueTree.addOption("...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
+		}
+
+		private static void intrudersSurrenderDialogue(NPCAgent agent)
+		{
+//TODO surrender dialogue >>>>>>
+			PLAYER.currentSession.pause();
+			DialogueTree dialogueTree = new DialogueTree();
+			DialogueTree result = new DialogueTree();
+			dialogueTree.text = "So you destroyed our ships. We are surrendering now, please don't kill us.";
+			dialogueTree.addOption("...", result);
+			dialogue = new DialogueSelectRev2(agent, dialogueTree);
+			SCREEN_MANAGER.dialogue = dialogue;
+			if (PLAYER.avatar?.currentCosm?.crew != null)
+			{
+				for (int i = 0; i < PLAYER.avatar.currentCosm.crew.Values.Count; i++) //managing intruders
+				{
+					var crew = PLAYER.avatar.currentCosm.crew.Values.ToList()[i];
+					if (!crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
+					{
+						if (crew.team.threats.Contains(PLAYER.avatar.faction))
+						{
+							crew.team.threats.Remove(PLAYER.avatar.faction);
+						}
+					}
+				}
+			}
 		}
 
 		public static void addHailDialogue(ref DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
