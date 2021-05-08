@@ -19,6 +19,11 @@ namespace HarshWorld
 
 	public enum GlobalInt : uint
 	{
+		Bounty,
+		FriendlyPiratesRep,
+		PiratesRep,
+		SSCRep,
+		FreelancersRep
 	}
 
 	public enum GlobalDouble : uint
@@ -40,6 +45,7 @@ namespace HarshWorld
 		public static Dictionary<GlobalInt, int> globalints = new Dictionary<GlobalInt, int>();
 		public static Dictionary<GlobalDouble, double> globaldoubles = new Dictionary<GlobalDouble, double>();
 		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
+		public static Dictionary<ulong, Tuple<string, GlobalInt>> globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
 		public static void Initialize()
 		{
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
@@ -48,6 +54,18 @@ namespace HarshWorld
 			GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 			offer = new Dictionary<InventoryItemType, int>();
 			demand = new Dictionary<InventoryItemType, int>();
+
+			globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
+			//globalfactions.Add(1UL, "");
+			//globalfactions.Add(2UL, "Player");
+			globalfactions.Add(3UL, new Tuple<string, GlobalInt>("SSC", GlobalInt.SSCRep));
+			globalfactions.Add(4UL, new Tuple<string, GlobalInt>("Pirates", GlobalInt.PiratesRep));
+			//globalfactions.Add(5UL, "");
+			globalfactions.Add(6UL, new Tuple<string, GlobalInt>("Freelancer", GlobalInt.FreelancersRep));
+			//globalfactions.Add(7UL, "");
+			globalfactions.Add(8UL, new Tuple<string, GlobalInt>("Friendly Pirates", GlobalInt.FriendlyPiratesRep));
+			//globalfactions.Add(ulong.MaxValue, "Derelicts");
+
 			eventflags = new Dictionary<GlobalFlag, bool>();
 			eventflags.Add(GlobalFlag.PiratesCalledForShip, false);
 			eventflags.Add(GlobalFlag.PiratesCalledForShipHostile, false);
@@ -56,10 +74,19 @@ namespace HarshWorld
 			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
 			eventflags.Add(GlobalFlag.Sige1EventLockdown, false);
 			eventflags.Add(GlobalFlag.PiratesCalledForDefense, false);
+
 			globalints = new Dictionary<GlobalInt, int>();
+			globalints.Add(GlobalInt.Bounty, 0);
+			globalints.Add(GlobalInt.FriendlyPiratesRep, 0);
+			globalints.Add(GlobalInt.PiratesRep, 0);
+			globalints.Add(GlobalInt.SSCRep, 0);
+			globalints.Add(GlobalInt.FreelancersRep, 0);
+
 			globaldoubles = new Dictionary<GlobalDouble, double>();
 			globaldoubles.Add(GlobalDouble.ModVersion, 0.9d);
+
 			globalstrings = new Dictionary<GlobalString, string>();
+
 			HWBaseSiegeEvent.initialize();
 			SCREEN_MANAGER.widgetChat = new WidgetChat();
 		}
@@ -90,5 +117,70 @@ namespace HarshWorld
 			return difficulty;
 		}
 
+		public static Dictionary<string, int> getFactionRepDeeds(ulong faction)
+		{
+			Dictionary<string, int> deeds = new Dictionary<string, int>();
+
+			switch (faction)
+			{
+				case 3: //SSC
+					if (PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
+					{
+						deeds.Add("raided the SSC shipyard", -300);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("kill_budd"))
+					{
+						deeds.Add("killed a pirate leader", 100);
+					}
+					break;
+				case 4: //Pirates
+					if (PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
+					{
+						deeds.Add("raided the SSC shipyard", 100);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("bust_pirates"))
+					{
+						deeds.Add("pirate's cove assault", -100);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("bust_pirates_2"))
+					{
+						deeds.Add("cleared out pirate's cove", -300);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("kill_budd"))
+					{
+						deeds.Add("killed Budd", -500);
+					}
+					break;
+				case 6: //Freelancer
+
+					break;
+				case 8: //Friendly Pirates
+					if (PLAYER.currentGame.completedQuests.Contains("bust_blockade"))
+					{
+						deeds.Add("busted the SSC blockade", 100);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("bust_pirates_2"))
+					{
+						deeds.Add("cleared out pirate's cove", 300);
+					}
+					if (PLAYER.currentGame.completedQuests.Contains("kill_budd"))
+					{
+						deeds.Add("killed Budd", 500);
+					}
+					break;
+			}
+			deeds.Add("other deeds", Globals.globalints[Globals.globalfactions[faction].Item2]);
+			return deeds;
+		}
+
+		public static int getAccFactionReputation(ulong faction)
+		{
+			int accumulated = 0;
+			foreach (var entry in Globals.getFactionRepDeeds(faction).Values)
+			{
+				accumulated = accumulated + entry;
+			}
+			return accumulated;
+		}
 	}
 }

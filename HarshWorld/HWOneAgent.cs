@@ -10,7 +10,7 @@ namespace HarshWorld
 			DialogueTree dialogueTree = new DialogueTree();
 			dialogueTree.text = "Are you still here?";
 			addResearchLoop(dialogueTree);
-			addNoRessourcesLoop(dialogueTree);
+			addNoResourcesLoop(dialogueTree);
 			addSiegeEventDialogue(dialogueTree);
 			DialogueTree result = new DialogueTree();
 			dialogueTree.addOption("Just leaving actually.", result);
@@ -40,7 +40,7 @@ namespace HarshWorld
 			dialogueTree5.addOption("I'm feeling almost independent enough to try this strange new research screen on my own. Thanks!", tree);
 
 		}
-		private static void addNoRessourcesLoop(DialogueTree tree)
+		private static void addNoResourcesLoop(DialogueTree tree)
 		{
 			DialogueTree result = new DialogueTree();
 			DialogueTree dialogueTree = new DialogueTree();
@@ -118,10 +118,10 @@ namespace HarshWorld
 			dialogueTree1.addOption("Great, so...what should i do?", dialogueTree2);
 
 			dialogueTree2.text = "Use the station's mining lasers to destroy their ships if you can't do it with your ship. They will be forced to leave, if they have no options to transport our goods away. You also could try to hail them and negotiate.";
-			dialogueTree2.addOption("I already tried my best.", dialogueTree3);
+			dialogueTree2.addOption("I already tried my best.", dialogueTree3, () => PLAYER.currentGame.completedQuests.Contains("bust_pirates"));
 			dialogueTree2.addOption("This is a great idea, i will do that.", tree);
 
-			dialogueTree3.text = "There is an option to call your pirate friends for help. I can't imagine their help would be cheap though.";
+			dialogueTree3.text = "There is an option to call your pirate friends for help. I belive they would consider helping you out, since you already helped them out a lot.";
 			dialogueTree3.addOption("Yes, please do that.", dialogueTree4);
 			dialogueTree3.addOption("No, I will find a solution myself.", tree);
 

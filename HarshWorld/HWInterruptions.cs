@@ -1891,7 +1891,7 @@ namespace HarshWorld
 					}
 				}
 				template.initialWave.Item1.shipIds = temp;
-				template.maxWaves = Math.Max(Math.Min(template.maxWaves, (int)Math.Ceiling((float)((currentdifficulty - 1) * HWCONFIG.GlobalDifficulty))), 0);
+				template.maxWaves = Math.Max(Math.Min(template.maxWaves, (int)Math.Ceiling((float)((currentdifficulty - 1) * HWCONFIG.GlobalDifficulty))), 1);
 			}
 			else
 			{

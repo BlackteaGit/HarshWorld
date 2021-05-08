@@ -11,6 +11,7 @@ using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
 using System.Data.SQLite;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace HarshWorld
 {
@@ -1796,6 +1797,56 @@ namespace HarshWorld
 				}
 			}
 		}
+
+		[HarmonyPatch(typeof(SCREEN_MANAGER), "initWidgets")] //initiating Screen Manager widgets extensions
+		public class SCREEN_MANAGER_initWidgets
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix()
+			{
+				HWSCREEN_MANAGER.initWidgets();
+			}
+		}
+
+		[HarmonyPatch(typeof(WidgetResources), "Draw")] //drawing reputation widget UI in the same batch as WidgetResources
+		public class WidgetResources_Draw
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(SpriteBatch batch)
+			{
+				if (HWSCREEN_MANAGER.widgetReputation != null)
+				{
+					HWSCREEN_MANAGER.widgetReputation.Draw(batch);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(WidgetResources), "Update")] //updating reputation widget after WidgetResources
+		public class WidgetResources_Update
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(float elapsed, MouseAction clickState, Rectangle mousePos)
+			{
+				if (PLAYER.currentSession.GetType() == typeof(BattleSessionSC))
+				{
+					//BattleSessionSC battleSessionSC = PLAYER.currentSession as BattleSessionSC;
+					//HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(battleSessionSC.credits));
+				}
+				else
+				{
+					HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(Globals.globalints[GlobalInt.Bounty]), Globals.globalints[GlobalInt.Bounty] > 0);
+				}
+				if (HWSCREEN_MANAGER.widgetReputation != null)
+				{
+					HWSCREEN_MANAGER.widgetReputation.Update(elapsed, clickState, mousePos);
+				}
+			}
+		}
+
+
 		/*
 		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questjournal if HWBaseSiegeEvent quest set to NULL
 		public class WidgetJournal_DisplayDetails

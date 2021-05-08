@@ -124,7 +124,7 @@ namespace HarshWorld
 			}
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && intrudersonboard && InterruptionInstance.activeShips.Count() == 0 && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false)
 			{
-				buildShip = true; //No active besieger ships left, some crew is still on the homebase, try to build a ship from players ressources.
+				buildShip = true; //No active besieger ships left, some crew is still on the homebase, try to build a ship from players resources.
 			}
 
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && !intrudersonboard) //all intruders are killed or left the station after phase2 and some have stolen goods in inventory
@@ -288,10 +288,9 @@ namespace HarshWorld
 
 			bool hackingsuccess = false;
 			intruderTimer += elapsed;
-			if (intruderTimer >= Math.Min(InterruptionInstance.activeShips.Count * 20f, 160f)) //spawning intruders
+			if (InterruptionInstance.activeShips.Count > 0 && intruderTimer >= Math.Min(InterruptionInstance.activeShips.Count * 20f, 160f)) //spawning intruders
 			{
-				intruderTimer = 0f;
-
+				
 				if (HWCONFIG.GlobalDifficulty > 0 && PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations
 				&& Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] == false && seconddeath == false && PLAYER.currentShip.cosm.crew.Count() < Squirrel3RNG.Next(12,17)) //spawning only in 1st phase
 				{
@@ -299,8 +298,9 @@ namespace HarshWorld
 					{
 						intrudersDialogue(InterruptionInstance.interruptersFaction);  //Spawning intruders with dialogue (if no intruders are present on station)
 						SCREEN_MANAGER.widgetChat.AddMessage("Intruders detected.", MessageTarget.Ship);
+						intruderTimer = 0f;
 					}
-					else if (PROCESS_REGISTER.currentCosm.klaxonOverride) //Spawning intruders without dialogue (if some intruders are already present on station)
+					else if (PROCESS_REGISTER.currentCosm.klaxonOverride && !PLAYER.currentShip.cosm.crew.Values.ToList().TrueForAll( c => (c.team.threats.Contains(PLAYER.avatar.faction) && Vector2.DistanceSquared(c.position, PLAYER.avatar.position) > 2000f * 2000f) || !c.team.threats.Contains(PLAYER.avatar.faction)))//Spawning intruders without dialogue (if some intruders are already present on station)
 					{
 						int num = Squirrel3RNG.Next(3) + 1;
 						CrewTeam crewTeam = new CrewTeam();
@@ -330,6 +330,7 @@ namespace HarshWorld
 							crew.pendingPosition = pendingPosition;
 							PLAYER.currentShip.cosm.addCrew(crew);
 							SCREEN_MANAGER.widgetChat.AddMessage("Intruders detected.", MessageTarget.Ship);
+							intruderTimer = 0f;
 						}
 					}
 				}
@@ -371,7 +372,7 @@ namespace HarshWorld
 					}
 				}
 				tip.tip = "Defend your homestation";
-				tip.setDescription("Kill the intruders before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
+				tip.setDescription("Kill the intruders before they can steal your resources and hack the airlocks open. Or make them leave by destroying their ships.");
 				try
 				{
 					if (SCREEN_MANAGER.questJournal != null)
@@ -384,10 +385,10 @@ namespace HarshWorld
 				}
 			}
 
-			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the intruders escape with your ressources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
+			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the intruders escape with your resources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
 			{
 				tip.tip = "Defend your homestation";
-				tip.setDescription("Do not let the intruders escape with your ressources.");
+				tip.setDescription("Do not let the intruders escape with your resources.");
 				try
 				{
 					if (SCREEN_MANAGER.questJournal != null)
@@ -432,7 +433,7 @@ namespace HarshWorld
 							}
 						}
 						tip.tip = "Defend your homestation";
-						tip.setDescription("Kill the intruders before they can steal your ressources and hack the airlocks open. Or make them leave by destroying their ships.");
+						tip.setDescription("Kill the intruders before they can steal your resources and hack the airlocks open. Or make them leave by destroying their ships.");
 					}
 				}
 			}
@@ -619,7 +620,7 @@ namespace HarshWorld
 										}
 										else // stealing item was unsuccessful for whatever reson
 										{
-											if (CHARACTER_DATA.getAllResources().Values.ToList().TrueForAll(amount => amount <= 0)) // if the reason of unsuccessful stealing is insufficent player ressources
+											if (CHARACTER_DATA.getAllResources().Values.ToList().TrueForAll(amount => amount <= 0)) // if the reason of unsuccessful stealing is insufficent player resources
 											{
 												InventoryItem Item = new InventoryItem(InventoryItemType.exotic_matter);
 												Item.stackSize = 1;
@@ -636,7 +637,7 @@ namespace HarshWorld
 												}
 												else // stealing credits was unsuccessful for whatever reson
 												{
-													if (CHARACTER_DATA.credits < (Item.refineValue * Item.stackSize)) // If player has no ressources and no money
+													if (CHARACTER_DATA.credits < (Item.refineValue * Item.stackSize)) // If player has no resources and no money
 													{
 														// try to steal player's ship or just leave
 														if(!stealShip)
@@ -710,12 +711,11 @@ namespace HarshWorld
 											}
 											if (POIdockSpot != null && POIdockSpot.docked == null && buildShip)
 											{
-//TODO>>build ship from players ressources>>>
+//TODO>>build ship from players resources>>>
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
-												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
-												
-												intrudersSurrenderDialogue(new GenericIntruder(crew.name));
+												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+												intrudersSurrenderDialogue(crew);
 //TODO surrender dialogue >>>>>>
 											}
 										}
@@ -777,11 +777,11 @@ namespace HarshWorld
 											}
 											if (POIdockSpot != null && POIdockSpot.docked == null && buildShip)
 											{
-//TODO>>build ship from players ressources>>>
+//TODO>>build ship from players resources>>>
 												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
-												SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
-												intrudersSurrenderDialogue(new GenericIntruder(crew.name));
+												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
+												intrudersSurrenderDialogue(crew);
 //TODO surrender dialogue >>>>>>
 											}
 											if (hasStolenResources(crew) || stealShip)
@@ -832,7 +832,7 @@ namespace HarshWorld
 										{
 											Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; // if not reset to phase 1 , but skip the phase 2 after player is killed (seconddeath flag still true)
 																										 //debug message
-											SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 1. ( kill player without lockdown)", MessageTarget.Ship);
+											//SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 1. ( kill player without lockdown)", MessageTarget.Ship);
 											seconddeath = true;
 										}
 									}
@@ -866,7 +866,7 @@ namespace HarshWorld
 												if(!thirddeath)
 												{ 
 													Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)												
-													SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
+													//SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
 													seconddeath = true;
 													thirddeath = true;
 													targetModule = POIConsole;
@@ -963,7 +963,7 @@ namespace HarshWorld
 												if (!thirddeath)
 												{
 													Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false; //if no escape ship in phase 3 reset to phase 1, but skip the phase 2 after player is killed (seconddeath flag still true)												
-													SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
+													//SCREEN_MANAGER.widgetChat.AddMessage("Phase1 reset 2. (kill player with lockdown)", MessageTarget.Ship);
 													seconddeath = true;
 													thirddeath = true;
 													targetModule = POIConsole;
@@ -1283,12 +1283,13 @@ namespace HarshWorld
 								crew.team.destination = eventposition;
 								crew.team.goalType = ConsoleGoalType.warp_jump;
 								InterruptionInstance.activeEffects.Add(new ActiveEffect("WarpIn", ship.position, 3f, 0f));
-//DEBUG message>>>>>>>>>>		
+	
 							}
-							SCREEN_MANAGER.widgetChat.AddMessage("Ship signature detected entering sensor range.", MessageTarget.Ship);
+							//DEBUG message>>>>>>>>>>	
+							//SCREEN_MANAGER.widgetChat.AddMessage("Ship signature detected entering sensor range.", MessageTarget.Ship);
 						}
 					}
-					else if (ship.engineEnergy <= 0 && leaving && InterruptionInstance.interdictTimer >= 3f)//ship.velocity.Equals(new Vector2(0, 0)))
+					else if (ship.engineEnergy <= 0 && leaving && InterruptionInstance.interdictTimer >= 2f)//ship.velocity.Equals(new Vector2(0, 0)))
 					{
 						remove = InterruptionInstance.activeShips[i];
 					}
@@ -1296,7 +1297,7 @@ namespace HarshWorld
 					{
 						if (ship.dockedAt != null)
 						{
-							SCREEN_MANAGER.widgetChat.AddMessage("Undocking ship.", MessageTarget.Ship);
+							SCREEN_MANAGER.widgetChat.AddMessage("Undocking ship at airlock 1.", MessageTarget.Ship);
 							ship.performUndock(session);
 						}
 						var direction = Vector2.Transform(InterruptionInstance.spawnPoints[RANDOM.getRandomNumber(InterruptionInstance.spawnPoints.Count<Vector2>())], InterruptionInstance.rotationMatrix);
@@ -1317,8 +1318,8 @@ namespace HarshWorld
 			if(remove != null)
 			{
 				InterruptionInstance.activeShips.Remove(remove);
-//DEBUG message>>>>>>>>>>
-				SCREEN_MANAGER.widgetChat.AddMessage("Ship abandoned.", MessageTarget.Ship);
+				//DEBUG message>>>>>>>>>>
+				//SCREEN_MANAGER.widgetChat.AddMessage("Ship abandoned.", MessageTarget.Ship);
 			}
 			if(InterruptionInstance.activeShips.Count == j)
 			{
@@ -1604,7 +1605,7 @@ namespace HarshWorld
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree dialogueTree2 = new DialogueTree();
 			DialogueTree result = new DialogueTree();
-			dialogueTree.text = "I see you died again? I activated the lockdown protocol and blocked the airlocks. The intruders have been busy stealing our ressources while I was rebuilding your body.";
+			dialogueTree.text = "I see you died again? I activated the lockdown protocol and blocked the airlocks. The intruders have been busy stealing our resources while I was rebuilding your body.";
 			dialogueTree.addOption("...", dialogueTree2);
 			dialogueTree2.text = "They are trying to hack our security system to dock their ships and store our cargo. Get rid of them before they succeed.";
 			dialogueTree2.addOption("I will try.", result);
@@ -1628,11 +1629,15 @@ namespace HarshWorld
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree dialogueTree2 = new DialogueTree();
+			DialogueTree dialogueTree3 = new DialogueTree();
 			DialogueTree result = new DialogueTree();
 			dialogueTree.text = "It looks like your efforts to manage this situation are not very effective. Maybe you should focus on damaging their ships so they have no choice but to leave.";
 			dialogueTree.addOption("...", dialogueTree2);
 			dialogueTree2.text = "Have you even tried hailing them yet? Anyway I managed to lock down the airlocks again. It won't hold them for long.";
-			dialogueTree2.addOption("...", result);
+			dialogueTree2.addOption("Sure.", result);
+			dialogueTree2.addOption("But I already destroyed all of their ships, what now?", dialogueTree3, () => interruption.activeShips.Count() <= 0 );
+			dialogueTree3.text = "Are you sure? Well, maybe they didn't realize this yet. I guess you could just let them hack our bridge again to see what's going on.";
+			dialogueTree3.addOption("I hope you are right.", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
 		}
@@ -1641,15 +1646,16 @@ namespace HarshWorld
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree result = new DialogueTree();
-			dialogueTree.text = "We have a little problem. They hacked our airlocks open and your ship. You have to prevent them from entering the ship and fly away with our goods.";
+			dialogueTree.text = "We have a little problem. They hacked our airlocks and your ship. You have to prevent them from flying away with our stuff.";
 			dialogueTree.addOption("...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
 		}
 
-		private static void intrudersSurrenderDialogue(NPCAgent agent)
+		private static void intrudersSurrenderDialogue(Crew crew)
 		{
-//TODO surrender dialogue >>>>>>
+			//TODO surrender dialogue >>>>>>
+			NPCAgent agent = new GenericIntruder(crew.name);
 			PLAYER.currentSession.pause();
 			DialogueTree dialogueTree = new DialogueTree();
 			DialogueTree result = new DialogueTree();
@@ -1657,17 +1663,14 @@ namespace HarshWorld
 			dialogueTree.addOption("...", result);
 			dialogue = new DialogueSelectRev2(agent, dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
-			if (PLAYER.avatar?.currentCosm?.crew != null)
+			for (int i = 0; i < crew.currentCosm.crew.Values.Count; i++) //managing intruders
 			{
-				for (int i = 0; i < PLAYER.avatar.currentCosm.crew.Values.Count; i++) //managing intruders
+				var crew2 = crew.currentCosm.crew.Values.ToList()[i];
+				if (!crew2.isPlayer && crew2.faction != 2U && crew2.state != CrewState.dead)
 				{
-					var crew = PLAYER.avatar.currentCosm.crew.Values.ToList()[i];
-					if (!crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
+					if (crew2.team.threats.Contains(2U))
 					{
-						if (crew.team.threats.Contains(PLAYER.avatar.faction))
-						{
-							crew.team.threats.Remove(PLAYER.avatar.faction);
-						}
+						crew2.team.threats.Remove(2U);
 					}
 				}
 			}
