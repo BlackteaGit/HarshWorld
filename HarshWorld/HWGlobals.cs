@@ -33,8 +33,8 @@ namespace HarshWorld
 	public enum GlobalString: uint
 	{
 	}
-	class Globals
-    {
+	public static class Globals  //WTFModLoader.WTFModLoader._modManager.Mods.Find(mod => mod.ModMetadata.Name == "HarshWorld.HarshWorld_Patches").ModInstance.GetType().Assembly.GetType("HarshWorld.Globals", throwOnError: true).GetField("").GetValue(null); //to access fields of this class from other harmony patches via reflection
+	{
 		public static InterruptionBasic[] Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
 		public static Dictionary<string, Interruption> Interruptionbag = new Dictionary<string, Interruption>();
 		public static ConcurrentQueue<Tuple<ulong, Point>> GlobalDespawnQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
@@ -57,14 +57,15 @@ namespace HarshWorld
 
 			globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
 			//globalfactions.Add(1UL, "");
-			//globalfactions.Add(2UL, "Player");
+			//globalfactions.Add(2UL, new Tuple<string, GlobalInt>("Allies"));
 			globalfactions.Add(3UL, new Tuple<string, GlobalInt>("SSC", GlobalInt.SSCRep));
 			globalfactions.Add(4UL, new Tuple<string, GlobalInt>("Pirates", GlobalInt.PiratesRep));
-			//globalfactions.Add(5UL, "");
-			globalfactions.Add(6UL, new Tuple<string, GlobalInt>("Freelancer", GlobalInt.FreelancersRep));
-			//globalfactions.Add(7UL, "");
+			globalfactions.Add(5UL, new Tuple<string, GlobalInt>("Freelancer", GlobalInt.FreelancersRep));
+			//globalfactions.Add(6UL, new Tuple<string, GlobalInt>("",));
+			//globalfactions.Add(7UL, "Delerict");
 			globalfactions.Add(8UL, new Tuple<string, GlobalInt>("Friendly Pirates", GlobalInt.FriendlyPiratesRep));
-			//globalfactions.Add(ulong.MaxValue, "Derelicts");
+			//globalfactions.Add(9UL, new Tuple<string, GlobalInt>("Civilian",));
+			//globalfactions.Add(ulong.MaxValue, new Tuple<string, GlobalInt>("Abandoned Wreck",));
 
 			eventflags = new Dictionary<GlobalFlag, bool>();
 			eventflags.Add(GlobalFlag.PiratesCalledForShip, false);
@@ -181,6 +182,41 @@ namespace HarshWorld
 				accumulated = accumulated + entry;
 			}
 			return accumulated;
+		}
+
+		public static void changeReputation(ulong faction, int modifier, string reason)
+		{
+			if (Globals.globalfactions.ContainsKey(faction))
+			{
+				string modification;
+				if (modifier < 0)
+				{
+					modification = "lost";
+				}
+				else
+				{
+					modification = "gained";
+				}
+				Globals.globalints[Globals.globalfactions[faction].Item2] += modifier;
+				SCREEN_MANAGER.widgetChat.AddMessage("You " + modification + " " + Math.Abs(modifier).ToString() + " reputation with the " + Globals.globalfactions[faction].Item1 + " faction " + reason, MessageTarget.Ship);
+			}
+		}
+		public static void changeReputation(ulong faction, int modifier)
+		{
+			if (Globals.globalfactions.ContainsKey(faction))
+			{
+				string modification;
+				if (modifier < 0)
+				{
+					modification = "lost";
+				}
+				else
+				{
+					modification = "gained";
+				}
+				Globals.globalints[Globals.globalfactions[faction].Item2] += modifier;
+				SCREEN_MANAGER.widgetChat.AddMessage("You " + modification + " " + Math.Abs(modifier).ToString() + " reputation with the " + Globals.globalfactions[faction].Item1 + " faction.", MessageTarget.Ship);
+			}
 		}
 	}
 }

@@ -56,8 +56,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WTF.exe</HintPath>
     </Reference>
-    <Reference Include="WTFModLoader">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Wayward Terran Frontier\WTFModLoader.dll</HintPath>
+    <Reference Include="WTFModLoader, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WTFModLoader.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

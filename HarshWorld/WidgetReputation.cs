@@ -64,6 +64,7 @@ namespace HarshWorld
 				SCREEN_MANAGER.toolTip._position.Y = state.Y;
 				SCREEN_MANAGER.toolTip.tip = "Bounty on your head";
 				SCREEN_MANAGER.toolTip.botLeftText = SCREEN_MANAGER.formatCreditStringSeparate(Globals.globalints[GlobalInt.Bounty]) + " credits";
+				HWSCREEN_MANAGER.toolTip = SCREEN_MANAGER.toolTip;
 			});
 			this.bountyLabel = (Label)guiElement.AddLabel("", SCREEN_MANAGER.FF12, 0, 0, tempwidth, 23, CONFIG.textBrightColor, VerticalAlignment.center, 0, HorizontalAlignment.right, 23);
 			this.capLabel = (Label)guiElement.AddLabel("", SCREEN_MANAGER.FF12, 0, 23, tempwidth, 23, CONFIG.textBrightColor, VerticalAlignment.center, 0, HorizontalAlignment.right, 23);

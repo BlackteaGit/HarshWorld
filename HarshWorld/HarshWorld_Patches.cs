@@ -1037,22 +1037,22 @@ namespace HarshWorld
 					{
 						if (__instance.inventory != null)
 						{
-							if(__instance.currentCosm.ship.id == PLAYER.currentGame.homeBaseId) // if death happens on player's homebase
+							if (__instance.currentCosm.ship.id == PLAYER.currentGame.homeBaseId) // if death happens on player's homebase
 							{
 								var inventory = __instance.inventory;
 								foreach (InventoryItem inventoryItem in inventory)
 								{
-									if(inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-									{ 
-										if(inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
+									if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+									{
+										if (inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
 										{
-											if(PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+											if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
 											{
 												PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
 											}
 											CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
 										}
-										else if(ITEMBAG.isResource.Contains(inventoryItem.type))
+										else if (ITEMBAG.isResource.Contains(inventoryItem.type))
 										{
 											var inventoryItemType = inventoryItem.type;
 											uint num = (uint)inventoryItem.stackSize;
@@ -1066,10 +1066,10 @@ namespace HarshWorld
 										else
 										{
 											if (Squirrel3RNG.Next(7) == 1)
-											{ 
+											{
 												if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
 												{
-													if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
+													if (PLAYER.avatar.placeInFirstSlot(inventoryItem))
 													{
 														PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
 													}
@@ -1088,21 +1088,44 @@ namespace HarshWorld
 								}
 							}
 							else // if death happens not on player's homebase
-							{ 
+							{
 								var inventory = __instance.inventory;
 								foreach (InventoryItem inventoryItem in inventory)
 								{
 									if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
 									{
 										if (Squirrel3RNG.Next(7) == 1)
+										{
 											__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+										}
 									}
 								}
 							}
 						}
 					}
+					else if(PLAYER.currentSession.corpses.Contains(__instance))
+					{
+						for (int i = 0; i < PLAYER.currentWorld.economy.nodes.Count; i++)
+						{
+							if (PLAYER.currentWorld.economy.nodes[i].id != PLAYER.currentGame.homeBaseId && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
+							{
+								if(Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
+								{
+									if (Globals.globalfactions.ContainsKey(__instance.faction)) 
+									{
+										Globals.changeReputation(__instance.faction, -5, "as nearby station detected a faction member death in your vicinity.");
+									}
+									else if (__instance.factionless)
+									{
+										Globals.changeReputation(5UL, -5, "as nearby station detected a civilian death in your vicinity.");
+										Globals.changeReputation(3UL, -5, "as nearby station detected a civilian death in your vicinity.");
+									}
+									break;
+								}
+							}
+						}
+					}
 				}
-
 
 				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
 				{
@@ -1126,6 +1149,15 @@ namespace HarshWorld
 											if (flag6)
 											{
 												__instance.team.threats.Add(crew.faction); // making friends of the killed npc hostile to the player
+												if(Globals.globalfactions.ContainsKey(__instance.faction)) //making player loosing reputation with the faction of the killed crew
+												{
+													Globals.changeReputation(__instance.faction, -5, "for killing a faction member.");
+												}
+												else if(__instance.factionless)
+												{
+													Globals.changeReputation(5UL, -5, "for killing civilians on a trading station.");
+													Globals.changeReputation(3UL, -5, "for killing civilians on a trading station.");
+												}
 											}
 										}
 									}
@@ -1758,7 +1790,7 @@ namespace HarshWorld
 					}
 				}
 				var selectorCanvas = typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance) as Canvas;
-				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas", throwOnError: true).GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type with reflection
+				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas", throwOnError: true).GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type via reflection
 				var args = new object[] { selectorCanvas };
 				switch (selectorID)
 				{
@@ -1846,7 +1878,78 @@ namespace HarshWorld
 			}
 		}
 
+		[HarmonyPatch(typeof(VNavigationRev3), "updateInput")] //making custom tooltips show in ship navigation screen
+		public class VNavigationRev3_updateInput
+		{
 
+
+			[HarmonyPrefix]
+			private static void Prefix()
+			{
+				HWSCREEN_MANAGER.toolTip = null;
+			}
+
+			[HarmonyPostfix]
+			private static void Postfix()
+			{
+				if (SCREEN_MANAGER.toolTip != null)
+				{
+					HWSCREEN_MANAGER.toolTip = null;
+				}
+				if (SCREEN_MANAGER.toolTip == null)
+				{
+					SCREEN_MANAGER.toolTip = HWSCREEN_MANAGER.toolTip;
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(ProceduralTaxiQuest), "test")] //adding reputation modifications to passenger quest
+		public class ProceduralTaxiQuest_test
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(bool __result, ProceduralTaxiQuest __instance, Crew ___crewRef, DialogueSelectRev2 ___dialogue)
+			{
+				if (__result)
+				{
+					if (___crewRef == null)
+					{
+						Globals.changeReputation(5UL, -5);
+					}
+					else if (___crewRef.state == CrewState.dead)
+					{
+						Globals.changeReputation(5UL, -5);
+					}
+					else if (___dialogue != null && ___dialogue.removeMe)
+					{
+						if (__instance.stage != 2U)
+						{
+							if (__instance.stage == 777U)
+							{
+								Globals.changeReputation(5UL, 10, "for a successful transportation job.");
+							}
+						}
+					}
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(AssasinationQuest), "crewDied")] //adding reputation modifications to assasiantion quest
+		public class AssasinationQuest_crewDied
+		{
+			[HarmonyPostfix]
+			private static void Postfix(Crew c, string ___targetName)
+			{
+				if (c.name == ___targetName)
+				{
+					Globals.changeReputation(5UL, 20, "for a successful assasination job.");
+					if (Globals.globalfactions.ContainsKey(c.faction))
+					{
+						Globals.changeReputation(c.faction, -10, "by assasinating a faction member.");
+					}
+				}
+			}
+		}
 		/*
 		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questjournal if HWBaseSiegeEvent quest set to NULL
 		public class WidgetJournal_DisplayDetails

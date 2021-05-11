@@ -13,6 +13,7 @@ namespace HarshWorld
 	{
 		public static WidgetReputation widgetReputation = null;
 		public static Texture2D[] GameArt;
+		public static ToolTip toolTip = null;
 		public static void initWidgets()
 		{
 			loadWidgetArt();

@@ -83,6 +83,7 @@ namespace HarshWorld
 				SCREEN_MANAGER.toolTip._position.X *= 2;
 				SCREEN_MANAGER.toolTip._position.X += 47;
 				SCREEN_MANAGER.toolTip.tip = Globals.globalfactions[this.Faction].Item1;
+				HWSCREEN_MANAGER.toolTip = SCREEN_MANAGER.toolTip;
 				foreach (var entry in Globals.getFactionRepDeeds(this.Faction))
 				{
 					SCREEN_MANAGER.toolTip.addStat(entry.Key, ToolBox.FormatNumber(entry.Value), false, entry.Value < 0);

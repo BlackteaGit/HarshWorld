@@ -352,6 +352,7 @@ namespace HarshWorld
 					}
 				}
 				Globals.eventflags[GlobalFlag.PiratesCalledForShipHostile] = true;
+				Globals.changeReputation(8UL, -10);
 				return "...";
 			};
 			DialogueTextMaker waitnonhostile = delegate ()
