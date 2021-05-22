@@ -224,12 +224,23 @@ namespace HarshWorld
 			}
 			if(modversion > 0 && modversion < Globals.globaldoubles[GlobalDouble.ModVersion])
 			{
-				SCREEN_MANAGER.alerts.Enqueue("Updating HarshWorld mod datasave to the current version of the mod."); //error message for debug
+				SCREEN_MANAGER.alerts.Enqueue("Updating saved data to the current version of the HarshWorld mod."); //error message for debug
 				string commandText2 = "insert or replace into globaldoubles (name, value) values (@name, @value)";
 				SQLiteCommand sqliteCommand2 = new SQLiteCommand(commandText2, MOD_DATA.modCon);
 				sqliteCommand2.Parameters.Add("@name", DbType.String).Value = GlobalDouble.ModVersion;
 				sqliteCommand2.Parameters.Add("@value", DbType.Double).Value = Globals.globaldoubles[GlobalDouble.ModVersion];
 				sqliteCommand2.ExecuteNonQuery();
+				if (File.Exists(HWCONFIG.ConfigFilePath))
+				{
+					using (var configWriter = File.CreateText(HWCONFIG.ConfigFilePath))
+					{
+						configWriter.WriteLine($"Max Active Encounters:{HWCONFIG.MaxInterruptions}");
+						configWriter.WriteLine($"Encounter Frequency Multiplier:{HWCONFIG.InterruptionFrequency}");
+						configWriter.WriteLine($"Global Difficulty Multiplier:{HWCONFIG.GlobalDifficulty}");
+						configWriter.WriteLine($"Drop Items On Death:{HWCONFIG.DropItemsOnDeath}");
+						configWriter.WriteLine($"Max Monster Level:{HWCONFIG.MaxMonsterLevel}");
+					}
+				}
 			}
 			if (modversion > Globals.globaldoubles[GlobalDouble.ModVersion])
 			{

@@ -302,36 +302,39 @@ namespace HarshWorld
 					}
 					else if (PROCESS_REGISTER.currentCosm.klaxonOverride && !PLAYER.currentShip.cosm.crew.Values.ToList().TrueForAll( c => (c.team.threats.Contains(PLAYER.avatar.faction) && Vector2.DistanceSquared(c.position, PLAYER.avatar.position) > 2000f * 2000f) || !c.team.threats.Contains(PLAYER.avatar.faction)))//Spawning intruders without dialogue (if some intruders are already present on station)
 					{
-						int num = Squirrel3RNG.Next(3) + 1;
-						CrewTeam crewTeam = new CrewTeam();
-						crewTeam.threats.Add(PLAYER.avatar.faction);
-						for (int i = 0; i < num; i++)
+						Task.Run(async () =>
 						{
-							Crew crew = new Crew();
-							crew.outfit(HWCONFIG.GlobalDifficulty * PLAYER.currentShip.cosm.crew.Count() * 2);
-							crew.faction = InterruptionInstance.interruptersFaction;
-							crew.team = crewTeam;
-							List<Vector2> list = new List<Vector2>();
-							for (int j = 0; j < 6; j++)
+							int num = Squirrel3RNG.Next(3) + 1;
+							CrewTeam crewTeam = new CrewTeam();
+							crewTeam.threats.Add(PLAYER.avatar.faction);
+							for (int i = 0; i < num; i++)
 							{
-								list.Add(PLAYER.currentShip.cosm.randomCrewLocation());
-							}
-							Vector2 pendingPosition = PLAYER.avatar.position;
-							float num2 = 0f;
-							foreach (Vector2 vector in list)
-							{
-								float num3 = Vector2.Distance(vector, PLAYER.avatar.position);
-								if (num3 > num2)
+								Crew crew = new Crew();
+								crew.outfit(HWCONFIG.GlobalDifficulty * PLAYER.currentShip.cosm.crew.Count() * 2);
+								crew.faction = InterruptionInstance.interruptersFaction;
+								crew.team = crewTeam;
+								List<Vector2> list = new List<Vector2>();
+								for (int j = 0; j < 6; j++)
 								{
-									pendingPosition = vector;
-									num2 = num3;
+									list.Add(PLAYER.currentShip.cosm.randomCrewLocation());
 								}
+								Vector2 pendingPosition = PLAYER.avatar.position;
+								float num2 = 0f;
+								foreach (Vector2 vector in list)
+								{
+									float num3 = Vector2.Distance(vector, PLAYER.avatar.position);
+									if (num3 > num2)
+									{
+										pendingPosition = vector;
+										num2 = num3;
+									}
+								}
+								crew.pendingPosition = pendingPosition;
+								PLAYER.currentShip.cosm.addCrew(crew);
 							}
-							crew.pendingPosition = pendingPosition;
-							PLAYER.currentShip.cosm.addCrew(crew);
-							SCREEN_MANAGER.widgetChat.AddMessage("Intruders detected.", MessageTarget.Ship);
-							intruderTimer = 0f;
-						}
+						});
+						SCREEN_MANAGER.widgetChat.AddMessage("Intruders detected.", MessageTarget.Ship);
+						intruderTimer = 0f;
 					}
 				}
 
@@ -696,7 +699,7 @@ namespace HarshWorld
 															break;
 														}
 													}
-													if (dockSpot != null && ship.docking != null && ship.docking.Count != 0 && ship.cosm?.crew != null && ship.cosm.alive)
+													if (dockSpot != null && ship.docking != null && ship.docking.Count != 0 && ship.cosm?.crew?.Values?.FirstOrDefault()?.team != null && ship.cosm.alive)
 													{
 														//check if the ship has a working airlock			
 														if (ship.cosm?.airlocks != null && !ship.cosm.airlocks.TrueForAll(airlock => !airlock.functioning))
@@ -716,7 +719,6 @@ namespace HarshWorld
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
 												intrudersSurrenderDialogue(crew);
-//TODO surrender dialogue >>>>>>
 											}
 										}
 									}
@@ -735,7 +737,7 @@ namespace HarshWorld
 												{
 													if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out var ship)) ;
 													{
-														if (POIdockSpot != null && ship.docking != null && ship.docking.Count != 0 && ship.cosm?.crew != null && ship.cosm.alive)
+														if (POIdockSpot != null && ship.docking != null && ship.docking.Count != 0 && ship.cosm?.crew?.Values?.FirstOrDefault()?.team != null && ship.cosm.alive)
 														{
 															//check if the ship has a working airlock			
 															if (ship.cosm?.airlocks != null && !ship.cosm.airlocks.TrueForAll(airlock => !airlock.functioning))
@@ -782,7 +784,7 @@ namespace HarshWorld
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
 												intrudersSurrenderDialogue(crew);
-//TODO surrender dialogue >>>>>>
+
 											}
 											if (hasStolenResources(crew) || stealShip)
 											{
@@ -1184,14 +1186,14 @@ namespace HarshWorld
 					InventoryItem Item = new InventoryItem(toSteal);
 					Item.stackSize = 1;
 					crew.placeInFirstSlot(Item);
-					crew.GetfloatyText().Enqueue("+" + Item.stackSize.ToString() + " " + Item.toolTip.tip);
+					crew.GetfloatyText().Enqueue("+" + Item.stackSize.ToString() + " " + Item.toolTip.tip + " stolen");
 					return false;  // stealing successful (do not attempt furter stealing)
 				}
 				CHARACTER_DATA.setResource(toSteal, ressourses[toSteal] - 1);
 				InventoryItem inventoryItem = new InventoryItem(toSteal);
 				inventoryItem.stackSize = 1;
 				crew.placeInFirstSlot(inventoryItem);
-				crew.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+				crew.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip + " stolen");
 			}
 			return true; // stealing  not successful
 		}
@@ -1249,12 +1251,12 @@ namespace HarshWorld
 				else if (crew.containsItemOfType(InventoryItemType.exotic_matter) && CHARACTER_DATA.credits - (ulong)(Item.refineValue * Item.stackSize) >= 0 && CHARACTER_DATA.credits - (ulong)(Item.refineValue * Item.stackSize) <= (ulong)(Item.refineValue * Item.stackSize))
 				{				
 					crew.placeInFirstSlot(Item);
-					crew.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(Item.refineValue * Item.stackSize)) + " credits");
+					crew.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(Item.refineValue * Item.stackSize)) + " credits" + " stolen");
 					CHARACTER_DATA.credits -= (ulong)(Item.refineValue * Item.stackSize);
 					return false;  // stealing successful (do not attempt furter stealing)
 				}				
 				crew.placeInFirstSlot(Item);
-				crew.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(Item.refineValue * Item.stackSize)) + " credits");
+				crew.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(Item.refineValue * Item.stackSize)) + " credits" + " stolen");
 				CHARACTER_DATA.credits -= (ulong)(Item.refineValue * Item.stackSize);
 			}
 			return true; // stealing unsuccessful
@@ -1268,7 +1270,28 @@ namespace HarshWorld
 			{
 				if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out Ship ship))
 				{
-					if (Vector2.DistanceSquared(eventposition, ship.position) >= 15000 * 15000)
+					var posToHomebase = Vector2.DistanceSquared(eventposition, ship.position);
+					if(PLAYER.currentShip != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+					{
+						if(ship.cosm?.crew?.FirstOrDefault().Value?.team != null && ship.cosm.crew.First().Value.team.goalType != ConsoleGoalType.warp_jump)
+						{
+							foreach (var crew in ship.cosm.crew.Values)
+							{
+								crew.team.goalType = ConsoleGoalType.warp_jump;
+							}
+						}
+                    }
+					else
+					{
+						if (ship.cosm?.crew?.FirstOrDefault().Value?.team != null && ship.cosm.crew.First().Value.team.goalType != ConsoleGoalType.kill_enemies)
+						{
+							foreach (var crew in ship.cosm.crew.Values)
+							{
+								crew.team.goalType = ConsoleGoalType.kill_enemies;
+							}
+						}
+					}
+					if (posToHomebase >= 15000 * 15000)
 					{
 						j++;
 						if (!leaving && ship.cosm?.crew != null && ship.cosm?.crew.Count > 0)// && ship.cosm.crew.Values.First().team.goalType != ConsoleGoalType.warp_jump)
@@ -1280,13 +1303,24 @@ namespace HarshWorld
 								// interrupt any fights going on and get the ships to the station
 								crew.team.threats.Clear();
 								crew.team.threats.Add(2UL);
+								ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
 								crew.team.destination = eventposition;
 								crew.team.goalType = ConsoleGoalType.warp_jump;
 								InterruptionInstance.activeEffects.Add(new ActiveEffect("WarpIn", ship.position, 3f, 0f));
-	
+								ship.velocity *= -1;
 							}
 							//DEBUG message>>>>>>>>>>	
 							//SCREEN_MANAGER.widgetChat.AddMessage("Ship signature detected entering sensor range.", MessageTarget.Ship);
+						}
+					}
+					else if (ship.cosm?.crew?.FirstOrDefault().Value?.team != null && ship.cosm.crew.First().Value.team.goalType == ConsoleGoalType.reach_destination && posToHomebase <= 500 * 500)
+					{
+						foreach (var crew in ship.cosm.crew.Values)
+						{
+							ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
+							crew.team.destination = eventposition;
+							crew.team.goalType = ConsoleGoalType.warp_jump;
+							ship.velocity *= -1;
 						}
 					}
 					else if (ship.engineEnergy <= 0 && leaving && InterruptionInstance.interdictTimer >= 2f)//ship.velocity.Equals(new Vector2(0, 0)))
@@ -1412,7 +1446,7 @@ namespace HarshWorld
 		public static bool test(float elapsed)
 		{
 
-			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] && SCREEN_MANAGER.dialogue == null && PLAYER.currentSession != null && !PLAYER.currentSession.paused)
+			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] && SCREEN_MANAGER.dialogue == null && !PLAYER.currentSession.paused && PLAYER.currentSession != null && PLAYER.currentShip != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 			{
 				SpawnDialogue();
 				Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] = false;
@@ -1427,11 +1461,12 @@ namespace HarshWorld
 			}
 
 			//restoring homebase cosm defaults if event was despawned by max active events restriction or other unpredicted circumstances
-			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && !Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] && PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId &&
+			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId &&
 			(Globals.Interruptionbag == null || (Globals.Interruptionbag != null && 
 			Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed != InterruptionType.home_siege_pirate_t1 && element.templateUsed != InterruptionType.home_siege_pirate_t2 && element.templateUsed != InterruptionType.home_siege_pirate_t25)))))
 			{
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false;
+				Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] = false;
 				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
 				PROCESS_REGISTER.currentCosm.klaxonOverride = false;
 				PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.normal;
@@ -1502,7 +1537,7 @@ namespace HarshWorld
 			}
 			else
 			{
-				entry.SetTarget(new Vector2(-4000, 4000), new Point(316, -183));
+				entry.SetTarget(PLAYER.currentGame.position, CONFIG.spHomeGrid);
 			}
 		}
 		private static void intrudersDialogue(ulong faction)
@@ -1523,39 +1558,41 @@ namespace HarshWorld
 					break;
 			}
 			dialogueTree.addOption("Let's kill them all!", dialogueTree2);
-			dialogueTree2.action = delegate ()
+			dialogueTree.action = delegate ()
 			{
-				if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null)
-				{
-					int num = Squirrel3RNG.Next(2) + 3;
-					CrewTeam crewTeam = new CrewTeam();
-					crewTeam.threats.Add(PLAYER.avatar.faction);
-					for (int i = 0; i < num; i++)
+				Task.Run(async () => {
+					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null)
 					{
-						Crew crew = new Crew();
-						crew.outfit(0f);
-						crew.faction = faction;
-						crew.team = crewTeam;
-						List<Vector2> list = new List<Vector2>();
-						for (int j = 0; j < 6; j++)
+						int num = Squirrel3RNG.Next(2) + 3;
+						CrewTeam crewTeam = new CrewTeam();
+						crewTeam.threats.Add(PLAYER.avatar.faction);
+						for (int i = 0; i < num; i++)
 						{
-							list.Add(PLAYER.currentShip.cosm.randomCrewLocation());
-						}
-						Vector2 pendingPosition = PLAYER.avatar.position;
-						float num2 = 0f;
-						foreach (Vector2 vector in list)
-						{
-							float num3 = Vector2.Distance(vector, PLAYER.avatar.position);
-							if (num3 > num2)
+							Crew crew = new Crew();
+							crew.outfit(0f);
+							crew.faction = faction;
+							crew.team = crewTeam;
+							List<Vector2> list = new List<Vector2>();
+							for (int j = 0; j < 6; j++)
 							{
-								pendingPosition = vector;
-								num2 = num3;
+								list.Add(PLAYER.currentShip.cosm.randomCrewLocation());
 							}
+							Vector2 pendingPosition = PLAYER.avatar.position;
+							float num2 = 0f;
+							foreach (Vector2 vector in list)
+							{
+								float num3 = Vector2.Distance(vector, PLAYER.avatar.position);
+								if (num3 > num2)
+								{
+									pendingPosition = vector;
+									num2 = num3;
+								}
+							}
+							crew.pendingPosition = pendingPosition;
+							PLAYER.currentShip.cosm.addCrew(crew);
 						}
-						crew.pendingPosition = pendingPosition;
-						PLAYER.currentShip.cosm.addCrew(crew);
 					}
-				}
+				});
 			};
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;
@@ -1579,9 +1616,9 @@ namespace HarshWorld
 			DialogueTree dialogueTree2 = new DialogueTree();
 			DialogueTree result = new DialogueTree();
 			dialogueTree.text = "Are you throwing a party or something? What are all those ships doing outside?";
-			dialogueTree.addOption("Wait, what ships?", dialogueTree2);
 			dialogueTree.addOption("You are joking, right?", dialogueTree2);
-			dialogueTree2.text = "Go to the bridge and see for yourself.";
+			dialogueTree.addOption("They just came out of nowhere, it has nothing to do with me.", dialogueTree2);
+			dialogueTree2.text = "This station has some old mining lasers installed. I activated them just in case. Be cautious while using them though, they might just explode in your face.";
 			dialogueTree2.addOption("Okay...", result);
 			dialogue = new DialogueSelectRev2(PLAYER.currentGame.agentTracker.getAgent("One"), dialogueTree);
 			SCREEN_MANAGER.dialogue = dialogue;

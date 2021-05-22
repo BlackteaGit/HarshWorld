@@ -68,16 +68,16 @@ namespace HarshWorld
             return (int)(Get1dNoiseInt(position, m_seed) * (1.0 / Int32.MaxValue) * (double)maxValueNotInclusive);
         }
 
-        public static int Next(int minValue, int maxValue)
+        public static int Next(int minValue, int maxValueNotInclusiveInt)
         {
-            if (maxValue < minValue)
+            if (maxValueNotInclusiveInt < minValue)
             {
                 //swap min and max
                 int temp = minValue;
-                minValue = maxValue;
-                maxValue = temp;
+                minValue = maxValueNotInclusiveInt;
+                maxValueNotInclusiveInt = temp;
             }
-            return minValue + Next(maxValue - minValue);
+            return minValue + Next(maxValueNotInclusiveInt - minValue);
         }
 
         public static double NextDouble()

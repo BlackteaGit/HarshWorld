@@ -886,22 +886,22 @@ namespace HarshWorld
 			loot = new List<Tuple<InventoryItemType, int>>
 			{
 			};
-			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.kill_enemies, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.reach_destination, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				35, //tiny pirate // SSC Runner
 				35, //tiny pirate // SSC Runner
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die."}, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die."}, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				36, //small pirate // SSC Messager
 				37, //med pirate // SSC Courier
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				36, //small pirate // SSC Messager
 				36 //small pirate // SSC Messager
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Ready to destroy.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Ready to destroy.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 
 			interruptionTemplate.interruptersFaction = 4U;
 			interruptionTemplate.averageWaveInterval = 1f;//240f;
@@ -919,24 +919,24 @@ namespace HarshWorld
 			loot = new List<Tuple<InventoryItemType, int>>
 			{
 			};
-			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.kill_enemies, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.reach_destination, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 
 			interruptionTemplate.AddWave(new List<int>
 			{
 				37, //med pirate // SSC Courier
 				37, //med pirate // SSC Courier
 				37 //med pirate // SSC Courier
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				35, //tiny pirate // SSC Runner
 				37, //med pirate // SSC Courier
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				35, //tiny pirate // SSC Runner
 				53//Pirate cutthroat // SSC Hauler
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 
 			interruptionTemplate.interruptersFaction = 4U;
 			interruptionTemplate.averageWaveInterval = 1f;//240f;
@@ -954,7 +954,7 @@ namespace HarshWorld
 			loot = new List<Tuple<InventoryItemType, int>>
 			{
 			};
-			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.kill_enemies, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			interruptionTemplate.AddInitialWave(list, ConsoleGoalType.reach_destination, 1f, loot, ShufflePhrases(new List<List<string>> { GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 
 			interruptionTemplate.AddWave(new List<int>
 			{
@@ -964,18 +964,18 @@ namespace HarshWorld
 				37, //med pirate // SSC Courier
 				37, //med pirate // SSC Courier
 				37 //med pirate // SSC Courier
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "We are here to collect.", "Pay us or die." }, GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				53,//Pirate cutthroat // SSC Hauler
 				37, //med pirate // SSC Courier
 				53//Pirate cutthroat // SSC Hauler
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "Let the party begin.", "Now you're screwed." }, GetRandomPirateInsults(Squirrel3RNG.Next(5)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 			interruptionTemplate.AddWave(new List<int>
 			{
 				53,//Pirate cutthroat // SSC Hauler
 				53//Pirate cutthroat // SSC Hauler
-			}, ConsoleGoalType.warp_jump, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
+			}, ConsoleGoalType.reach_destination, 0.65f, null, ShufflePhrases(new List<List<string>> { new List<string> { "What a nice station you have.", "Comin' in hot." }, GetRandomPirateInsults(Squirrel3RNG.Next(1)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 5)) }));
 
 			interruptionTemplate.interruptersFaction = 4U;
 			interruptionTemplate.averageWaveInterval = 1f;//240f;
@@ -1760,7 +1760,7 @@ namespace HarshWorld
 		public bool shuffle = false;
 		public float interdictTimer = 0f;
 		private float speakTimer = 0f;
-		private Vector2 interdictionSpot;
+		public Vector2 interdictionSpot;
 		public List<ActiveEffect> activeEffects;
 		public bool initWaveQueued; // representing a spawning stage of the interruption for save/load
 		public int wavesQueued = 0; // representing a spawning stage of the interruption for save/load
@@ -2142,11 +2142,14 @@ namespace HarshWorld
 					}
 				}
 			}
-				spawnPos += this.position;
-				var conversations = wave.Item2;
-				//Vector2 direction = this.position - spawnPos;
-				Vector2 direction = PLAYER.currentShip.position - spawnPos;
-				this.SpawnShip(wave.Item1.shipIds[0], spawnPos, direction, session, wave.Item1.goal, ref wave.Item1.loot, isDefensiveWave, conversations);
+			spawnPos += this.position;
+			var conversations = wave.Item2;
+			Vector2 direction = PLAYER.currentShip.position - spawnPos;
+			if (wave.Item1.goal == ConsoleGoalType.reach_destination)
+			{
+				direction = this.interdictionSpot - spawnPos;
+			}
+			this.SpawnShip(wave.Item1.shipIds[0], spawnPos, direction, session, wave.Item1.goal, ref wave.Item1.loot, isDefensiveWave, conversations);
 				checked
 				{
 					if (wave.Item1.shipIds.Count > 1)
@@ -2236,8 +2239,11 @@ namespace HarshWorld
 				//A new thread to counter freezes on spawning big ships
 				spawnPos += this.position;
 				var conversations = wave.Item2;
-				//Vector2 direction = this.position - spawnPos;
 				Vector2 direction = PLAYER.currentShip.position - spawnPos;
+				if (wave.Item1.goal == ConsoleGoalType.reach_destination)
+				{
+					direction = this.interdictionSpot - spawnPos;
+				}
 				this.SpawnShip(wave.Item1.shipIds[0], spawnPos, direction, session, wave.Item1.goal, ref wave.Item1.loot, isDefensiveWave, conversations);
 				checked
 				{
@@ -3150,6 +3156,9 @@ namespace HarshWorld
 					this.doConversations(elapsed, session, shuffle);
 				}
 				this.doInterdict(elapsed);
+
+				EVENTS.playerDeath += this.watchForDeath;
+
 				if (this.activeShips.Count() == 0 && (this.wavesQueued == 0 || this.currentWave >= this.maxWaves) && this.initWaveQueued == false)
 					this.interdicting = false;
 
@@ -3167,6 +3176,15 @@ namespace HarshWorld
 			}
 		}
 
+		public void watchForDeath(object sender, EventArgs e)
+		{
+			EVENTS.playerDeath -= this.watchForDeath;
+			if(Globals.globalints[GlobalInt.Bounty] > 0 && this.activeShips.Count > 0)
+			{
+				Globals.globalints[GlobalInt.Bounty] = 0;
+				SCREEN_MANAGER.widgetChat.AddMessage("Enemy found your corpse and collected your bounty on the black market.", MessageTarget.Ship);
+			}
+		}
 		/*
 		public class NodeSlot
 		{

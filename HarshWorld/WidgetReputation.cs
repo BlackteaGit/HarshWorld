@@ -97,7 +97,7 @@ namespace HarshWorld
 			foreach (KeyValuePair<ulong, Tuple<string, GlobalInt>> keyValuePair in available)
 			{
 				
-				((ReputationEntry)this.reputationCanvas.AddReputationEntry("entry", SCREEN_MANAGER.white, 0, 1, 117, 30)).SetupEntry(keyValuePair.Value.Item1, Globals.getAccFactionReputation(keyValuePair.Key), keyValuePair.Key);
+				((ReputationEntry)this.reputationCanvas.AddReputationEntry("entry", SCREEN_MANAGER.white, 0, 1, 117, 30)).SetupEntry(keyValuePair.Value.Item1, Globals.getAccumulatedReputation(keyValuePair.Key), keyValuePair.Key);
 			}
 		}
 

@@ -10,7 +10,44 @@ namespace HarshWorld
 {
     public static class HWFriendlyPiratesCalledEvent
     {
+		private static uint shipcost = 1000u;
+		private static uint visitcost = 120u;
 
+		private static uint getShipcost()
+		{
+			var repmodifier = Globals.getAccumulatedReputation(8UL);
+			if(repmodifier > 0)
+			{
+				repmodifier = (10 / repmodifier);
+			}
+			else if (repmodifier < 0)
+			{
+				repmodifier = Math.Abs(repmodifier) / 10 / 2;
+            }
+			else if (repmodifier == 0)
+			{
+				repmodifier = 1;
+			}
+			return (uint)(shipcost * repmodifier);
+		}
+
+		private static uint getVisitcost()
+		{
+			var repmodifier = Globals.getAccumulatedReputation(8UL);
+			if (repmodifier > 0)
+			{
+				repmodifier = (10 / repmodifier);
+			}
+			else if (repmodifier < 0)
+			{
+				repmodifier = Math.Abs(repmodifier) / 10 / 2;
+			}
+			else if (repmodifier == 0)
+			{
+				repmodifier = 1;
+			}
+			return (uint)(visitcost * repmodifier);
+		}
 		public static void interruptionUpdate (float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
 			if (Globals.eventflags[GlobalFlag.PiratesCalledForShip] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session, InterruptionInstance))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
@@ -236,7 +273,7 @@ namespace HarshWorld
 			DialogueTree dialogueTree14 = new DialogueTree();
 			DialogueTextMaker buyship = delegate ()
 			{
-				CHARACTER_DATA.credits -= 1120u;
+				CHARACTER_DATA.credits -= (getShipcost() + getVisitcost());
 				foreach (var interruption in Globals.Interruptionbag)
 				{
 					if (interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
@@ -300,7 +337,7 @@ namespace HarshWorld
 			};
 			DialogueTextMaker payvisit = delegate ()
 			{
-				CHARACTER_DATA.credits -= 120u;
+				CHARACTER_DATA.credits -= getVisitcost();
 				foreach (var interruption in Globals.Interruptionbag)
 				{
 					if (interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
@@ -396,28 +433,29 @@ namespace HarshWorld
 			dialogueTree3.addOption("Yes, please. I have no fear of those SSC assholes.", dialogueTree4);
 			dialogueTree3.addOption("Nah, it's to much trouble for me.", dialogueTree5);
 
-			dialogueTree4.text = "Alright then, 120 bucks for the trouble of gettin' here plus 1000 bucks for the ship, and it's yours.";
-			dialogueTree4.addOption("Here you go.", dialogueTree11, () => (CHARACTER_DATA.credits >= 1120u));//check if can be payed
-			dialogueTree5.addOption("I don't have the money.", dialogueTree5, () => (CHARACTER_DATA.credits < 1120u)); //check if can be payed
+
+			dialogueTree4.text = "Alright then, "+ getVisitcost().ToString() + " bucks for the trouble of gettin' here plus "+ getShipcost().ToString() + " bucks for the ship, and it's yours.";
+			dialogueTree4.addOption("Here you go.", dialogueTree11, () => (CHARACTER_DATA.credits >= getShipcost() + getVisitcost()));//check if can be payed
+			dialogueTree5.addOption("I don't have the money.", dialogueTree5, () => (CHARACTER_DATA.credits < getShipcost() + getVisitcost())); //check if can be payed
 			dialogueTree4.addOption("No, I've changed my mind.", dialogueTree5);
 
-			dialogueTree5.text = "You will have to pay for our visit though. 120 bucks.";
-			dialogueTree5.addOption("Here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= 120u));//check if can be payed
-			dialogueTree5.addOption("I don't have the money.", dialogueTree7, () => (CHARACTER_DATA.credits < 120u)); //check if can be payed
+			dialogueTree5.text = "You will have to pay for our visit though. "+ getVisitcost().ToString() +" bucks.";
+			dialogueTree5.addOption("Here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= getVisitcost()));//check if can be payed
+			dialogueTree5.addOption("I don't have the money.", dialogueTree7, () => (CHARACTER_DATA.credits < getVisitcost())); //check if can be payed
 			dialogueTree5.addOption("Bite me! I won't pay for nothing.", dialogueTree6);
 
 			dialogueTree6.text = "Well we'll wait here and feed you with bullets until you pay us asshole.";
-			dialogueTree6.addOption("Allright, no need for hostility, here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= 120u)); //check if can be payed
+			dialogueTree6.addOption("Allright, no need for hostility, here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= getVisitcost())); //check if can be payed
 			dialogueTree6.addOption("You sure can try.", dialogueTree12);  //pirates wait hostile
 
 			dialogueTree7.text = "You sure have some equipment to sell in your station's shop for paying us.";
 			dialogueTree7.addOption("Allright, I will see if I can get some money to pay you.", dialogueTree13); //pirates wait non-hostile
 			dialogueTree7.addOption("Bite me! I won't pay for nothing.", dialogueTree6);
 
-			dialogueTree8.text = "I bet you do, asshole. You still have to pay 120 bucks for our visit.";
-			dialogueTree8.addOption("Here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= 120u)); //check if can be payed
+			dialogueTree8.text = "I bet you do, asshole. You still have to pay " + getVisitcost().ToString() +" bucks for our visit.";
+			dialogueTree8.addOption("Here you go.", dialogueTree10, () => (CHARACTER_DATA.credits >= getVisitcost())); //check if can be payed
 			dialogueTree8.addOption("I want to buy your ship.", dialogueTree4, () => Globals.Interruptionbag != null && Globals.Interruptionbag.Values.ToList().TrueForAll(element => (element.templateUsed == InterruptionType.friendly_pirates_call && element.activeShips.Count == 3) || (element.templateUsed != InterruptionType.friendly_pirates_call))); // check if the ship is still avaible
-			dialogueTree8.addOption("I don't have the money.", dialogueTree7, () => (CHARACTER_DATA.credits < 120u)); //check if can be payed
+			dialogueTree8.addOption("I don't have the money.", dialogueTree7, () => (CHARACTER_DATA.credits < getVisitcost())); //check if can be payed
 			dialogueTree8.addOption("Bite me! I won't pay for nothing.", dialogueTree6);
 
 			dialogueTree9.text = "What a sad story. Anyway, we brought a ship for you, but some jerk attacked us. Now we can't spare this ship.";

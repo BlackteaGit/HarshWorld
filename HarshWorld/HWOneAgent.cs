@@ -65,7 +65,7 @@ namespace HarshWorld
 
 
 			dialogueTree3.text = "You can wait for them to regrow or I could call your pirate friends for help.";
-			dialogueTree2.addOption("I already mined them all out.", dialogueTree3, () => (PLAYER.currentGame.completedQuests.Contains("phase_1_end") && !Globals.eventflags[GlobalFlag.Sige1EventActive]) || PLAYER.debugMode);
+			dialogueTree2.addOption("I already mined them all out.", dialogueTree3, () => (PLAYER.currentGame.completedQuests.Contains("phase_1_end") && !Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.getAccumulatedReputation(8UL) > - 200) || PLAYER.debugMode);
 			dialogueTree2.addOption("This is a great idea, i will do that.", tree);
 
 
@@ -118,7 +118,7 @@ namespace HarshWorld
 			dialogueTree1.addOption("Great, so...what should i do?", dialogueTree2);
 
 			dialogueTree2.text = "Use the station's mining lasers to destroy their ships if you can't do it with your ship. They will be forced to leave, if they have no options to transport our goods away. You also could try to hail them and negotiate.";
-			dialogueTree2.addOption("I already tried my best.", dialogueTree3, () => PLAYER.currentGame.completedQuests.Contains("bust_pirates"));
+			dialogueTree2.addOption("I already tried my best.", dialogueTree3, () => PLAYER.currentGame.completedQuests.Contains("bust_pirates") && Globals.getAccumulatedReputation(8UL) > -200 && PLAYER.debugMode);
 			dialogueTree2.addOption("This is a great idea, i will do that.", tree);
 
 			dialogueTree3.text = "There is an option to call your pirate friends for help. I belive they would consider helping you out, since you already helped them out a lot.";

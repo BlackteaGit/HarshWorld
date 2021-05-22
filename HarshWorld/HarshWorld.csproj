@@ -73,12 +73,14 @@
     <Compile Include="HWOneAgent.cs" />
     <Compile Include="HWSCREEN_MANAGER.cs" />
     <Compile Include="HW_CHARACTER_DATA_Extensions.cs" />
+    <Compile Include="MonsterExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HWSafeFireAndForgetExtensions.cs" />
     <Compile Include="HWSquirrel3RNG.cs" />
     <Compile Include="HWSPAWNMANAGER.cs" />
     <Compile Include="HWShipExtensions.cs" />
     <Compile Include="ReputationEntry.cs" />
+    <Compile Include="HWReputationOptions.cs" />
     <Compile Include="WidgetReputation.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -6,12 +6,14 @@ namespace HarshWorld
 {	
     class HWCONFIG
     {
-		private static string ConfigFilePath = "";
+		public static string ConfigFilePath = "";
 		private static Dictionary<string, HWCONFIG.VariableReference> exportDictionary;
 
 		public static int MaxInterruptions = 2;
 		public static float InterruptionFrequency = 1.0f;
 		public static float GlobalDifficulty = 1.0f;
+		public static bool DropItemsOnDeath = true;
+		public static int MaxMonsterLevel = 35;
 
 		public sealed class VariableReference
 		{
@@ -42,6 +44,14 @@ namespace HarshWorld
 			{
 				HWCONFIG.GlobalDifficulty = (float)v;
 			});
+			HWCONFIG.SaveVar(HWCONFIG.exportDictionary, "Drop Items On Death", () => HWCONFIG.DropItemsOnDeath, delegate (object v)
+			{
+				HWCONFIG.DropItemsOnDeath = (bool)v;
+			});
+			HWCONFIG.SaveVar(HWCONFIG.exportDictionary, "Max Monster Level", () => HWCONFIG.MaxMonsterLevel, delegate (object v)
+			{
+				HWCONFIG.MaxMonsterLevel = (int)v;
+			});
 		}
 
 		public static void SaveVar(Dictionary<string, HWCONFIG.VariableReference> dic, string key, Func<object> getter, Action<object> setter)
@@ -54,6 +64,8 @@ namespace HarshWorld
 			HWCONFIG.MaxInterruptions = 2;
 			HWCONFIG.InterruptionFrequency = 1.0f;
 			HWCONFIG.GlobalDifficulty = 1.0f;
+			HWCONFIG.DropItemsOnDeath = true;
+			HWCONFIG.MaxMonsterLevel = 35;
 		}
 
 		public static void LoadConfig()
