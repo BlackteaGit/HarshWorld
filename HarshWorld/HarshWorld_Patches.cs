@@ -850,7 +850,24 @@ namespace HarshWorld
 						int shipsUnlocked = CHARACTER_DATA.shipsUnlocked();
 						//shipsUnlocked = 30; //debugging
 
-						int selectItem = Squirrel3RNG.Next(1, 7);
+
+						//scaling loot drop chance on distance to the homebse
+						float distance = 0;
+						if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
+						{
+							distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
+						}
+						else
+						{
+							Vector2 vector2 = new Vector2((float)(CONFIG.spHomeGrid.X - PLAYER.currentShip.grid.X), (float)(CONFIG.spHomeGrid.Y - PLAYER.currentShip.grid.Y)) * 200000f;
+							vector2 += PLAYER.currentGame.position;
+							distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
+						}
+						float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
+						int maxdropchance = 35;
+						maxdropchance /= (int)Math.Max((multiplier / (Math.Max(multiplier, maxdropchance) / maxdropchance)), 1);
+
+						int selectItem = Squirrel3RNG.Next(1, 14);
 						if (selectItem == 1)
 						{
 							//weapon
@@ -893,11 +910,11 @@ namespace HarshWorld
 							extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, 39.9f) / 2;
 							Item = new Extinguisher(extinguisherQuality);
 						}
-						if (selectItem == 5)
+
+						if (selectItem == 5 && Squirrel3RNG.Next(70) == 1)
 						{
-							// mining laser
-							if (Squirrel3RNG.Next(50) == 1)
-								Item = new Digger();
+							//observant aura 
+							Item = new ObservantAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 						}
 
 						if (selectItem == 6)
@@ -906,22 +923,113 @@ namespace HarshWorld
 							if (Squirrel3RNG.Next(50) == 1)
 								Item = new ArtifactItem((float)(1.0 + Squirrel3RNG.NextDouble() * 24.0));
 						}
+						if (selectItem == 7 && Squirrel3RNG.Next(50) == 1) //rare crystals
+						{
+							switch (Squirrel3RNG.Next(10))
+							{
+								case 0:
+									Item = new CrystalGene(CrystalType.gold_bulk);
+									break;
+								case 1:
+									Item = new CrystalGene(CrystalType.gold_facet);
+									break;
+								case 2:
+									Item = new InventoryItem(InventoryItemType.crystal_spore);
+									break;
+								case 3:
+									Item = new CrystalGene(CrystalType.mitraxit_bulk);
+									break;
+								case 4:
+									Item = new CrystalGene(CrystalType.mitraxit_facet);
+									break;
+								case 5:
+									Item = new CrystalGene(CrystalType.rhodium_bulk);
+									break;
+								case 6:
+									Item = new CrystalGene(CrystalType.rhodium_facet);
+									break;
+								case 7:
+									Item = new CrystalGene(CrystalType.titanium_bulk);
+									break;
+								case 8:
+									Item = new CrystalGene(CrystalType.titanium_facet);
+									break;
+								case 9:
+									Item = new CrystalGene(CrystalType.iron_facet);
+									break;
+								default:
+									Item = new CrystalGene(CrystalType.iron_facet);
+									break;
+							}
+						}
+						if (selectItem == 8 && Squirrel3RNG.Next(50) == 1)
+						{ 
+							//core node
+							Item = new InventoryItem(InventoryItemType.core_node);
+							Item.stackSize = 1U;
+						}
+						if (selectItem == 9 && Squirrel3RNG.Next(70) == 1)
+						{
+							//stealth aura 
+							Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+						}
+						if (selectItem == 10 && Squirrel3RNG.Next(70) == 1)
+						{
+							//plasma aura 
+							Item = new PlasmaScienceAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+						}
+						if (selectItem == 11 && Squirrel3RNG.Next(70) == 1)
+						{
+							//sturdy aura 
+							Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+						}
+						if (selectItem == 12 && Squirrel3RNG.Next(30) == 1)
+						{
+							//random tuning kit
+							Item = new TuningKit(Math.Min(Math.Max(1f, maxdropchance / 4f), 12f));
+						}
 
-						int selectItem2 = Squirrel3RNG.Next(1, 6);
+						if (selectItem == 13 && Squirrel3RNG.Next(30) == 1)
+						{
+							//beam aura
+							Item = new BeamEnergyDistributer(Math.Min(Math.Max(1, shipsUnlocked / 4), Math.Min(Math.Max(1, maxdropchance / 4), 12)));
+						}
+
+
+						int selectItem2 = Squirrel3RNG.Next(1, 8);
 						if (selectItem2 == 1)
 						{
-							// Shirt1
-							Item2 = new Shirt(vanityItemType.crew_shirt);
+							switch (Squirrel3RNG.Next(3))
+							{
+								case 0:
+									// Shirt1
+									Item2 = new Shirt(vanityItemType.crew_shirt);
+									break;
+								case 1:
+									// Shirt2
+									Item2 = new Shirt(vanityItemType.red_shirt);
+									break;
+								case 2:
+									// Shirt3
+									Item2 = new Shirt(vanityItemType.tank_top);
+									break;
+								default:
+									// Shirt1
+									Item2 = new Shirt(vanityItemType.crew_shirt);
+									break;
+							}
 						}
 						if (selectItem2 == 2)
 						{
-							// Shirt2
-							Item2 = new Shirt(vanityItemType.red_shirt);
+							// biomass
+							Item2 = new InventoryItem(InventoryItemType.biomass);
+							Item2.stackSize = 1U;
 						}
 						if (selectItem2 == 3)
 						{
-							// Shirt3
-							Item2 = new Shirt(vanityItemType.tank_top);
+							// biomass
+							Item2 = new InventoryItem(InventoryItemType.biomass);
+							Item2.stackSize = 1U;
 						}
 						if (selectItem2 == 4)
 						{
@@ -934,22 +1042,106 @@ namespace HarshWorld
 							// dirt
 							Item2 = new InventoryItem(InventoryItemType.dirt);
 						}
+						if (selectItem2 == 6)
+						{
+							//crystals
 
-						float distance = 0;
-						if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
-						{
-							distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
+							if (RANDOM.chance(0.1))
+							{
+								Item2 = new InventoryItem(InventoryItemType.crystal_spore);
+							}
+							if (RANDOM.chance(0.9))
+							{
+								switch (Squirrel3RNG.Next(16))
+								{
+									case 0:
+										Item2 = new CrystalGene(CrystalType.collector);
+										break;
+									case 1:
+										Item2 = new CrystalGene(CrystalType.collector);
+										break;
+									case 2:
+										Item2 = new CrystalGene(CrystalType.collector);
+										break;
+									case 3:
+										Item2 = new CrystalGene(CrystalType.collector);
+										break;
+									case 4:
+										{
+											Item2 = new CrystalGene(CrystalType.flower);
+											break;
+										}
+									case 5:
+										{
+											Item2 = new CrystalGene(CrystalType.root);
+											break;
+										}
+									case 6:
+										{
+											Item2 = new CrystalGene(CrystalType.growth);
+											break;
+										}
+									case 7:
+										Item2 = new CrystalGene(CrystalType.lense);
+										break;
+									default:
+										Item2 = new CrystalGene(CrystalType.iron_bulk);
+										break;
+								}
+							}
+							else
+							{
+								switch (Squirrel3RNG.Next(12))
+								{
+									case 0:
+										Item2 = new CrystalBranch(2);
+										break;
+									case 1:
+										Item2 = new CrystalBranch(2);
+										break;
+									case 2:
+										Item2 = new CrystalBranch(3);
+										break;
+									case 3:
+										Item2 = new CrystalGene(CrystalType.resonator);
+										break;
+									case 4:
+										Item2 = new CrystalGene(CrystalType.resonator);
+										break;
+									case 5:
+										Item2 = new CrystalGene(CrystalType.resonator);
+										break;
+									case 6:
+										Item2 = new CrystalGene(CrystalType.shell);
+										break;
+									case 7:
+										Item2 = new CrystalGene(CrystalType.shell);
+										break;
+									case 8:
+										Item2 = new CrystalGene(CrystalType.shell);
+										break;
+									case 9:
+										Item2 = new CrystalGene(CrystalType.battery);
+										break;
+									case 10:
+										Item2 = new CrystalGene(CrystalType.battery);
+										break;
+									case 11:
+										Item2 = new CrystalGene(CrystalType.battery);
+										break;
+									default:
+										Item2 = new CrystalGene(CrystalType.resonator);
+										break;
+								}
+							}
 						}
-						else
+						if (selectItem2 == 7)
 						{
-							Vector2 vector2 = new Vector2((float)(CONFIG.spHomeGrid.X - PLAYER.currentShip.grid.X), (float)(CONFIG.spHomeGrid.Y - PLAYER.currentShip.grid.Y)) * 200000f;
-							vector2 += PLAYER.currentGame.position;
-							distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
+							// mining laser
+							Item2 = new Digger();
 						}
-						float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
-						int maxdropchance = 33;
-						maxdropchance /= (int)Math.Max((multiplier / (Math.Max(multiplier, maxdropchance) / maxdropchance)), 1);
-						
+
+
 
 						for (int i = 0; i < cosm.crew.Values.Count; i++)
 						{
@@ -968,7 +1160,7 @@ namespace HarshWorld
 								{
 									if (PLAYER.avatar.currentCosm.ship != null)
 									{
-										if (Squirrel3RNG.Next(0, 100) <= maxdropchance*2)
+										if (Squirrel3RNG.Next(0, 100) <= maxdropchance*2 + 10)
 										{
 
 											if (Item2.type == InventoryItemType.biomass)
