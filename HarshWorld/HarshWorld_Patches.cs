@@ -1522,6 +1522,17 @@ namespace HarshWorld
 						__instance.updateFloatyText();
 					}
 				}
+				/* all player faction crew members get assigned here to player team in vanilla
+				this.reportTimer += elapsed;
+				if (this.reportTimer > 0.5f)
+				{
+					this.reportTimer = 0f;
+					if (!this.isPlayer && this.faction == 2UL && PLAYER.currentGame != null && this.name != null)
+					{
+						PLAYER.currentGame.team.reportStatus(this);
+					}
+				}
+				*/
 			}
 		}
 
@@ -2028,6 +2039,149 @@ namespace HarshWorld
 			}
 		}
 
+		[HarmonyPatch(typeof(CoOpSpRpG.Console), "tryUse")] // AI for ally taking control of a ship
+		public class Console_tryUse
+		{
+
+			[HarmonyPrefix]
+			private static void Prefix(CoOpSpRpG.Console __instance, Crew user)
+			{
+				if (!user.isPlayer || (__instance.crew != null && __instance.crew.isPlayer))
+				{
+					if (__instance.crew == null || __instance.crew.state != CrewState.operating)
+					{
+						if (!user.isPlayer && user.faction == 2UL)
+						{
+							if(user.team?.goalType != null && user.team?.goalType != ConsoleGoalType.escort && PLAYER.currentShip != null)
+							{
+								user.team.focus = PLAYER.currentShip.id;
+								user.team.destination = default(Vector2);
+								user.team.goalType = ConsoleGoalType.escort;
+								user.team.ignoreAggression = true;
+							}
+							if(user.team?.goalType != null && user.team?.goalType == ConsoleGoalType.escort && PLAYER.currentShip != null && user.team.focus != PLAYER.currentShip.id)
+							{
+								user.team.focus = PLAYER.currentShip.id;
+								user.team.ignoreAggression = true;
+							}
+							if (user.conThoughts == null || (user.conThoughts != null && user.conThoughts.goalType != ConsoleGoalType.escort))
+							{
+								user.conThoughts = new ConsoleThought(user);
+								user.conThoughts.goalType = ConsoleGoalType.escort;
+								user.team.ignoreAggression = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		/*
+		[HarmonyPatch(typeof(ConsoleThought), "navChooseTask")] // AI for ally escorting player
+		public class ConsoleThought_navChooseTask
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(ConsoleThought __instance, BattleSession session, Ship ship, CoOpSpRpG.Console console, Vector2 ___desiredTargetOffset)
+			{
+				if (__instance.isRunningAway)
+				{
+					return;
+				}
+				if (__instance.goalType == ConsoleGoalType.escort)
+				{
+					if (__instance.owner.team != null)
+					{
+						if (session.allShips.ContainsKey(__instance.owner.team.focus))
+						{
+							if(session.allShips[__instance.owner.team.focus].boostStage >= 1 && ship.boostStage < 1)
+							{
+								//ship.startBoost();
+							}
+							if (session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1)
+							{
+								//ship.endBoost();
+							}
+						}
+					}
+				}
+			}
+		}
+		*/
+		
+		[HarmonyPatch(typeof(ConsoleThought), "navUpdate")] // AI for ally escorting player
+		public class ConsoleThought_navUpdate
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(ConsoleThought __instance, ConcurrentQueue<CrewInteriorAlert> interiorAlerts, BattleSession session, Ship ship, CoOpSpRpG.Console console, float elapsed)
+			{
+
+				if (__instance.state == ConsoleState.attacking || __instance.state == ConsoleState.running)
+				{
+					if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
+					{
+						if (session.allShips.ContainsKey(PLAYER.currentShip.id))
+						{
+							if (ship.boostStage >= 1 &&
+							Vector2.DistanceSquared(PLAYER.currentShip.position, ship.position) <
+							((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView) * ((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView)
+							)
+							{
+								if(__instance.owner.team.ignoreAggression == false)
+								{ 
+									ship.endBoost();
+								}
+								else
+								{
+									__instance.state = ConsoleState.escorting;
+									__instance.goalType = ConsoleGoalType.escort;
+									__instance.owner.team.focus = PLAYER.currentShip.id;
+								}
+							}
+							else if(ship.boostStage >= 1 || (PLAYER.currentShip.boostStage >= 1 && ship.boostStage < 1))
+							{
+								__instance.state = ConsoleState.escorting;
+								__instance.goalType = ConsoleGoalType.escort;
+								__instance.owner.team.focus = PLAYER.currentShip.id;
+								__instance.owner.team.ignoreAggression = true;
+							}
+						}
+					}
+				}
+
+				if (__instance.state == ConsoleState.escorting || __instance.state == ConsoleState.idle)
+				{
+					if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
+					{
+						if (__instance.owner.team.focus != PLAYER.currentShip.id)
+						{
+							__instance.owner.team.focus = PLAYER.currentShip.id;
+						}
+						if (session.allShips.ContainsKey(__instance.owner.team.focus))
+						{
+							if (session.allShips[__instance.owner.team.focus].boostStage >= 1 && ship.boostStage < 1)
+							{
+								ship.startBoost();
+								__instance.owner.team.ignoreAggression = true;
+							}
+							if (session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1 && Vector2.DistanceSquared(session.allShips[__instance.owner.team.focus].position, ship.position) < 
+							(ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView
+							* 
+							((ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView)
+							)
+							{
+								ship.endBoost();
+								__instance.owner.team.ignoreAggression = false;
+							}
+						}
+
+					}
+				}
+
+			}
+		}
+		
+
 
 		[HarmonyPatch(typeof(HailAnimation), "smallTalkLoop")] // adding options to hail dialogue
 		public class HailAnimation_smallTalkLoop
@@ -2218,15 +2372,18 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(VNavigationRev3), "updateInput")] //making custom tooltips show in ship navigation screen, custom debug key actions
+		[HarmonyPatch(typeof(VNavigationRev3), "updateInput")] //making custom tooltips show in ship navigation screen, custom  actions
 		public class VNavigationRev3_updateInput
 		{
 
 
 			[HarmonyPrefix]
-			private static void Prefix(KeyboardState ___oldState)
+			private static void Prefix(bool __state, VNavigationRev3 __instance, KeyboardState ___oldState, Keys[] ___oldKeys, MouseState ___oldMouse)
 			{
 				HWSCREEN_MANAGER.toolTip = null;
+				KeyboardState state = Keyboard.GetState();
+				Keys[] pressedKeys = state.GetPressedKeys();
+				MouseState state2 = Mouse.GetState();
 
 				if (PLAYER.debugMode)
 				{
@@ -2314,11 +2471,17 @@ namespace HarshWorld
 					}
 				}
 
+				if ((CONFIG.keyBindings[7].wasJustReleased(___oldKeys, pressedKeys, ___oldMouse, state2) || (state2.LeftButton == ButtonState.Released && ___oldMouse.LeftButton == ButtonState.Pressed && CONFIG.keyBindings[6].isPressed(pressedKeys, state2))) && PLAYER.currentTeam != null)
+				{
+					__state = true;
+				}
+
 			}
 
 			[HarmonyPostfix]
-			private static void Postfix()
+			private static void Postfix(bool __state, VNavigationRev3 __instance, Vector2 ___mousePos)
 			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
 				if (SCREEN_MANAGER.toolTip != null)
 				{
 					HWSCREEN_MANAGER.toolTip = null;
@@ -2327,6 +2490,41 @@ namespace HarshWorld
 				{
 					SCREEN_MANAGER.toolTip = HWSCREEN_MANAGER.toolTip;
 				}
+
+				if (__state && PLAYER.currentConsole.target != null && PLAYER.currentConsole.target.GetType() == typeof(Ship))
+				{
+					var actor = PLAYER.currentConsole.target;
+					Ship ship2 = actor as Ship;
+					if (!PLAYER.currentTeam.threats.Contains(ship2.faction))
+					{							
+						foreach (var crew in PLAYER.currentGame.team.crew)
+						{
+							if(crew.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+							{
+								crew.team.focus = PLAYER.currentShip.id;
+								crew.team.destination = default(Vector2);
+								crew.team.goalType = ConsoleGoalType.escort;
+								crew.team.ignoreAggression = true;
+							}
+						}
+				
+					}
+					else
+					{					
+						foreach (var crew in PLAYER.currentGame.team.crew)
+						{
+							if (crew.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+							{
+								crew.team.focus = ship2.id;
+								crew.team.destination = default(Vector2);
+								//crew.team.goalType = ConsoleGoalType.kill_target;
+								crew.team.goalType = ConsoleGoalType.kill_enemies_escort;
+								crew.team.ignoreAggression = false;
+							}
+						}
+					}
+				}
+				__state = false;
 			}
 		}
 
@@ -2444,7 +2642,7 @@ namespace HarshWorld
 		public class TargetOverlay_Draw
 		{
 			[HarmonyPostfix]
-			private static void Postfix(TargetOverlay __instance, LineBatch lineBatch, SpriteBatch spriteBatch, Color uiAlpha, bool ___drawName, Vector2[] ___pointsTL, Vector2 ___center, int ___screenHeight, float ___secondPhase, bool ___nameReady)
+			private static void Postfix(TargetOverlay __instance, SpriteBatch spriteBatch, bool ___drawName, Vector2[] ___pointsTL, Vector2 ___center, int ___screenHeight, float ___secondPhase, bool ___nameReady, Vector2 ___bp_info_pos, Vector2 ___bp_speed_offset, Color ___col_speedText)
 			{
 				Vector2 vector2 = SCREEN_MANAGER.FF10.MeasureString(HWReputationOptions.targetFaction);
 				var faction_pos = new Vector2(___center.X - vector2.X / 2f, -___pointsTL[2].Y + (float)___screenHeight - 20f);
@@ -2460,10 +2658,19 @@ namespace HarshWorld
 						spriteBatch.End();
 					}
 				}
+				//drawing help info
+				Vector2 targetinfosize = SCREEN_MANAGER.FF10.MeasureString(HWReputationOptions.targetFaction);
+				var targetinfo_pos = new Vector2(___center.X - targetinfosize.X / 2f, -___pointsTL[2].Y + (float)___screenHeight + 175f);
+				spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, null, null, null, null);
+				spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Crew target", targetinfo_pos, ___col_speedText);
+				//spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Crew target", ___bp_info_pos + ___bp_speed_offset + new Vector2(0f, -92f), ___col_speedText);
+				spriteBatch.End();
+				
+
 			}
 		}
 
-		[HarmonyPatch(typeof(HackingScreenRev2), "win")]
+		[HarmonyPatch(typeof(HackingScreenRev2), "win")] //adding reputation looss for hacking faction ships
 		public class HackingScreenRev2_win
 		{
 
