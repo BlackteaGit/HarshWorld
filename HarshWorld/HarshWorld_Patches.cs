@@ -33,276 +33,279 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(WorldRev3 __instance, List<ulong> ___flotillas)
 			{
+				if(MOD_DATA.loaded)
+				{
 				//HWCONFIG.InterruptionFrequency = 250000;
-				if (Globals.Interruptions != null && Globals.Interruptions.Count() > 0 && HWCONFIG.InterruptionFrequency > 0)
-				{ 
-					if (PLAYER.currentSession != null && PLAYER.currentShip != null && PLAYER.currentShip.boostStage >= 1)
-					{
+					if (Globals.Interruptions != null && Globals.Interruptions.Count() > 0 && HWCONFIG.InterruptionFrequency > 0)
+					{ 
+						if (PLAYER.currentSession != null && PLAYER.currentShip != null && PLAYER.currentShip.boostStage >= 1)
+						{
 
-						var signature = PLAYER.currentShip.signitureRadius * HWCONFIG.GlobalDifficulty;
-						if (PLAYER.currentShip.ownershipHistory.Contains(3UL) && PLAYER.currentShip.ownershipHistory.Contains(8UL)) //more visibility for the ship supplied by friendly pirates faction
-						{
-							signature *= 4;
-						}
-						// check if ambush is already spawned nearby
-						Boolean interrupted = false;
-						foreach (InterruptionBasic interruptionbasic in Globals.Interruptions)
-						{
-							if (interruptionbasic.InterruptionId != null && interruptionbasic.Grid == PLAYER.currentShip.grid && Vector2.DistanceSquared(PLAYER.currentShip.position, interruptionbasic.Position) < 15000f * 15000f)
+							var signature = PLAYER.currentShip.signitureRadius * HWCONFIG.GlobalDifficulty;
+							if (PLAYER.currentShip.ownershipHistory.Contains(3UL) && PLAYER.currentShip.ownershipHistory.Contains(8UL)) //more visibility for the ship supplied by friendly pirates faction
 							{
-								interrupted = true;
+								signature *= 4;
 							}
-						}
-
-						// spawn random ambush on traveling with travel drive and a ship is within heat signature radius
-						if (!interrupted)
-						{
-							var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
-							for (int i = 0; i < sessionships.Length; i++)
+							// check if ambush is already spawned nearby
+							Boolean interrupted = false;
+							foreach (InterruptionBasic interruptionbasic in Globals.Interruptions)
 							{
-								var shipid = sessionships[i];
-								if (PLAYER.currentShip.id != shipid && PLAYER.currentSession.allShips[shipid].cosm != null && PLAYER.currentSession.allShips[shipid].cosm.alive && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipid].position) < ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView))
+								if (interruptionbasic.InterruptionId != null && interruptionbasic.Grid == PLAYER.currentShip.grid && Vector2.DistanceSquared(PLAYER.currentShip.position, interruptionbasic.Position) < 15000f * 15000f)
 								{
-									// random ambush, dependant on reputation
-									var spotedfaction = PLAYER.currentSession.allShips[shipid].faction;
-									var repmodifier = Globals.getAccumulatedReputation(spotedfaction) * 100;
-									var bountymodifier = Globals.globalints[GlobalInt.Bounty] * 10;
-									if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)((250000 + repmodifier - bountymodifier) / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
-									{
-										if((spotedfaction == 3U && PLAYER.currentGame.completedQuests.Contains("phase_1_end")) || spotedfaction == 4U)
-										{ 
-											HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(spotedfaction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
-											interrupted = true;
-										}
-										else if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
-										{
-											HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(), PLAYER.currentShip.position, PLAYER.currentShip.grid));
-											interrupted = true;
-										}
-									}
+									interrupted = true;
+								}
+							}
 
-									// ambush if player has demanded goods in inventory
-									if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(200000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+							// spawn random ambush on traveling with travel drive and a ship is within heat signature radius
+							if (!interrupted)
+							{
+								var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
+								for (int i = 0; i < sessionships.Length; i++)
+								{
+									var shipid = sessionships[i];
+									if (PLAYER.currentShip.id != shipid && PLAYER.currentSession.allShips[shipid].cosm != null && PLAYER.currentSession.allShips[shipid].cosm.alive && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipid].position) < ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView))
 									{
-										var demand = Globals.demand;
-										var offer = Globals.offer;
-										foreach (var item in demand)
+										// random ambush, dependant on reputation
+										var spotedfaction = PLAYER.currentSession.allShips[shipid].faction;
+										var repmodifier = Globals.getAccumulatedReputation(spotedfaction) * 100;
+										var bountymodifier = Globals.globalints[GlobalInt.Bounty] * 10;
+										if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)((250000 + repmodifier - bountymodifier) / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
 										{
-											if (offer.ContainsKey(item.Key) || item.Value > 20)
+											if((spotedfaction == 3U && PLAYER.currentGame.completedQuests.Contains("phase_1_end")) || spotedfaction == 4U)
+											{ 
+												HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(spotedfaction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
+												interrupted = true;
+											}
+											else if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
 											{
-												if (offer.GetValueSafe(item.Key) / item.Value < 0.2)
+												HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(), PLAYER.currentShip.position, PLAYER.currentShip.grid));
+												interrupted = true;
+											}
+										}
+
+										// ambush if player has demanded goods in inventory
+										if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(200000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+										{
+											var demand = Globals.demand;
+											var offer = Globals.offer;
+											foreach (var item in demand)
+											{
+												if (offer.ContainsKey(item.Key) || item.Value > 20)
 												{
-													var ship = PLAYER.currentShip;
-													int num = 0;
-													MicroCosm cosm = PROCESS_REGISTER.getCosm(ship);
-													if (cosm.cargoBays != null && cosm.cargoBays.Count > 0)
+													if (offer.GetValueSafe(item.Key) / item.Value < 0.2)
 													{
-														for (int j = 0; j < cosm.cargoBays.Count; j++)
+														var ship = PLAYER.currentShip;
+														int num = 0;
+														MicroCosm cosm = PROCESS_REGISTER.getCosm(ship);
+														if (cosm.cargoBays != null && cosm.cargoBays.Count > 0)
 														{
-															if (cosm.cargoBays[j].storage != null)
+															for (int j = 0; j < cosm.cargoBays.Count; j++)
 															{
-																num += cosm.cargoBays[j].storage.countItemByType(item.Key);
+																if (cosm.cargoBays[j].storage != null)
+																{
+																	num += cosm.cargoBays[j].storage.countItemByType(item.Key);
+																}
 															}
 														}
+														if (PLAYER.avatar.countItemOfType(item.Key) > 0 || num > 0)
+														{
+															String Tooltip;
+															if (ITEMBAG.defaultTip.ContainsKey(item.Key))
+															{
+																Tooltip = ITEMBAG.defaultTip[item.Key].tip;
+															}
+															else
+															{
+																Tooltip = "cargo";
+															}
+															List<String> conversations = new List<String>
+															{
+																"Give me yer " + Tooltip + " or i will hurt ye!",
+																"Now i'll take yer " + Tooltip + ".",
+																"Ye pitful maggot got some " + Tooltip + " We'll ravish yer booty!",
+																"Yer " + Tooltip + " will make me rich."
+															};
+															HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, true));
+															interrupted = true;
+															break;
+														}
 													}
-													if (PLAYER.avatar.countItemOfType(item.Key) > 0 || num > 0)
+												}
+											}
+										}
+
+										// ambush if player has a stolen ship
+										if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(150000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+										{											
+											var ship = PLAYER.currentShip;
+											foreach (var owner in ship.ownershipHistory)
+											{
+												if (owner == 3UL || owner == 4UL)
+												{
+													if(PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(owner))
 													{
-														String Tooltip;
-														if (ITEMBAG.defaultTip.ContainsKey(item.Key))
-														{
-															Tooltip = ITEMBAG.defaultTip[item.Key].tip;
-														}
-														else
-														{
-															Tooltip = "cargo";
-														}
 														List<String> conversations = new List<String>
 														{
-															"Give me yer " + Tooltip + " or i will hurt ye!",
-															"Now i'll take yer " + Tooltip + ".",
-															"Ye pitful maggot got some " + Tooltip + " We'll ravish yer booty!",
-															"Yer " + Tooltip + " will make me rich."
+														"Nice ship you have there, asshole.",
+														"Did you think you can steal a ship and hide?",
+														"Time to pay your bills for this ship.",
+														"You ship stealin' piece of crap."
 														};
-														HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, true));
+														HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(owner), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
 														interrupted = true;
 														break;
 													}
 												}
+
 											}
 										}
-									}
 
-									// ambush if player has a stolen ship
-									if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(150000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
-									{											
-										var ship = PLAYER.currentShip;
-										foreach (var owner in ship.ownershipHistory)
+										//special condition for the ship supplied by friendly pirates faction
+										if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(100000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
 										{
-											if (owner == 3UL || owner == 4UL)
+											if (PLAYER.currentShip.ownershipHistory.Contains(3UL) && PLAYER.currentShip.ownershipHistory.Contains(8UL))
 											{
-												if(PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(owner))
+												if (PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(3UL))
 												{
 													List<String> conversations = new List<String>
-													{
-													"Nice ship you have there, asshole.",
-													"Did you think you can steal a ship and hide?",
-													"Time to pay your bills for this ship.",
-													"You ship stealin' piece of crap."
-													};
-													HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(owner), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
+														{
+														"Nice ship you have there, asshole.",
+														"Did you think you can steal a ship and hide?",
+														"Time to pay your bills for this ship.",
+														"You ship stealin' piece of crap."
+														};
+													HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(3UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
 													interrupted = true;
-													break;
 												}
 											}
-
 										}
-									}
 
-									//special condition for the ship supplied by friendly pirates faction
-									if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(100000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+									}
+								}
+							}
+
+							// spawn random ambush on traveling with Higgs drive
+							if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+							{
+								if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
+								{
+									ulong faction = (ulong)Squirrel3RNG.Next(3,5);
+									if(Globals.getAccumulatedReputation(faction) < 1000)
+									{ 
+										HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(faction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
+										interrupted = true;
+									}
+								}
+								else
+								{
+									if (Globals.getAccumulatedReputation(4UL) < 1000)
 									{
-										if (PLAYER.currentShip.ownershipHistory.Contains(3UL) && PLAYER.currentShip.ownershipHistory.Contains(8UL))
-										{
-											if (PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(3UL))
-											{
-												List<String> conversations = new List<String>
-													{
-													"Nice ship you have there, asshole.",
-													"Did you think you can steal a ship and hide?",
-													"Time to pay your bills for this ship.",
-													"You ship stealin' piece of crap."
-													};
-												HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(3UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
-												interrupted = true;
-											}
-										}
+										HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid));
+										interrupted = true;
 									}
-
 								}
 							}
+
+
 						}
 
-						// spawn random ambush on traveling with Higgs drive
-						if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+						if (!Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.globalints[GlobalInt.Bounty] > 0)
 						{
-							if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
-							{
-								ulong faction = (ulong)Squirrel3RNG.Next(3,5);
-								if(Globals.getAccumulatedReputation(faction) < 1000)
-								{ 
-									HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(faction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
-									interrupted = true;
-								}
-							}
-							else
-							{
-								if (Globals.getAccumulatedReputation(4UL) < 1000)
+							var bountymodifier = Globals.globalints[GlobalInt.Bounty];
+							var repmodifier = 0;
+							if(Squirrel3RNG.Next(bountymodifier) > 100)
+							{ 
+								var factions = Globals.globalfactions.Keys.ToArray();
+								for (int i = 0; i < factions.Count(); i++)
 								{
-									HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid));
-									interrupted = true;
+									repmodifier += Math.Min(0, Globals.getAccumulatedReputation(factions[i]));
 								}
+								repmodifier *= 100;
 							}
-						}
-
-
-					}
-
-					if (!Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.globalints[GlobalInt.Bounty] > 0)
-					{
-						var bountymodifier = Globals.globalints[GlobalInt.Bounty];
-						var repmodifier = 0;
-						if(Squirrel3RNG.Next(bountymodifier) > 100)
-						{ 
-							var factions = Globals.globalfactions.Keys.ToArray();
-							for (int i = 0; i < factions.Count(); i++)
+							bountymodifier *= 100;
+							// homebase siege1 pirate event
+							if ( Squirrel3RNG.Next(1, Math.Max((int)(500000 + repmodifier - bountymodifier / HWCONFIG.InterruptionFrequency), 2)) == 1)
 							{
-								repmodifier += Math.Min(0, Globals.getAccumulatedReputation(factions[i]));
-							}
-							repmodifier *= 100;
-						}
-						bountymodifier *= 100;
-						// homebase siege1 pirate event
-						if ( Squirrel3RNG.Next(1, Math.Max((int)(500000 + repmodifier - bountymodifier / HWCONFIG.InterruptionFrequency), 2)) == 1)
-						{
-							InterruptionType template = InterruptionType.home_siege_pirate_t1;
-							var currentdifficulty = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
-							if (currentdifficulty <= 12)
-							{
-								switch (Squirrel3RNG.Next(3))
+								InterruptionType template = InterruptionType.home_siege_pirate_t1;
+								var currentdifficulty = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+								if (currentdifficulty <= 12)
 								{
-									case 0:
-										template = InterruptionType.home_siege_pirate_t1;
-										break;
-									case 1:
-										template = InterruptionType.home_siege_pirate_t1;
-										break;
-									case 2:
-										template = InterruptionType.home_siege_pirate_t1;
-										break;
-									default:
-										template = InterruptionType.home_siege_pirate_t1;
-										break;
+									switch (Squirrel3RNG.Next(3))
+									{
+										case 0:
+											template = InterruptionType.home_siege_pirate_t1;
+											break;
+										case 1:
+											template = InterruptionType.home_siege_pirate_t1;
+											break;
+										case 2:
+											template = InterruptionType.home_siege_pirate_t1;
+											break;
+										default:
+											template = InterruptionType.home_siege_pirate_t1;
+											break;
+									}
 								}
-							}
-							if (currentdifficulty > 12 && currentdifficulty <= 21)
-							{
-								switch (Squirrel3RNG.Next(4))
+								if (currentdifficulty > 12 && currentdifficulty <= 21)
 								{
-									case 0:
-										template = InterruptionType.home_siege_pirate_t2;
-										break;
-									case 1:
-										template = InterruptionType.home_siege_pirate_t2;
-										break;
-									case 2:
-										template = InterruptionType.home_siege_pirate_t2;
-										break;
-									case 3:
-										template = InterruptionType.home_siege_pirate_t2;
-										break;
-									default:
-										template = InterruptionType.home_siege_pirate_t2;
-										break;
+									switch (Squirrel3RNG.Next(4))
+									{
+										case 0:
+											template = InterruptionType.home_siege_pirate_t2;
+											break;
+										case 1:
+											template = InterruptionType.home_siege_pirate_t2;
+											break;
+										case 2:
+											template = InterruptionType.home_siege_pirate_t2;
+											break;
+										case 3:
+											template = InterruptionType.home_siege_pirate_t2;
+											break;
+										default:
+											template = InterruptionType.home_siege_pirate_t2;
+											break;
+									}
 								}
-							}
-							if (currentdifficulty > 21)
-							{
-								switch (Squirrel3RNG.Next(8))
+								if (currentdifficulty > 21)
 								{
-									case 0:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 1:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 2:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 3:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 4:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 5:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 6:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									case 7:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
-									default:
-										template = InterruptionType.home_siege_pirate_t25;
-										break;
+									switch (Squirrel3RNG.Next(8))
+									{
+										case 0:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 1:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 2:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 3:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 4:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 5:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 6:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										case 7:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+										default:
+											template = InterruptionType.home_siege_pirate_t25;
+											break;
+									}
 								}
+								var interruption = new Interruption(template, PLAYER.currentGame.position, CONFIG.spHomeGrid);
+								interruption.interdictionSpot = PLAYER.currentGame.position;
+								HWSPAWNMANAGER.addInterruption(interruption);
+								Globals.eventflags[GlobalFlag.Sige1EventActive] = true;
+								Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] = true;
 							}
-							var interruption = new Interruption(template, PLAYER.currentGame.position, CONFIG.spHomeGrid);
-							interruption.interdictionSpot = PLAYER.currentGame.position;
-							HWSPAWNMANAGER.addInterruption(interruption);
-							Globals.eventflags[GlobalFlag.Sige1EventActive] = true;
-							Globals.eventflags[GlobalFlag.Sige1EventSpawnDialogueActive] = true;
 						}
 					}
 				}
@@ -316,40 +319,43 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(BattleSessionSP __instance, float elapsed)
 			{
-				if (Globals.GlobalShipRemoveQueue != null && !Globals.GlobalShipRemoveQueue.IsEmpty)  // removing collected garbage ship ids (already set to despawn by the Interruption.DespawnEnqueqedShipAsync) from active sessions
+				if (MOD_DATA.loaded)
 				{
-					List<Tuple<ulong, Point>> list = new List<Tuple<ulong, Point>>();
-					while (Globals.GlobalShipRemoveQueue.TryDequeue(out var tuple))
+					if (Globals.GlobalShipRemoveQueue != null && !Globals.GlobalShipRemoveQueue.IsEmpty)  // removing collected garbage ship ids (already set to despawn by the Interruption.DespawnEnqueqedShipAsync) from active sessions
 					{
-						if (__instance.grid == tuple.Item2)
-						{							
-							if(__instance.allShips.TryGetValue(tuple.Item1, out var ship) && ship.removeThis)
-							{ 
-								__instance.allShips.Remove(tuple.Item1);
+						List<Tuple<ulong, Point>> list = new List<Tuple<ulong, Point>>();
+						while (Globals.GlobalShipRemoveQueue.TryDequeue(out var tuple))
+						{
+							if (__instance.grid == tuple.Item2)
+							{
+								if (__instance.allShips.TryGetValue(tuple.Item1, out var ship) && ship.removeThis)
+								{
+									__instance.allShips.Remove(tuple.Item1);
+								}
+							}
+							else
+							{
+								list.Add(tuple);
 							}
 						}
-						else
+						for (int i = 0; i < list.Count(); i++)
 						{
-							list.Add(tuple);
+							Globals.GlobalShipRemoveQueue.Enqueue(list[i]);
 						}
+						list.Clear();
 					}
-					for (int i = 0; i < list.Count(); i++)
+					if (Globals.Interruptions != null)
 					{
-						Globals.GlobalShipRemoveQueue.Enqueue(list[i]);
-					}
-					list.Clear();
-				}
-				if(Globals.Interruptions != null)
-				{
-					for (int i = 0; i < Globals.Interruptions.Count(); i++)
-					{
-						var interruptionbasic = Globals.Interruptions[i];
-						if (interruptionbasic.InterruptionId != null && interruptionbasic.Grid == __instance.grid)
+						for (int i = 0; i < Globals.Interruptions.Count(); i++)
 						{
-							Interruption interruption;
-							if (Globals.Interruptionbag.TryGetValue(interruptionbasic.InterruptionId, out interruption))
+							var interruptionbasic = Globals.Interruptions[i];
+							if (interruptionbasic.InterruptionId != null && interruptionbasic.Grid == __instance.grid)
 							{
-								interruption.Update(elapsed, __instance);
+								Interruption interruption;
+								if (Globals.Interruptionbag.TryGetValue(interruptionbasic.InterruptionId, out interruption))
+								{
+									interruption.Update(elapsed, __instance);
+								}
 							}
 						}
 					}
@@ -1414,17 +1420,35 @@ namespace HarshWorld
 						for (int i = 0; i < sessionships.Length; i++)
 						{
 							var shipid = sessionships[i];
-							if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist 
-							&& PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null && PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
+							if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip 
+							&& PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist 
+							&& PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
 							{
 								if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
 								{
 									if (Globals.globalfactions.ContainsKey(PLAYER.currentSession.allShips[shipid].faction))
 									{
 										Globals.changeReputation(PLAYER.currentSession.allShips[shipid].faction, +3, "for assistance in a battle.");
-										Globals.changeReputation(__instance.faction, -5);
 										break;
 									}									
+								}
+							}
+							if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null 
+							&& Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist
+							&& !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
+							{
+								if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
+								{
+									if (Globals.globalfactions.ContainsKey(__instance.faction))
+									{
+										Globals.changeReputation(__instance.faction, -5, "a nearby neutral ship spoted faction member death in your vicinity.");
+										break;
+									}
+									else if (__instance.factionless)
+									{
+										Globals.changeReputation(5UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
+										Globals.changeReputation(3UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
+									}
 								}
 							}
 						}
@@ -2122,6 +2146,12 @@ namespace HarshWorld
 					{
 						if (session.allShips.ContainsKey(PLAYER.currentShip.id))
 						{
+							if(__instance.owner.team.ignoreAggression == true)
+							{
+								__instance.state = ConsoleState.escorting;
+								__instance.goalType = ConsoleGoalType.escort;
+								__instance.owner.team.focus = PLAYER.currentShip.id;
+							}
 							if (ship.boostStage >= 1 &&
 							Vector2.DistanceSquared(PLAYER.currentShip.position, ship.position) <
 							((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView) * ((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView)
@@ -2130,13 +2160,9 @@ namespace HarshWorld
 								if(__instance.owner.team.ignoreAggression == false)
 								{ 
 									ship.endBoost();
+
 								}
-								else
-								{
-									__instance.state = ConsoleState.escorting;
-									__instance.goalType = ConsoleGoalType.escort;
-									__instance.owner.team.focus = PLAYER.currentShip.id;
-								}
+
 							}
 							else if(ship.boostStage >= 1 || (PLAYER.currentShip.boostStage >= 1 && ship.boostStage < 1))
 							{
@@ -2153,7 +2179,12 @@ namespace HarshWorld
 				{
 					if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
 					{
-						if (__instance.owner.team.focus != PLAYER.currentShip.id)
+						if (__instance.owner.team.ignoreAggression == false)
+						{
+							__instance.goalType = ConsoleGoalType.kill_enemies_escort;
+							//__instance.goalType = ConsoleGoalType.kill_target;
+						}
+						else if (__instance.owner.team.focus != PLAYER.currentShip.id)
 						{
 							__instance.owner.team.focus = PLAYER.currentShip.id;
 						}
@@ -2171,7 +2202,6 @@ namespace HarshWorld
 							)
 							{
 								ship.endBoost();
-								__instance.owner.team.ignoreAggression = false;
 							}
 						}
 
@@ -2180,8 +2210,6 @@ namespace HarshWorld
 
 			}
 		}
-		
-
 
 		[HarmonyPatch(typeof(HailAnimation), "smallTalkLoop")] // adding options to hail dialogue
 		public class HailAnimation_smallTalkLoop
@@ -2190,6 +2218,33 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
 			{
+				if(lobby.text.Contains("BEEP"))
+				{
+					if(___representative.team?.threats != null && !___representative.team.threats.Contains(2UL))
+					{ 
+						lobby.text = "I trust you're not planning any trouble. What can I do for you, friend?";
+					}
+					else
+					{
+						lobby.text = "Now why would I want to talk to you?";
+					}
+					if (___representative.faction == 2UL)
+					{
+						lobby.text = "Aye captain, what can I do for you?";
+					}
+					if (___representative.faction == 4UL)
+					{
+						lobby.text = "Ho there, what's yer trouble?";
+					}
+					if (___representative.faction == 7UL)
+					{
+						lobby.text = "*static noise*";
+					}
+				}
+				else
+				{
+
+                }
 				if(Globals.eventflags[GlobalFlag.PiratesCalledForShip])
 				{ 
 					HWFriendlyPiratesCalledEvent.addHailDialogue(ref lobby, ___representative, ___results);
@@ -2199,8 +2254,54 @@ namespace HarshWorld
 					HWBaseSiegeEvent.addHailDialogue(ref lobby, ___representative, ___results);
 				}
 				HWReputationOptions.addHailDialogue(ref lobby, ___representative, ___results);
+			}		
+
+			[HarmonyPostfix]
+			private static void Postfix(DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
+			{
+				
+				foreach (var branch in lobby.branches)
+				{
+					foreach (var secondbranch in branch.branches)
+					{
+						if(secondbranch.text.Contains("spawned"))
+						{
+							secondbranch.text = "I am living my dream. And my dream is to " + ___representative.team.goalType.ToString().Replace('_', ' ') + " !"; 
+							if (___representative.faction == 7UL)
+							{
+								string text2 = "BEEP";
+								for (int i = 0; i < Squirrel3RNG.Next(2); i++)
+								{
+									text2 = text2 + " BEEP";
+								}
+								text2 = text2 + " *static noise*";
+								for (int i = 0; i < Squirrel3RNG.Next(2); i++)
+								{
+									text2 = text2 + " BEEP";
+								}
+								secondbranch.text = text2;
+							}
+						}
+					}
+					if (___representative.faction == 7UL)
+					{
+						string text = "BEEP";
+						for (int i = 0; i < Squirrel3RNG.Next(2); i++)
+						{
+							text = text + " BEEP";
+						}
+						text = text + " *static noise*";
+						for (int i = 0; i < Squirrel3RNG.Next(2); i++)
+						{
+							text = text + " BEEP";
+						}
+						branch.text = text;
+					}
+				}
+				
 			}
 		}
+
 
 		[HarmonyPatch(typeof(LogisticsScreenRev3), "doRightClick")] 
 		public class LogisticsScreenRev3_doRightClick
@@ -2378,7 +2479,7 @@ namespace HarshWorld
 
 
 			[HarmonyPrefix]
-			private static void Prefix(bool __state, VNavigationRev3 __instance, KeyboardState ___oldState, Keys[] ___oldKeys, MouseState ___oldMouse)
+			private static void Prefix(ref bool __state, VNavigationRev3 __instance, KeyboardState ___oldState, Keys[] ___oldKeys, MouseState ___oldMouse)
 			{
 				HWSCREEN_MANAGER.toolTip = null;
 				KeyboardState state = Keyboard.GetState();
@@ -2479,7 +2580,7 @@ namespace HarshWorld
 			}
 
 			[HarmonyPostfix]
-			private static void Postfix(bool __state, VNavigationRev3 __instance, Vector2 ___mousePos)
+			private static void Postfix(ref bool __state, VNavigationRev3 __instance, Vector2 ___mousePos)
 			{
 				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
 				if (SCREEN_MANAGER.toolTip != null)
@@ -2517,8 +2618,8 @@ namespace HarshWorld
 							{
 								crew.team.focus = ship2.id;
 								crew.team.destination = default(Vector2);
-								//crew.team.goalType = ConsoleGoalType.kill_target;
-								crew.team.goalType = ConsoleGoalType.kill_enemies_escort;
+								crew.team.goalType = ConsoleGoalType.kill_target;
+								//crew.team.goalType = ConsoleGoalType.kill_enemies_escort;
 								crew.team.ignoreAggression = false;
 							}
 						}
@@ -2662,8 +2763,8 @@ namespace HarshWorld
 				Vector2 targetinfosize = SCREEN_MANAGER.FF10.MeasureString(HWReputationOptions.targetFaction);
 				var targetinfo_pos = new Vector2(___center.X - targetinfosize.X / 2f, -___pointsTL[2].Y + (float)___screenHeight + 175f);
 				spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, null, null, null, null);
-				spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Crew target", targetinfo_pos, ___col_speedText);
-				//spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Crew target", ___bp_info_pos + ___bp_speed_offset + new Vector2(0f, -92f), ___col_speedText);
+				spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Ally target", targetinfo_pos, ___col_speedText);
+				//spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Ally target", ___bp_info_pos + ___bp_speed_offset + new Vector2(0f, -92f), ___col_speedText);
 				spriteBatch.End();
 				
 
@@ -2694,86 +2795,87 @@ namespace HarshWorld
 				}				
 			}
 		}
-				/*
-				[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questjournal if HWBaseSiegeEvent quest set to NULL
-				public class WidgetJournal_DisplayDetails
-				{
-					[HarmonyPostfix]
-					private static void Prefix(WidgetJournal __instance, JournalEntry entry)
+		
+		/*
+		[HarmonyPatch(typeof(WidgetJournal), "DisplayDetails")] //managing questjournal if HWBaseSiegeEvent quest set to NULL
+		public class WidgetJournal_DisplayDetails
+		{
+			[HarmonyPostfix]
+			private static void Prefix(WidgetJournal __instance, JournalEntry entry)
+			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+				if (entry != null)
+				{		
+					if (entry.quest == null && entry.name == HWBaseSiegeEvent.tip.tip)
 					{
-						BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
-						if (entry != null)
-						{		
-							if (entry.quest == null && entry.name == HWBaseSiegeEvent.tip.tip)
-							{
-								var args = new object[] { HWBaseSiegeEvent.tip.description };
-								var descriptionText = typeof(WidgetJournal).GetField("descriptionText", flags).GetValue(__instance);
-								typeof(GuiElement).Assembly.GetType("CoOpSpRpG.TextBoxStatic").GetMethod("SetText", flags, null, new Type[] { typeof(string) }, null).Invoke(descriptionText, args); // accessing private field of an internal type instance with reflection
-								typeof(WidgetJournal).GetField("descriptionText", flags).SetValue(__instance, descriptionText);
-							}
-						}
+						var args = new object[] { HWBaseSiegeEvent.tip.description };
+						var descriptionText = typeof(WidgetJournal).GetField("descriptionText", flags).GetValue(__instance);
+						typeof(GuiElement).Assembly.GetType("CoOpSpRpG.TextBoxStatic").GetMethod("SetText", flags, null, new Type[] { typeof(string) }, null).Invoke(descriptionText, args); // accessing private field of an internal type instance with reflection
+						typeof(WidgetJournal).GetField("descriptionText", flags).SetValue(__instance, descriptionText);
 					}
 				}
-				/*
+			}
+		}
+		/*
 
-				[HarmonyPatch(typeof(BattleSession), "doCloudInteractions")]		//testing optimisations for cloud distance checks
-				public class BattleSession_doCloudInteractions
+		[HarmonyPatch(typeof(BattleSession), "doCloudInteractions")]		//testing optimisations for cloud distance checks
+		public class BattleSession_doCloudInteractions
+		{
+
+			[HarmonyPrefix]
+			private static bool Prefix(BattleSession __instance, ConcealmentEffect ___cloudCoverEffectInstance)
+			{
+				if (__instance.cloudyColliders != null)
 				{
-
-					[HarmonyPrefix]
-					private static bool Prefix(BattleSession __instance, ConcealmentEffect ___cloudCoverEffectInstance)
+					for (int i = 0; i < __instance.allShips.Values.Count; i++)
 					{
-						if (__instance.cloudyColliders != null)
+						Ship ship = __instance.allShips.Values.ToList()[i];
+						ship.status.Remove(___cloudCoverEffectInstance);
+						Point point = checked(new Point((int)ship.position.X, (int)ship.position.Y));
+						BattleSession.CloudCollider[] items = __instance.cloudyColliders.GetItems(point); 
+						for (int j = 0; j < items.Count(); j++)
 						{
-							for (int i = 0; i < __instance.allShips.Values.Count; i++)
+							BattleSession.CloudCollider cloudCollider = items[j];
+							if (Vector2.DistanceSquared(ship.position, cloudCollider.position) <= cloudCollider.radius * cloudCollider.radius)
 							{
-								Ship ship = __instance.allShips.Values.ToList()[i];
-								ship.status.Remove(___cloudCoverEffectInstance);
-								Point point = checked(new Point((int)ship.position.X, (int)ship.position.Y));
-								BattleSession.CloudCollider[] items = __instance.cloudyColliders.GetItems(point); 
-								for (int j = 0; j < items.Count(); j++)
+								string type = cloudCollider.type;
+								string text = type;
+								if (text != null)
 								{
-									BattleSession.CloudCollider cloudCollider = items[j];
-									if (Vector2.DistanceSquared(ship.position, cloudCollider.position) <= cloudCollider.radius * cloudCollider.radius)
+									if (text == "e")
 									{
-										string type = cloudCollider.type;
-										string text = type;
-										if (text != null)
-										{
-											if (text == "e")
-											{
-												ship.status.Add(___cloudCoverEffectInstance);
-											}
-										}
-										break;
+										ship.status.Add(___cloudCoverEffectInstance);
 									}
 								}
+								break;
 							}
 						}
-						return false;
 					}
 				}
-
-				*/
-				/*
-				[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame to be attached to vanilla game method after it gets implemented
-				public class RootMenuRev2_actionConfirmDelete
-				{
-
-					[HarmonyPostfix]
-					private static void Postfix(SaveEntry __focusedSave)
-					{
-						string[] modfiles = Directory.GetFiles(Directory.GetCurrentDirectory() + "\\worldsaves\\", __focusedSave.name + "*", SearchOption.AllDirectories);
-						for (int i = 0; i < modfiles.Count(); i++)
-						{
-							var file = modfiles[i];
-							if (file.Contains("_HW_MODSAVE"))
-								File.Delete(file);
-						}
-					}
-				}
-				*/
-
-
+				return false;
 			}
+		}
+
+		*/
+		/*
+		[HarmonyPatch(typeof(RootMenuRev2), "actionConfirmDelete")]             //deleting mod data on deleting savegame to be attached to vanilla game method after it gets implemented
+		public class RootMenuRev2_actionConfirmDelete
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(SaveEntry __focusedSave)
+			{
+				string[] modfiles = Directory.GetFiles(Directory.GetCurrentDirectory() + "\\worldsaves\\", __focusedSave.name + "*", SearchOption.AllDirectories);
+				for (int i = 0; i < modfiles.Count(); i++)
+				{
+					var file = modfiles[i];
+					if (file.Contains("_HW_MODSAVE"))
+						File.Delete(file);
+				}
+			}
+		}
+		*/
+
+
+	}
 }

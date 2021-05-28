@@ -18,8 +18,9 @@ namespace HarshWorld
 			//hire ship
 			//buy a random blueprint from ship's modules
 			//barter different things
-			ulong payoffCost = 0;
 			var reputation = Globals.getAccumulatedReputation(___representative.faction);
+
+			ulong payoffCost = 0;
 			if (Globals.globalfactions.ContainsKey(___representative.faction))
 			{
 				if (!___representative.team.threats.Contains(2UL))
@@ -35,6 +36,17 @@ namespace HarshWorld
 			{
 				payoffCost = (ulong)Squirrel3RNG.Next(100, 5000);
 			}
+
+			ulong undockCost = 0;
+			if (Globals.globalfactions.ContainsKey(___representative.faction))
+			{
+				undockCost = (ulong)Squirrel3RNG.Next(Math.Max(100, -1 * reputation), 500 / Math.Max(1, reputation)) + (ulong)Globals.globalints[GlobalInt.Bounty];
+			}
+			else
+			{
+				undockCost = (ulong)Squirrel3RNG.Next(100, 500);
+			}
+
 			DialogueTextMaker PayForRep = delegate ()
 			{	
 				if (Globals.globalfactions.ContainsKey(___representative.faction))
@@ -68,7 +80,9 @@ namespace HarshWorld
 			DialogueTree dialogueTree5 = new DialogueTree();
 			DialogueTree dialogueTree6 = new DialogueTree();
 			DialogueTree dialogueTree7 = new DialogueTree();
-			lobby.addOption(PayForRep, dialogueTree, () => ___representative.team?.threats != null && !Globals.eventflags[GlobalFlag.Sige1EventActive] && !Globals.eventflags[GlobalFlag.PiratesCalledForShip] && !Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && PLAYER.currentGame.completedQuests.Contains("first_battle") );
+			lobby.addOption("Can you please undock your ship?", dialogueTree2, () => !Globals.eventflags[GlobalFlag.Sige1EventActive] && !Globals.eventflags[GlobalFlag.PiratesCalledForShip] && !Globals.eventflags[GlobalFlag.PiratesCalledForDefense] &&
+			___representative.currentCosm.ship.dockedAt != null);
+			lobby.addOption(PayForRep, dialogueTree, () => ___representative.team?.threats != null && ___representative.faction != 2UL && !Globals.eventflags[GlobalFlag.Sige1EventActive] && !Globals.eventflags[GlobalFlag.PiratesCalledForShip] && !Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && PLAYER.currentGame.completedQuests.Contains("first_battle"));
 			dialogueTree.text = "Sure, if you want our favour, a donation of " + payoffCost.ToString() +" credits will make us very happy.";
 			dialogueTree.addOption("Let's do it!", dialogueTree1, () => (CHARACTER_DATA.credits >= payoffCost));
 			dialogueTree.addOption("No, I think it's to much for me.", exitConversation);
@@ -104,6 +118,36 @@ namespace HarshWorld
 				{
 					Globals.changeReputation(___representative.faction, 10);
 				}
+			};
+
+			dialogueTree2.text = "I don't think so.";
+			if (___representative.faction == 2UL || reputation > 500)
+			{ 
+				dialogueTree2.text = "Sure.";
+				dialogueTree2.action = delegate ()
+				{
+					___representative.currentCosm.ship.performUndock(PLAYER.currentSession);
+				};
+			}
+			if (___representative.faction != 2UL && reputation <= 500 && reputation >= -500)
+			{
+				dialogueTree2.text = "Sure, if you donate us " + undockCost.ToString() + " for the trouble.";
+				dialogueTree2.addOption("Let's do it!", dialogueTree3, () => (CHARACTER_DATA.credits >= undockCost));
+			}
+			else if (reputation < -500)
+			{
+				dialogueTree2.text = "Screw you!";
+			}
+			dialogueTree2.addOption("Safe travels, friend.", exitConversation, () => reputation > 500);
+			dialogueTree2.addOption("Until next time.", exitConversation, () => reputation <= 500 && reputation >= -500);
+			dialogueTree2.addOption("Whatever.", exitConversation, () => reputation < -500);
+
+			dialogueTree3.text = "Done.";
+			dialogueTree3.addOption("Fly safe.", exitConversation);
+			dialogueTree3.action = delegate ()
+			{
+				CHARACTER_DATA.credits -= undockCost;
+				___representative.currentCosm.ship.performUndock(PLAYER.currentSession);
 			};
 		}
 
