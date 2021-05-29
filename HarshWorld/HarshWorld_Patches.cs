@@ -165,7 +165,7 @@ namespace HarshWorld
 										{
 											if (PLAYER.currentShip.ownershipHistory.Contains(3UL) && PLAYER.currentShip.ownershipHistory.Contains(8UL))
 											{
-												if (PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(3UL))
+												if (PLAYER.currentSession.allShips[shipid].ownershipHistory.Contains(3UL) && PLAYER.currentSession.allShips[shipid].faction != 2UL)
 												{
 													List<String> conversations = new List<String>
 														{
@@ -2600,7 +2600,7 @@ namespace HarshWorld
 					{							
 						foreach (var crew in PLAYER.currentGame.team.crew)
 						{
-							if(crew.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+							if(crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
 							{
 								crew.team.focus = PLAYER.currentShip.id;
 								crew.team.destination = default(Vector2);
@@ -2614,7 +2614,7 @@ namespace HarshWorld
 					{					
 						foreach (var crew in PLAYER.currentGame.team.crew)
 						{
-							if (crew.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+							if (crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
 							{
 								crew.team.focus = ship2.id;
 								crew.team.destination = default(Vector2);

@@ -88,7 +88,7 @@ namespace HarshWorld
 			globalints.Add(GlobalInt.FreelancersRep, 0);
 
 			globaldoubles = new Dictionary<GlobalDouble, double>();
-			globaldoubles.Add(GlobalDouble.ModVersion, 0.71d);
+			globaldoubles.Add(GlobalDouble.ModVersion, 0.72d);
 
 			globalstrings = new Dictionary<GlobalString, string>();
 

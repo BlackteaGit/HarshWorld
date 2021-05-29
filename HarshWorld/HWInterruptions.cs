@@ -1873,7 +1873,18 @@ namespace HarshWorld
 			{ 
 				currentdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
 			}
-			currentdifficulty = Math.Max((int)Math.Ceiling((float)((currentdifficulty / 3) * HWCONFIG.GlobalDifficulty)), 1);
+
+			/*
+			if(PLAYER.currentSession != null && PLAYER.currentSession.grid == this.grid)
+			{
+				currentdifficulty = (int)(currentdifficulty * (1f + PLAYER.currentSession.allShips.Values.Where(ship => ship.faction == 2UL && ship != PLAYER.currentShip).Count() * 0.5f));
+			}
+			else if(PLAYER.currentSession == null)
+			{		
+				currentdifficulty = (int)(currentdifficulty * (1f + PLAYER.currentWorld.getSession(this.grid).allShips.Values.Where(ship => ship.faction == 2UL && ship != PLAYER.currentShip).Count() * 0.5f));
+			}
+			currentdifficulty = Math.Max((int)Math.Ceiling((float)((currentdifficulty / 3 ) * HWCONFIG.GlobalDifficulty)), 1);
+			*/
 
 			if (template.initialWave != null && template.initialWave.Item1 != null)
 			{
@@ -3034,7 +3045,6 @@ namespace HarshWorld
 					}
 				}
 			}
-
 
 			bool flag = session.grid != PLAYER.currentSession.grid;
 			if (!flag)
