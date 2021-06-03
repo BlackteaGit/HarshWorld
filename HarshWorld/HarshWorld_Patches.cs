@@ -1322,208 +1322,210 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Crew __instance)
 			{
-
-				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
+				if (MOD_DATA.loaded)
 				{
-					if (__instance.currentCosm != null && __instance.currentCosm.ship != null)
+					if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
 					{
-						if (__instance.inventory != null)
+						if (__instance.currentCosm != null && __instance.currentCosm.ship != null)
 						{
-							if (__instance.currentCosm.ship.id == PLAYER.currentGame.homeBaseId) // if death happens on player's homebase
+							if (__instance.inventory != null)
 							{
-								var inventory = __instance.inventory;
-								foreach (InventoryItem inventoryItem in inventory)
+								if (__instance.currentCosm.ship.id == PLAYER.currentGame.homeBaseId) // if death happens on player's homebase
 								{
-									if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+									var inventory = __instance.inventory;
+									foreach (InventoryItem inventoryItem in inventory)
 									{
-										if (inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
+										if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
 										{
-											if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
-											{
-												PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
-											}
-											CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
-										}
-										else if (ITEMBAG.isResource.Contains(inventoryItem.type))
-										{
-											var inventoryItemType = inventoryItem.type;
-											uint num = (uint)inventoryItem.stackSize;
-											long amount = CHARACTER_DATA.getResource(inventoryItemType) + (long)((ulong)num);
-											CHARACTER_DATA.setResource(inventoryItemType, amount);
-											if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
-											{
-												PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
-											}
-										}
-										else
-										{
-											if (Squirrel3RNG.Next(7) == 1)
+											if (inventoryItem.type == InventoryItemType.exotic_matter || inventoryItem.type == InventoryItemType.dense_exotic_matter)
 											{
 												if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
 												{
-													if (PLAYER.avatar.placeInFirstSlot(inventoryItem))
+													PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)(inventoryItem.refineValue * inventoryItem.stackSize)) + " credits");
+												}
+												CHARACTER_DATA.credits += (ulong)(inventoryItem.refineValue * inventoryItem.stackSize);
+											}
+											else if (ITEMBAG.isResource.Contains(inventoryItem.type))
+											{
+												var inventoryItemType = inventoryItem.type;
+												uint num = (uint)inventoryItem.stackSize;
+												long amount = CHARACTER_DATA.getResource(inventoryItemType) + (long)((ulong)num);
+												CHARACTER_DATA.setResource(inventoryItemType, amount);
+												if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
+												{
+													PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+												}
+											}
+											else
+											{
+												if (Squirrel3RNG.Next(7) == 1)
+												{
+													if (PLAYER.avatar.currentCosm != null && __instance.currentCosm == PLAYER.avatar.currentCosm)
 													{
-														PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+														if (PLAYER.avatar.placeInFirstSlot(inventoryItem))
+														{
+															PLAYER.avatar.GetfloatyText().Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+														}
+														else
+														{
+															__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+														}
 													}
 													else
 													{
 														__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
 													}
 												}
-												else
-												{
-													__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
-												}
+											}
+										}
+									}
+								}
+								else // if death happens not on player's homebase
+								{
+									var inventory = __instance.inventory;
+									foreach (InventoryItem inventoryItem in inventory)
+									{
+										if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+										{
+											if (Squirrel3RNG.Next(7) == 1)
+											{
+												__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
 											}
 										}
 									}
 								}
 							}
-							else // if death happens not on player's homebase
+						}
+						else if (PLAYER.currentSession.corpses.Contains(__instance))
+						{
+							for (int i = 0; i < PLAYER.currentWorld.economy.nodes.Count; i++)
 							{
-								var inventory = __instance.inventory;
-								foreach (InventoryItem inventoryItem in inventory)
+								if (PLAYER.currentWorld.economy.nodes[i].id != PLAYER.currentGame.homeBaseId && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
 								{
-									if (inventoryItem != null && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+									if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
 									{
-										if (Squirrel3RNG.Next(7) == 1)
+										if (Globals.globalfactions.ContainsKey(__instance.faction))
 										{
-											__instance.currentCosm.ship.threadDumpCargo(inventoryItem);
+											Globals.changeReputation(__instance.faction, -5, "a nearby station detected faction member death in your vicinity.");
 										}
-									}
-								}
-							}
-						}
-					}
-					else if(PLAYER.currentSession.corpses.Contains(__instance))
-					{
-						for (int i = 0; i < PLAYER.currentWorld.economy.nodes.Count; i++)
-						{
-							if (PLAYER.currentWorld.economy.nodes[i].id != PLAYER.currentGame.homeBaseId && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
-							{
-								if(Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentWorld.economy.nodes[i].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
-								{
-									if (Globals.globalfactions.ContainsKey(__instance.faction)) 
-									{
-										Globals.changeReputation(__instance.faction, -5, "a nearby station detected faction member death in your vicinity.");
-									}
-									else if (__instance.factionless)
-									{
-										Globals.changeReputation(5UL, -5, "a nearby station detected civilian death in your vicinity.");
-										Globals.changeReputation(3UL, -5, "a nearby station detected civilian death in your vicinity.");
-									}
-									break;
-								}
-							}
-						}
-						var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
-						for (int i = 0; i < sessionships.Length; i++)
-						{
-							var shipid = sessionships[i];
-							if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip 
-							&& PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist 
-							&& PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
-							{
-								if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
-								{
-									if (Globals.globalfactions.ContainsKey(PLAYER.currentSession.allShips[shipid].faction))
-									{
-										Globals.changeReputation(PLAYER.currentSession.allShips[shipid].faction, +3, "for assistance in a battle.");
-										break;
-									}									
-								}
-							}
-							if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null 
-							&& Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist
-							&& !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
-							{
-								if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
-								{
-									if (Globals.globalfactions.ContainsKey(__instance.faction))
-									{
-										Globals.changeReputation(__instance.faction, -5, "a nearby neutral ship spoted faction member death in your vicinity.");
+										else if (__instance.factionless)
+										{
+											Globals.changeReputation(5UL, -5, "a nearby station detected civilian death in your vicinity.");
+											Globals.changeReputation(3UL, -5, "a nearby station detected civilian death in your vicinity.");
+										}
 										break;
 									}
-									else if (__instance.factionless)
+								}
+							}
+							var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
+							for (int i = 0; i < sessionships.Length; i++)
+							{
+								var shipid = sessionships[i];
+								if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip
+								&& PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist
+								&& PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
+								{
+									if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
 									{
-										Globals.changeReputation(5UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
-										Globals.changeReputation(3UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
+										if (Globals.globalfactions.ContainsKey(PLAYER.currentSession.allShips[shipid].faction))
+										{
+											Globals.changeReputation(PLAYER.currentSession.allShips[shipid].faction, +3, "for assistance in a battle.");
+											break;
+										}
+									}
+								}
+								if (!Globals.eventflags[GlobalFlag.PiratesCalledForDefense] && shipid != PLAYER.currentGame.homeBaseId && PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm?.crew?.FirstOrDefault().Value?.team?.threats != null
+								&& Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist
+								&& !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(__instance.faction) && !PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL))
+								{
+									if (Vector2.DistanceSquared(PLAYER.currentShip.position, __instance.position) <= CONFIG.minViewDist * CONFIG.minViewDist && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
+									{
+										if (Globals.globalfactions.ContainsKey(__instance.faction))
+										{
+											Globals.changeReputation(__instance.faction, -5, "a nearby neutral ship spoted faction member death in your vicinity.");
+											break;
+										}
+										else if (__instance.factionless)
+										{
+											Globals.changeReputation(5UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
+											Globals.changeReputation(3UL, -5, "a nearby neutral ship detected civilian death in your vicinity.");
+										}
 									}
 								}
 							}
 						}
 					}
-				}
 
-				if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
-				{
-					if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
+					if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction)
 					{
-						for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)
+						if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
 						{
-							var crew = __instance.currentCosm.crew.Values.ToList()[i];
-							bool flag4 = crew.faction != __instance.faction && crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 600f * 600f && crew.isPlayer;
-							if (flag4)
+							for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)
 							{
-								bool isStation = __instance.currentCosm.isStation;
-								if (isStation)
+								var crew = __instance.currentCosm.crew.Values.ToList()[i];
+								bool flag4 = crew.faction != __instance.faction && crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 600f * 600f && crew.isPlayer;
+								if (flag4)
 								{
-									bool flag5 = PLAYER.currentWorld != null && PLAYER.currentWorld.economy != null && __instance.currentCosm.ship != null;
-									if (flag5)
+									bool isStation = __instance.currentCosm.isStation;
+									if (isStation)
 									{
-										foreach (EconomyNode economyNode in PLAYER.currentWorld.economy.nodes)
+										bool flag5 = PLAYER.currentWorld != null && PLAYER.currentWorld.economy != null && __instance.currentCosm.ship != null;
+										if (flag5)
 										{
-											bool flag6 = economyNode.id == __instance.currentCosm.ship.id;
-											if (flag6)
+											foreach (EconomyNode economyNode in PLAYER.currentWorld.economy.nodes)
 											{
-												__instance.team.threats.Add(crew.faction); // making friends of the killed npc hostile to the player
-												if(Globals.globalfactions.ContainsKey(__instance.faction)) //making player loosing reputation with the faction of the killed crew
+												bool flag6 = economyNode.id == __instance.currentCosm.ship.id;
+												if (flag6)
 												{
-													Globals.changeReputation(__instance.faction, -5, "for killing a faction member.");
-												}
-												else if(__instance.factionless)
-												{
-													Globals.changeReputation(5UL, -5, "for killing civilians on a trading station.");
-													Globals.changeReputation(3UL, -5, "for killing civilians on a trading station.");
+													__instance.team.threats.Add(crew.faction); // making friends of the killed npc hostile to the player
+													if (Globals.globalfactions.ContainsKey(__instance.faction)) //making player loosing reputation with the faction of the killed crew
+													{
+														Globals.changeReputation(__instance.faction, -5, "for killing a faction member.");
+													}
+													else if (__instance.factionless)
+													{
+														Globals.changeReputation(5UL, -5, "for killing civilians on a trading station.");
+														Globals.changeReputation(3UL, -5, "for killing civilians on a trading station.");
+													}
 												}
 											}
 										}
 									}
-								}
 
+								}
 							}
 						}
 					}
-				}
 
-				if (__instance.isPlayer)
-				{
-					if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
+					if (__instance.isPlayer)
 					{
-						for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)//foreach (Crew crew in __instance.currentCosm.crew.Values)
+						if (__instance.currentCosm != null && __instance.currentCosm.crew != null && __instance.currentCosm.ship != null && __instance.currentCosm.ship.id != PLAYER.currentGame.homeBaseId)
 						{
-							var crew = __instance.currentCosm.crew.Values.ToList()[i];
-							bool flag4 = crew.faction != __instance.faction && crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 600f * 600f && crew.faction != PLAYER.avatar.faction;
-							if (flag4)
+							for (int i = 0; i < __instance.currentCosm.crew.Values.Count; i++)//foreach (Crew crew in __instance.currentCosm.crew.Values)
 							{
-								bool isStation = __instance.currentCosm.isStation;
-								if (isStation)
+								var crew = __instance.currentCosm.crew.Values.ToList()[i];
+								bool flag4 = crew.faction != __instance.faction && crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 600f * 600f && crew.faction != PLAYER.avatar.faction;
+								if (flag4)
 								{
-									bool flag5 = PLAYER.currentWorld != null && PLAYER.currentWorld.economy != null && __instance.currentCosm.ship != null;
-									if (flag5)
+									bool isStation = __instance.currentCosm.isStation;
+									if (isStation)
 									{
-										foreach (EconomyNode economyNode in PLAYER.currentWorld.economy.nodes)
+										bool flag5 = PLAYER.currentWorld != null && PLAYER.currentWorld.economy != null && __instance.currentCosm.ship != null;
+										if (flag5)
 										{
-											bool flag6 = economyNode.id == __instance.currentCosm.ship.id;
-											if (flag6)
+											foreach (EconomyNode economyNode in PLAYER.currentWorld.economy.nodes)
 											{
-												if (crew.team.threats.Contains(__instance.faction))
-													crew.team.threats.Remove(__instance.faction);  // hostile npcs will become friendly again after they see player die
+												bool flag6 = economyNode.id == __instance.currentCosm.ship.id;
+												if (flag6)
+												{
+													if (crew.team.threats.Contains(__instance.faction))
+														crew.team.threats.Remove(__instance.faction);  // hostile npcs will become friendly again after they see player die
+												}
 											}
 										}
 									}
-								}
 
+								}
 							}
 						}
 					}
@@ -1634,51 +1636,54 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(bool ___waiting)
 			{
-				if (!___waiting && PLAYER.avatar.state == CrewState.dead && HWCONFIG.DropItemsOnDeath)
+				if (MOD_DATA.loaded)
 				{
-
-					if (Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
-					{					
-						Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
-						HWBaseSiegeEvent.targetModule = null;
-					}
-
-					if (PLAYER.avatar.inventory != null)
+					if (!___waiting && PLAYER.avatar.state == CrewState.dead && HWCONFIG.DropItemsOnDeath)
 					{
-						var inventory = PLAYER.avatar.inventory;
-						if (!Globals.eventflags[GlobalFlag.Sige1EventActive]) 
+
+						if (Globals.eventflags[GlobalFlag.Sige1EventActive]) //special condition for siege event
 						{
-							foreach (InventoryItem inventoryItem in inventory)
+							Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
+							HWBaseSiegeEvent.targetModule = null;
+						}
+
+						if (PLAYER.avatar.inventory != null)
+						{
+							var inventory = PLAYER.avatar.inventory;
+							if (!Globals.eventflags[GlobalFlag.Sige1EventActive])
 							{
-								if (PLAYER.avatar.currentCosm != null)
+								foreach (InventoryItem inventoryItem in inventory)
 								{
-									if (PLAYER.avatar.currentCosm.ship != null)
+									if (PLAYER.avatar.currentCosm != null)
 									{
-										if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-											PLAYER.avatar.currentCosm.ship.threadDumpCargo(inventoryItem);
+										if (PLAYER.avatar.currentCosm.ship != null)
+										{
+											if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+												PLAYER.avatar.currentCosm.ship.threadDumpCargo(inventoryItem);
+										}
+										else
+										{
+											if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+												PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
+										}
 									}
 									else
 									{
 										if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
 											PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
 									}
-								}
-								else
-								{
-									if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
-										PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
-								}
 
+								}
 							}
-						}
-						else //special condition for siege event
-						{
-							for (int i = 4; i < inventory.Length; i++)
+							else //special condition for siege event
 							{
-								InventoryItem inventoryItem = inventory[i];
-								if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
+								for (int i = 4; i < inventory.Length; i++)
 								{
-									PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
+									InventoryItem inventoryItem = inventory[i];
+									if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
+									{
+										PLAYER.currentSession.cargo.Add(new CargoPod(inventoryItem, PLAYER.avatar.position + RANDOM.squareVector(20f)));
+									}
 								}
 							}
 						}
@@ -1695,61 +1700,64 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(Respawning __instance, ref Vector2 ___mousePos, float ___wasteTimer, List<Clickable> ___buttons, MouseState ___oldMouse)
 			{
-				if (HWCONFIG.DropItemsOnDeath)
+				if (MOD_DATA.loaded)
 				{
-					MouseState state2 = Mouse.GetState();
-					Rectangle test = new Rectangle(state2.X, state2.Y, 1, 1);
-					___mousePos.X = (float)state2.X;
-					___mousePos.Y = (float)state2.Y;
-					bool flag = ___wasteTimer >= 10f;
-					checked
+					if (HWCONFIG.DropItemsOnDeath)
 					{
-						if (flag)
+						MouseState state2 = Mouse.GetState();
+						Rectangle test = new Rectangle(state2.X, state2.Y, 1, 1);
+						___mousePos.X = (float)state2.X;
+						___mousePos.Y = (float)state2.Y;
+						bool flag = ___wasteTimer >= 10f;
+						checked
 						{
-							foreach (Clickable clickable in ___buttons)
+							if (flag)
 							{
-								clickable.hover(test);
-							}
-							bool flag2 = state2.LeftButton == ButtonState.Released && ___oldMouse.LeftButton == ButtonState.Pressed;
-							if (flag2)
-							{
-								foreach (Clickable clickable2 in ___buttons)
+								foreach (Clickable clickable in ___buttons)
 								{
-									bool flag3 = test.Intersects(clickable2.region);
-									if (flag3)
+									clickable.hover(test);
+								}
+								bool flag2 = state2.LeftButton == ButtonState.Released && ___oldMouse.LeftButton == ButtonState.Pressed;
+								if (flag2)
+								{
+									foreach (Clickable clickable2 in ___buttons)
 									{
-										//if (clickable2.action == 0)
-										//{
-										if (PLAYER.avatar.inventory != null && PLAYER.avatar.currentCosm != null)
+										bool flag3 = test.Intersects(clickable2.region);
+										if (flag3)
 										{
-											var inventory = PLAYER.avatar.inventory;
-											if (!Globals.eventflags[GlobalFlag.Sige1EventActive])
+											//if (clickable2.action == 0)
+											//{
+											if (PLAYER.avatar.inventory != null && PLAYER.avatar.currentCosm != null)
 											{
-												foreach (InventoryItem inventoryItem in inventory)
+												var inventory = PLAYER.avatar.inventory;
+												if (!Globals.eventflags[GlobalFlag.Sige1EventActive])
 												{
-
-													if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+													foreach (InventoryItem inventoryItem in inventory)
 													{
-														PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
-													}
 
-												}
-											}
-											else  //special condition for siege event
-											{
-												//PLAYER.avatar.heldItem = null;
-												for (int i = 4; i < inventory.Length; i++)
-												{
-													InventoryItem inventoryItem = inventory[i];
-													if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
-													{
-														PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
+														if (inventoryItem != null && inventoryItem.type != InventoryItemType.mining_laser && inventoryItem.type != InventoryItemType.repair_gun && inventoryItem.type != InventoryItemType.fire_extinguisher && inventoryItem.type != InventoryItemType.fire_extinguisher_2)
+														{
+															PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
+														}
+
 													}
 												}
+												else  //special condition for siege event
+												{
+													//PLAYER.avatar.heldItem = null;
+													for (int i = 4; i < inventory.Length; i++)
+													{
+														InventoryItem inventoryItem = inventory[i];
+														if (inventoryItem != null && inventoryItem.type != InventoryItemType.gun)
+														{
+															PLAYER.avatar.inventory[Array.IndexOf(inventory, inventoryItem)] = null;
+														}
+													}
+												}
 											}
+											//}
+
 										}
-										//}
-
 									}
 								}
 							}
@@ -1983,81 +1991,84 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(CoOpSpRpG.Console __instance)
 			{
-				if(PLAYER.currentSession.GetType() == typeof(BattleSessionSP))
-				{ 
-					if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+				if (MOD_DATA.loaded)
+				{
+					if (PLAYER.currentSession.GetType() == typeof(BattleSessionSP))
 					{
-						PLAYER.currentShip.scanRange = CONFIG.minViewDist;
-						PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
-						PLAYER.currentShip.tempView = 1f;
-						PLAYER.currentShip.tempFireRate = 1f;
-						PLAYER.currentShip.tempGunAccuracy = 1f;
-						PLAYER.currentShip.tempBulletDuration = 1f;
-						PLAYER.currentShip.tempBulletSpeed = 1f;
-						PLAYER.currentShip.tempBulletDamageMod = 1f;
-						PLAYER.currentShip.tempMagazineSize = 1f;
-						PLAYER.currentShip.tempMissileHard = 1f;
-						PLAYER.currentShip.tempTurReload = 1f;
-						PLAYER.currentShip.tempTurTraverse = 1f;
-						__instance.group = 0;
-						if (PLAYER.currentShip.turrets == null || __instance.turrets == null || PLAYER.currentShip.turrets.ToList().TrueForAll(Element => Element == null)) // new turrets assigned only once. Or assign new turrets to current console
+						if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
 						{
-							PLAYER.currentShip.turrets = TURRET_BAG.makeTurrets(new TurretType[] { TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket }); //give station weapons
-							__instance.turrets = PLAYER.currentShip.turrets;
-						}
-						if (PLAYER.currentShip.turrets != null)
-						{
-							foreach (Turret t in PLAYER.currentShip.turrets)
+							PLAYER.currentShip.scanRange = CONFIG.minViewDist;
+							PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
+							PLAYER.currentShip.tempView = 1f;
+							PLAYER.currentShip.tempFireRate = 1f;
+							PLAYER.currentShip.tempGunAccuracy = 1f;
+							PLAYER.currentShip.tempBulletDuration = 1f;
+							PLAYER.currentShip.tempBulletSpeed = 1f;
+							PLAYER.currentShip.tempBulletDamageMod = 1f;
+							PLAYER.currentShip.tempMagazineSize = 1f;
+							PLAYER.currentShip.tempMissileHard = 1f;
+							PLAYER.currentShip.tempTurReload = 1f;
+							PLAYER.currentShip.tempTurTraverse = 1f;
+							__instance.group = 0;
+							if (PLAYER.currentShip.turrets == null || __instance.turrets == null || PLAYER.currentShip.turrets.ToList().TrueForAll(Element => Element == null)) // new turrets assigned only once. Or assign new turrets to current console
 							{
-								if (t != null)
+								PLAYER.currentShip.turrets = TURRET_BAG.makeTurrets(new TurretType[] { TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket, TurretType.s_b_rocket }); //give station weapons
+								__instance.turrets = PLAYER.currentShip.turrets;
+							}
+							if (PLAYER.currentShip.turrets != null)
+							{
+								foreach (Turret t in PLAYER.currentShip.turrets)
 								{
-									t.ship = PLAYER.currentShip;
+									if (t != null)
+									{
+										t.ship = PLAYER.currentShip;
+									}
 								}
 							}
-						}
-						//__instance.turrets = PLAYER.currentShip.turrets;
-						//give them ammo
-						if (PLAYER.currentShip.data == null)
-						{
-							PLAYER.currentShip.data = new CosmMetaData();
-						}
-						PLAYER.currentShip.data.reload = true;
-					}
-					else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
-					{
-						PLAYER.currentShip.scanRange = 0;
-						PLAYER.currentShip.signitureRadius = 0;
-						PLAYER.currentShip.tempView = 0;
-						PLAYER.currentShip.tempFireRate = 0f;
-						PLAYER.currentShip.tempGunAccuracy = 0f;
-						PLAYER.currentShip.tempBulletDuration = 0f;
-						PLAYER.currentShip.tempBulletSpeed = 0f;
-						PLAYER.currentShip.tempBulletDamageMod = 0f;
-						PLAYER.currentShip.tempMagazineSize = 0f;
-						PLAYER.currentShip.tempMissileHard = 0f;
-						PLAYER.currentShip.tempTurReload = 0f;
-						PLAYER.currentShip.tempTurTraverse = 0f;
-					}
-					if ((Globals.eventflags[GlobalFlag.PiratesCalledForShip] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
-					{
-						PLAYER.currentShip.scanRange = CONFIG.minViewDist;
-						PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
-						PLAYER.currentShip.tempView = 1f;
-						__instance.group = 0;
-						foreach (var interruption in Globals.Interruptionbag)
-						{
-							if(interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
+							//__instance.turrets = PLAYER.currentShip.turrets;
+							//give them ammo
+							if (PLAYER.currentShip.data == null)
 							{
-								return;
+								PLAYER.currentShip.data = new CosmMetaData();
 							}
+							PLAYER.currentShip.data.reload = true;
 						}
-						HWSPAWNMANAGER.addInterruption(new Interruption(InterruptionType.friendly_pirates_call, PLAYER.currentShip.position, PLAYER.currentShip.grid));
-					}
-					else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
-					{
-						PLAYER.currentShip.scanRange = 0;
-						PLAYER.currentShip.signitureRadius = 0;
-						PLAYER.currentShip.tempView = 0;
+						else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+						{
+							PLAYER.currentShip.scanRange = 0;
+							PLAYER.currentShip.signitureRadius = 0;
+							PLAYER.currentShip.tempView = 0;
+							PLAYER.currentShip.tempFireRate = 0f;
+							PLAYER.currentShip.tempGunAccuracy = 0f;
+							PLAYER.currentShip.tempBulletDuration = 0f;
+							PLAYER.currentShip.tempBulletSpeed = 0f;
+							PLAYER.currentShip.tempBulletDamageMod = 0f;
+							PLAYER.currentShip.tempMagazineSize = 0f;
+							PLAYER.currentShip.tempMissileHard = 0f;
+							PLAYER.currentShip.tempTurReload = 0f;
+							PLAYER.currentShip.tempTurTraverse = 0f;
+						}
+						if ((Globals.eventflags[GlobalFlag.PiratesCalledForShip] || (Globals.Interruptionbag != null && !Globals.Interruptionbag.Values.ToList().TrueForAll(element => element.templateUsed != InterruptionType.friendly_pirates_call))) && PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId)
+						{
+							PLAYER.currentShip.scanRange = CONFIG.minViewDist;
+							PLAYER.currentShip.signitureRadius = CONFIG.minViewDist;
+							PLAYER.currentShip.tempView = 1f;
+							__instance.group = 0;
+							foreach (var interruption in Globals.Interruptionbag)
+							{
+								if (interruption.Value.templateUsed == InterruptionType.friendly_pirates_call)
+								{
+									return;
+								}
+							}
+							HWSPAWNMANAGER.addInterruption(new Interruption(InterruptionType.friendly_pirates_call, PLAYER.currentShip.position, PLAYER.currentShip.grid));
+						}
+						else if (PLAYER.currentShip.id == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
+						{
+							PLAYER.currentShip.scanRange = 0;
+							PLAYER.currentShip.signitureRadius = 0;
+							PLAYER.currentShip.tempView = 0;
+						}
 					}
 				}
 			}
@@ -2218,42 +2229,45 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
 			{
-				if(lobby.text.Contains("BEEP"))
+				if (MOD_DATA.loaded)
 				{
-					if(___representative.team?.threats != null && !___representative.team.threats.Contains(2UL))
-					{ 
-						lobby.text = "I trust you're not planning any trouble. What can I do for you, friend?";
+					if (lobby.text.Contains("BEEP"))
+					{
+						if (___representative.team?.threats != null && !___representative.team.threats.Contains(2UL))
+						{
+							lobby.text = "I trust you're not planning any trouble. What can I do for you, friend?";
+						}
+						else
+						{
+							lobby.text = "Now why would I want to talk to you?";
+						}
+						if (___representative.faction == 2UL)
+						{
+							lobby.text = "Aye captain, what can I do for you?";
+						}
+						if (___representative.faction == 4UL)
+						{
+							lobby.text = "Ho there, what's yer trouble?";
+						}
+						if (___representative.faction == 7UL)
+						{
+							lobby.text = "*static noise*";
+						}
 					}
 					else
 					{
-						lobby.text = "Now why would I want to talk to you?";
-					}
-					if (___representative.faction == 2UL)
-					{
-						lobby.text = "Aye captain, what can I do for you?";
-					}
-					if (___representative.faction == 4UL)
-					{
-						lobby.text = "Ho there, what's yer trouble?";
-					}
-					if (___representative.faction == 7UL)
-					{
-						lobby.text = "*static noise*";
-					}
-				}
-				else
-				{
 
-                }
-				if(Globals.eventflags[GlobalFlag.PiratesCalledForShip])
-				{ 
-					HWFriendlyPiratesCalledEvent.addHailDialogue(ref lobby, ___representative, ___results);
+					}
+					if (Globals.eventflags[GlobalFlag.PiratesCalledForShip])
+					{
+						HWFriendlyPiratesCalledEvent.addHailDialogue(ref lobby, ___representative, ___results);
+					}
+					if (Globals.eventflags[GlobalFlag.Sige1EventActive])
+					{
+						HWBaseSiegeEvent.addHailDialogue(ref lobby, ___representative, ___results);
+					}
+					HWReputationOptions.addHailDialogue(ref lobby, ___representative, ___results);
 				}
-				if (Globals.eventflags[GlobalFlag.Sige1EventActive])
-				{
-					HWBaseSiegeEvent.addHailDialogue(ref lobby, ___representative, ___results);
-				}
-				HWReputationOptions.addHailDialogue(ref lobby, ___representative, ___results);
 			}		
 
 			[HarmonyPostfix]
@@ -2310,21 +2324,24 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(ref string opt, Ship ___selected)
 			{
-				if (opt == "Scrap" && ___selected.ownershipHistory.Contains(3UL) && ___selected.ownershipHistory.Contains(8UL)) // preventing player from scrapping the bought friendly pirate ship in normal way.
+				if (MOD_DATA.loaded)
 				{
-					___selected.performUndock(PLAYER.currentSession);
-					foreach (InventoryItem inventoryItem in HWFriendlyPiratesCalledEvent.getRandomScrapLoot())
+					if (opt == "Scrap" && ___selected.ownershipHistory.Contains(3UL) && ___selected.ownershipHistory.Contains(8UL)) // preventing player from scrapping the bought friendly pirate ship in normal way.
 					{
-						if(PLAYER.avatar.placeInFirstSlot(inventoryItem))
-						PLAYER.currentShip.floatyText.Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+						___selected.performUndock(PLAYER.currentSession);
+						foreach (InventoryItem inventoryItem in HWFriendlyPiratesCalledEvent.getRandomScrapLoot())
+						{
+							if (PLAYER.avatar.placeInFirstSlot(inventoryItem))
+								PLAYER.currentShip.floatyText.Enqueue("+" + inventoryItem.stackSize.ToString() + " " + inventoryItem.toolTip.tip);
+						}
+						PLAYER.currentSession.despawnShip(___selected);
+						opt = "";
 					}
-					PLAYER.currentSession.despawnShip(___selected);
-					opt = "";
-				}
-				if (opt != "" && !___selected.ownershipHistory.Contains(PLAYER.avatar.faction) && Globals.eventflags[GlobalFlag.Sige1EventActive]) //disable menu interaction with not owned ships while being under Siege
-				{
-					SCREEN_MANAGER.widgetChat.AddMessage("Access to ship systems denied.", MessageTarget.Ship);
-					opt = "";
+					if (opt != "" && !___selected.ownershipHistory.Contains(PLAYER.avatar.faction) && Globals.eventflags[GlobalFlag.Sige1EventActive]) //disable menu interaction with not owned ships while being under Siege
+					{
+						SCREEN_MANAGER.widgetChat.AddMessage("Access to ship systems denied.", MessageTarget.Ship);
+						opt = "";
+					}
 				}
 			}
 		}
@@ -2347,9 +2364,12 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(Turret __instance, BattleSession session)
 			{
-				if(session.GetType() == typeof(BattleSessionSP) && Globals.eventflags[GlobalFlag.Sige1EventActive] && __instance.ship.id == PLAYER.currentGame.homeBaseId)
+				if (MOD_DATA.loaded)
 				{
-					__instance.energy = __instance._maxEnergy;
+					if (session.GetType() == typeof(BattleSessionSP) && Globals.eventflags[GlobalFlag.Sige1EventActive] && __instance.ship.id == PLAYER.currentGame.homeBaseId)
+					{
+						__instance.energy = __instance._maxEnergy;
+					}
 				}
 			}
 		}
@@ -2360,50 +2380,52 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(WidgetJournal __instance, JournalEntry ___focusedEntry, int ___journalTrackerWidth)
 			{
-				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
-				JournalEntry entry = null;
-				if (PLAYER.currentGame != null)
+				if (MOD_DATA.loaded)
 				{
-					if (Globals.eventflags[GlobalFlag.Sige1EventActive])
+					BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+					JournalEntry entry = null;
+					if (PLAYER.currentGame != null)
 					{
-						JournalEntry journalEntry = (JournalEntry)__instance.ScrollCanvas.AddJournalEntry("Track base", SCREEN_MANAGER.white, 4, 2, ___journalTrackerWidth - 20, 56, SortType.vertical,
-						new JournalEntry.ClickJournalEvent(__instance.DisplayDetails), new JournalEntry.ClickJournalMapEvent((inp) =>
+						if (Globals.eventflags[GlobalFlag.Sige1EventActive])
 						{
-							JournalEntry jEntry = (JournalEntry)inp;
-							if (jEntry.quest != null && jEntry.quest.tip != null && jEntry.trackButton != null)
+							JournalEntry journalEntry = (JournalEntry)__instance.ScrollCanvas.AddJournalEntry("Track base", SCREEN_MANAGER.white, 4, 2, ___journalTrackerWidth - 20, 56, SortType.vertical,
+							new JournalEntry.ClickJournalEvent(__instance.DisplayDetails), new JournalEntry.ClickJournalMapEvent((inp) =>
 							{
-								jEntry.quest.tracked = !jEntry.quest.tracked;
+								JournalEntry jEntry = (JournalEntry)inp;
+								if (jEntry.quest != null && jEntry.quest.tip != null && jEntry.trackButton != null)
+								{
+									jEntry.quest.tracked = !jEntry.quest.tracked;
+								}
+							}));
+							__instance.entriesRef.Add(journalEntry);
+							HWBaseSiegeEvent.SetupEntry(journalEntry);
+							HWBaseSiegeEvent.getDistance(journalEntry);
+							if (___focusedEntry != null && ___focusedEntry.quest == null && ___focusedEntry.name == journalEntry.name)
+							{
+								entry = ___focusedEntry;
 							}
-						}));
-						__instance.entriesRef.Add(journalEntry);
-						HWBaseSiegeEvent.SetupEntry(journalEntry);
-						HWBaseSiegeEvent.getDistance(journalEntry);
-						if (___focusedEntry != null && ___focusedEntry.quest == null && ___focusedEntry.name == journalEntry.name)
-						{
-							entry = ___focusedEntry;
 						}
 					}
+					var selectorCanvas = typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance) as Canvas;
+					int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas", throwOnError: true).GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type via reflection
+					var args = new object[] { selectorCanvas };
+					switch (selectorID)
+					{
+						case 0:
+							typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+							break;
+						case 1:
+							typeof(WidgetJournal).GetMethod("SortByDistance", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+							break;
+						case 2:
+							typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+							break;
+						default:
+							typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
+							break;
+					}
+					__instance.DisplayDetails(entry);
 				}
-				var selectorCanvas = typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance) as Canvas;
-				int selectorID = (int)typeof(Canvas).Assembly.GetType("CoOpSpRpG.SelectorCanvas", throwOnError: true).GetField("selectorID", flags).GetValue(typeof(WidgetJournal).GetField("selectorCanvas", flags).GetValue(__instance)); // accessing private field of an internal type via reflection
-				var args = new object[] { selectorCanvas };
-				switch (selectorID)
-				{
-					case 0:
-						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
-						break;
-					case 1:
-						typeof(WidgetJournal).GetMethod("SortByDistance", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
-						break;
-					case 2:
-						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
-						break;
-					default:
-						typeof(WidgetJournal).GetMethod("SortByName", flags, null, new Type[] { typeof(GuiElement) }, null).Invoke(__instance, args);
-						break;
-				}
-				__instance.DisplayDetails(entry);
-
 			}
 		}
 
@@ -2414,12 +2436,15 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(AgentTracker __instance, ref List<BarAgentDrawer> __result, ulong stationID, Point grid)
 			{
-				if (stationID == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
+				if (MOD_DATA.loaded)
 				{
-					Crew crew = HWBaseSiegeEvent.getFriendlyIntruder(PLAYER.currentSession);
-					if(crew != null)
+					if (stationID == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
 					{
-						__result.Add(new BarAgentDrawer(new GenericIntruder(crew.name)));
+						Crew crew = HWBaseSiegeEvent.getFriendlyIntruder(PLAYER.currentSession);
+						if (crew != null)
+						{
+							__result.Add(new BarAgentDrawer(new GenericIntruder(crew.name)));
+						}
 					}
 				}
 			}
@@ -2457,18 +2482,21 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(float elapsed, MouseAction clickState, Rectangle mousePos)
 			{
-				if (PLAYER.currentSession.GetType() == typeof(BattleSessionSC))
+				if (MOD_DATA.loaded)
 				{
-					//BattleSessionSC battleSessionSC = PLAYER.currentSession as BattleSessionSC;
-					//HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(battleSessionSC.credits));
-				}
-				else
-				{
-					HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(Globals.globalints[GlobalInt.Bounty]), Globals.globalints[GlobalInt.Bounty] > 0);
-				}
-				if (HWSCREEN_MANAGER.widgetReputation != null)
-				{
-					HWSCREEN_MANAGER.widgetReputation.Update(elapsed, clickState, mousePos);
+					if (PLAYER.currentSession.GetType() == typeof(BattleSessionSC))
+					{
+						//BattleSessionSC battleSessionSC = PLAYER.currentSession as BattleSessionSC;
+						//HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(battleSessionSC.credits));
+					}
+					else
+					{
+						HWSCREEN_MANAGER.widgetReputation.SetReputation(SCREEN_MANAGER.formatCreditStringSeparate(Globals.globalints[GlobalInt.Bounty]), Globals.globalints[GlobalInt.Bounty] > 0);
+					}
+					if (HWSCREEN_MANAGER.widgetReputation != null)
+					{
+						HWSCREEN_MANAGER.widgetReputation.Update(elapsed, clickState, mousePos);
+					}
 				}
 			}
 		}
@@ -2486,7 +2514,7 @@ namespace HarshWorld
 				Keys[] pressedKeys = state.GetPressedKeys();
 				MouseState state2 = Mouse.GetState();
 
-				if (PLAYER.debugMode)
+				if (PLAYER.debugMode && MOD_DATA.loaded)
 				{
 					if (!Keyboard.GetState().IsKeyDown(Keys.L) && ___oldState.IsKeyDown(Keys.L) && !Globals.eventflags[GlobalFlag.Sige1EventActive]) //debug trigger for homebase siege event
 					{
@@ -2636,23 +2664,26 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(bool __result, ProceduralTaxiQuest __instance, Crew ___crewRef, DialogueSelectRev2 ___dialogue)
 			{
-				if (__result)
+				if (MOD_DATA.loaded)
 				{
-					if (___crewRef == null)
+					if (__result)
 					{
-						Globals.changeReputation(5UL, -5);
-					}
-					else if (___crewRef.state == CrewState.dead)
-					{
-						Globals.changeReputation(5UL, -5);
-					}
-					else if (___dialogue != null && ___dialogue.removeMe)
-					{
-						if (__instance.stage != 2U)
+						if (___crewRef == null)
 						{
-							if (__instance.stage == 777U)
+							Globals.changeReputation(5UL, -5);
+						}
+						else if (___crewRef.state == CrewState.dead)
+						{
+							Globals.changeReputation(5UL, -5);
+						}
+						else if (___dialogue != null && ___dialogue.removeMe)
+						{
+							if (__instance.stage != 2U)
 							{
-								Globals.changeReputation(5UL, 10, "for a successful transportation job.");
+								if (__instance.stage == 777U)
+								{
+									Globals.changeReputation(5UL, 10, "for a successful transportation job.");
+								}
 							}
 						}
 					}
@@ -2666,12 +2697,15 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Crew c, string ___targetName)
 			{
-				if (c.name == ___targetName)
+				if (MOD_DATA.loaded)
 				{
-					Globals.changeReputation(5UL, 20, "for a successful assasination job.");
-					if (Globals.globalfactions.ContainsKey(c.faction))
+					if (c.name == ___targetName)
 					{
-						Globals.changeReputation(c.faction, -10, "by assasinating a faction member.");
+						Globals.changeReputation(5UL, 20, "for a successful assasination job.");
+						if (Globals.globalfactions.ContainsKey(c.faction))
+						{
+							Globals.changeReputation(c.faction, -10, "by assasinating a faction member.");
+						}
 					}
 				}
 			}
@@ -2778,21 +2812,24 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix()
 			{
-				if (PLAYER.currentShip.ownershipHistory.Count >= 2)
+				if (MOD_DATA.loaded)
 				{
-					var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
-					for (int i = 0; i < sessionships.Length; i++)
+					if (PLAYER.currentShip.ownershipHistory.Count >= 2)
 					{
-						var shipid = sessionships[i];
-						var signature = PLAYER.currentShip.signitureRadius;
-						if (PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm != null && PLAYER.currentSession.allShips[shipid].cosm.alive && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView))
+						var sessionships = PLAYER.currentSession.allShips.Keys.ToArray();
+						for (int i = 0; i < sessionships.Length; i++)
 						{
-							ulong faction = PLAYER.currentShip.ownershipHistory[PLAYER.currentShip.ownershipHistory.Count - 2];
-							Globals.changeReputation(faction, -10, "a nearby ship has spotted you stealing a faction owned ship.");
-							break;
+							var shipid = sessionships[i];
+							var signature = PLAYER.currentShip.signitureRadius;
+							if (PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm != null && PLAYER.currentSession.allShips[shipid].cosm.alive && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, PLAYER.currentShip.position) <= ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView))
+							{
+								ulong faction = PLAYER.currentShip.ownershipHistory[PLAYER.currentShip.ownershipHistory.Count - 2];
+								Globals.changeReputation(faction, -10, "a nearby ship has spotted you stealing a faction owned ship.");
+								break;
+							}
 						}
 					}
-				}				
+				}
 			}
 		}
 		
