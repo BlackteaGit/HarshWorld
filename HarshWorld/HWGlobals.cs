@@ -48,6 +48,7 @@ namespace HarshWorld
 		public static Dictionary<ulong, Tuple<string, GlobalInt>> globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
 		public static int difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
 		public static int shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+		public static bool initialized;
 		public static void Initialize()
 		{
 			difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
@@ -94,6 +95,7 @@ namespace HarshWorld
 
 			HWBaseSiegeEvent.initialize();
 			SCREEN_MANAGER.widgetChat = new WidgetChat();
+			initialized = true;
 		}
 		public static int DifficultyFromCost(int cost)
 		{

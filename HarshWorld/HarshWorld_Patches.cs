@@ -12,7 +12,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System.Data.SQLite;
 using System.IO;
 using System.Collections.Concurrent;
-using WaywardExtensions;
 
 namespace HarshWorld
 {
@@ -33,7 +32,8 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(WorldRev3 __instance, List<ulong> ___flotillas)
 			{
-				if(MOD_DATA.loaded)
+			
+				if(Globals.initialized)
 				{
 				//HWCONFIG.InterruptionFrequency = 250000;
 					if (Globals.Interruptions != null && Globals.Interruptions.Count() > 0 && HWCONFIG.InterruptionFrequency > 0)
@@ -319,7 +319,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(BattleSessionSP __instance, float elapsed)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (Globals.GlobalShipRemoveQueue != null && !Globals.GlobalShipRemoveQueue.IsEmpty)  // removing collected garbage ship ids (already set to despawn by the Interruption.DespawnEnqueqedShipAsync) from active sessions
 					{
@@ -1322,7 +1322,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Crew __instance)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
 					{
@@ -1636,7 +1636,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(bool ___waiting)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (!___waiting && PLAYER.avatar.state == CrewState.dead && HWCONFIG.DropItemsOnDeath)
 					{
@@ -1700,7 +1700,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(Respawning __instance, ref Vector2 ___mousePos, float ___wasteTimer, List<Clickable> ___buttons, MouseState ___oldMouse)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (HWCONFIG.DropItemsOnDeath)
 					{
@@ -1951,7 +1951,11 @@ namespace HarshWorld
 					Globals.GlobalShipRemoveQueue = null;
 					Globals.offer = null;
 					Globals.demand = null;
+					Globals.globalints.Clear();
 					Globals.eventflags.Clear();
+					Globals.globaldoubles.Clear();
+					Globals.globalstrings.Clear();
+					Globals.initialized = false;
 				}
 			}
 		}
@@ -1991,7 +1995,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(CoOpSpRpG.Console __instance)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (PLAYER.currentSession.GetType() == typeof(BattleSessionSP))
 					{
@@ -2103,7 +2107,10 @@ namespace HarshWorld
 							{
 								user.conThoughts = new ConsoleThought(user);
 								user.conThoughts.goalType = ConsoleGoalType.escort;
-								user.team.ignoreAggression = true;
+								if (user.team != null)
+								{ 
+									user.team.ignoreAggression = true;
+								}
 							}
 						}
 					}
@@ -2229,7 +2236,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(DialogueTree lobby, Crew ___representative, List<ResponseImmediateAction> ___results)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (lobby.text.Contains("BEEP"))
 					{
@@ -2324,7 +2331,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(ref string opt, Ship ___selected)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (opt == "Scrap" && ___selected.ownershipHistory.Contains(3UL) && ___selected.ownershipHistory.Contains(8UL)) // preventing player from scrapping the bought friendly pirate ship in normal way.
 					{
@@ -2364,7 +2371,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Prefix(Turret __instance, BattleSession session)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (session.GetType() == typeof(BattleSessionSP) && Globals.eventflags[GlobalFlag.Sige1EventActive] && __instance.ship.id == PLAYER.currentGame.homeBaseId)
 					{
@@ -2436,7 +2443,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(AgentTracker __instance, ref List<BarAgentDrawer> __result, ulong stationID, Point grid)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (stationID == PLAYER.currentGame.homeBaseId && !Globals.eventflags[GlobalFlag.Sige1EventActive])
 					{
@@ -2482,7 +2489,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(float elapsed, MouseAction clickState, Rectangle mousePos)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (PLAYER.currentSession.GetType() == typeof(BattleSessionSC))
 					{
@@ -2514,7 +2521,7 @@ namespace HarshWorld
 				Keys[] pressedKeys = state.GetPressedKeys();
 				MouseState state2 = Mouse.GetState();
 
-				if (PLAYER.debugMode && MOD_DATA.loaded)
+				if (PLAYER.debugMode && Globals.initialized)
 				{
 					if (!Keyboard.GetState().IsKeyDown(Keys.L) && ___oldState.IsKeyDown(Keys.L) && !Globals.eventflags[GlobalFlag.Sige1EventActive]) //debug trigger for homebase siege event
 					{
@@ -2619,36 +2626,38 @@ namespace HarshWorld
 				{
 					SCREEN_MANAGER.toolTip = HWSCREEN_MANAGER.toolTip;
 				}
-
-				if (__state && PLAYER.currentConsole.target != null && PLAYER.currentConsole.target.GetType() == typeof(Ship))
-				{
-					var actor = PLAYER.currentConsole.target;
-					Ship ship2 = actor as Ship;
-					if (!PLAYER.currentTeam.threats.Contains(ship2.faction))
-					{							
-						foreach (var crew in PLAYER.currentGame.team.crew)
-						{
-							if(crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+				if(Globals.initialized)
+				{ 
+					if (__state && PLAYER.currentConsole.target != null && PLAYER.currentConsole.target.GetType() == typeof(Ship))
+					{
+						var actor = PLAYER.currentConsole.target;
+						Ship ship2 = actor as Ship;
+						if (!PLAYER.currentTeam.threats.Contains(ship2.faction))
+						{							
+							foreach (var crew in PLAYER.currentGame.team.crew)
 							{
-								crew.team.focus = PLAYER.currentShip.id;
-								crew.team.destination = default(Vector2);
-								crew.team.goalType = ConsoleGoalType.escort;
-								crew.team.ignoreAggression = true;
+								if(crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+								{
+									crew.team.focus = PLAYER.currentShip.id;
+									crew.team.destination = default(Vector2);
+									crew.team.goalType = ConsoleGoalType.escort;
+									crew.team.ignoreAggression = true;
+								}
 							}
-						}
 				
-					}
-					else
-					{					
-						foreach (var crew in PLAYER.currentGame.team.crew)
-						{
-							if (crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+						}
+						else
+						{					
+							foreach (var crew in PLAYER.currentGame.team.crew)
 							{
-								crew.team.focus = ship2.id;
-								crew.team.destination = default(Vector2);
-								crew.team.goalType = ConsoleGoalType.kill_target;
-								//crew.team.goalType = ConsoleGoalType.kill_enemies_escort;
-								crew.team.ignoreAggression = false;
+								if (crew?.currentCosm?.consoles != null && crew.currentCosm != PLAYER.currentShip.cosm && crew.currentCosm.consoles.Count > 0)
+								{
+									crew.team.focus = ship2.id;
+									crew.team.destination = default(Vector2);
+									crew.team.goalType = ConsoleGoalType.kill_target;
+									//crew.team.goalType = ConsoleGoalType.kill_enemies_escort;
+									crew.team.ignoreAggression = false;
+								}
 							}
 						}
 					}
@@ -2664,7 +2673,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(bool __result, ProceduralTaxiQuest __instance, Crew ___crewRef, DialogueSelectRev2 ___dialogue)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (__result)
 					{
@@ -2697,7 +2706,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Crew c, string ___targetName)
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (c.name == ___targetName)
 					{
@@ -2777,7 +2786,7 @@ namespace HarshWorld
 		public class TargetOverlay_Draw
 		{
 			[HarmonyPostfix]
-			private static void Postfix(TargetOverlay __instance, SpriteBatch spriteBatch, bool ___drawName, Vector2[] ___pointsTL, Vector2 ___center, int ___screenHeight, float ___secondPhase, bool ___nameReady, Vector2 ___bp_info_pos, Vector2 ___bp_speed_offset, Color ___col_speedText)
+			private static void Postfix(TargetOverlay __instance, SpriteBatch spriteBatch, bool ___drawName, Vector2[] ___pointsTL, Vector2[] ___pointsBL, Vector2 ___center, int ___screenHeight, float ___secondPhase, bool ___nameReady, Vector2 ___bp_info_pos, Vector2 ___bp_speed_offset, Color ___col_speedText, Vector2 ___massUnder)
 			{
 				Vector2 vector2 = SCREEN_MANAGER.FF10.MeasureString(HWReputationOptions.targetFaction);
 				var faction_pos = new Vector2(___center.X - vector2.X / 2f, -___pointsTL[2].Y + (float)___screenHeight - 20f);
@@ -2794,11 +2803,10 @@ namespace HarshWorld
 					}
 				}
 				//drawing help info
-				Vector2 targetinfosize = SCREEN_MANAGER.FF10.MeasureString(HWReputationOptions.targetFaction);
-				var targetinfo_pos = new Vector2(___center.X - targetinfosize.X / 2f, -___pointsTL[2].Y + (float)___screenHeight + 175f);
+				Vector2 targetinfosize = SCREEN_MANAGER.FF10.MeasureString("[MB3] Ally target");
+				var targetinfo_pos = new Vector2(___center.X - targetinfosize.X / 2f - 3f, -(MathHelper.Lerp(___pointsBL[3].Y, ___pointsTL[3].Y, 0)) + (float)___screenHeight + 5f);		
 				spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, SamplerState.PointClamp, null, null, null, null);
 				spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Ally target", targetinfo_pos, ___col_speedText);
-				//spriteBatch.DrawString(SCREEN_MANAGER.FF10, "[MB3] Ally target", ___bp_info_pos + ___bp_speed_offset + new Vector2(0f, -92f), ___col_speedText);
 				spriteBatch.End();
 				
 
@@ -2812,7 +2820,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix()
 			{
-				if (MOD_DATA.loaded)
+				if (Globals.initialized)
 				{
 					if (PLAYER.currentShip.ownershipHistory.Count >= 2)
 					{
