@@ -2208,7 +2208,14 @@ namespace HarshWorld
 				PLAYER.currentWorld.returnShip(ship);
 			}
 			ship.removeThis = true;
-			Globals.GlobalShipRemoveQueue.Enqueue(new Tuple<ulong, Point>(ship.id, ship.grid));
+			if (PLAYER.currentSession.grid != ship.grid || PLAYER.currentSession.allShips.ContainsKey(ship.id))
+			{
+				Globals.GlobalShipRemoveQueue.Enqueue(new Tuple<ulong, Point>(ship.id, ship.grid));
+			}
+			else
+			{
+				//ship.Dispose();
+			}
 		}
 		
 		private async Task SpawnWaveAsync(Tuple<Wave, List<String>> wave, BattleSession session, Vector2 spawnPos, bool isDefensiveWave)
@@ -2269,17 +2276,11 @@ namespace HarshWorld
 						}
 					}
 				}
-				if (!QuewedShipsToRecycle.IsEmpty)
+				Parallel.ForEach(QuewedShipsToRecycle, ship =>
 				{
-					while (QuewedShipsToRecycle.TryDequeue(out var ship))
-					{
-						try
-						{
-							await DespawnEnqueuedShipAsync(ship);
-						}
-						catch { }
-					}
-				}
+					DespawnEnqueuedShipAsync(ship).SafeFireAndForget();
+				});
+				QuewedShipsToRecycle = new ConcurrentQueue<Ship>();
 
 			});
 		}
@@ -2904,6 +2905,7 @@ namespace HarshWorld
 			{
 				this.interdictTimer = 0f;
 				bool flag2 = this.interdicting;
+				bool flag3 = false;
 				if (flag2)
 				{
 					foreach (Ship ship in PLAYER.currentSession.allShips.Values)
@@ -2911,17 +2913,18 @@ namespace HarshWorld
 						if (PLAYER.currentShip != null && ship.id == PLAYER.currentShip.id)
 						{
 							ship.Setinterrupted(false);
-							if (Vector2.DistanceSquared(this.interdictionSpot, ship.position) < 10000f * 10000f)
+							flag3 = Vector2.DistanceSquared(this.interdictionSpot, ship.position) < 10000f * 10000f;
+							if (flag3)
 							{	
 								if(HWCONFIG.GlobalDifficulty > 0)
 								{
 									ship.endBoost();
 									ship.Setinterrupted(true);
-									//ship.scoopMode = true;
 								}
 							}
 						}
 					}
+					if(flag3)
 					PARTICLE.systems[10].addParticle(new Vector3(this.interdictionSpot.X, this.interdictionSpot.Y, 0f), 0.38f, 0.3f, 0f, 40000f, 1f, 4, 4);
 				}
 			}
@@ -3155,6 +3158,8 @@ namespace HarshWorld
 								//this.SpawnWave(this.toSpawn, session, spawnPos, true);
 								this.SpawnWaveAsync(this.toSpawn, session, spawnPos, true).SafeFireAndForget();
 								this.wavesQueued -= 1;
+								this.rotation = RANDOM.randomRotation();
+								this.rotationMatrix = Matrix.CreateRotationZ(this.rotation);
 							}
 							this.currentWaveInterval = this.waveIntervalAverage + (float)RANDOM.getRandomNumber((double)(-(double)this.waveIntervalAverage * 0.1f), (double)(-(double)this.waveIntervalAverage * 0.1f));
 						}
