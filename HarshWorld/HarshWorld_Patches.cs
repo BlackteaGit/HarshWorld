@@ -1607,7 +1607,7 @@ namespace HarshWorld
 			{
 				checked
 				{
-					if (PROCESS_REGISTER.currentCosm.klaxonOverride == true)
+					if (PROCESS_REGISTER.currentCosm != null && PROCESS_REGISTER.currentCosm.klaxonOverride == true)
 					{
 						if (PLAYER.avatar.currentCosm != null && PLAYER.avatar.currentCosm.crew != null)
 						{
@@ -2175,7 +2175,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(ConsoleThought __instance, Ship ship)
 			{
-				if(__instance.owner.team.focus == PLAYER.currentShip.id)
+				if(PLAYER.currentShip != null && __instance.owner.team.focus == PLAYER.currentShip.id)
 				{
 					__instance.desiredDestination = new Vector2((float)((PLAYER.currentShip.grid.X - ship.grid.X) * 200000), (float)((PLAYER.currentShip.grid.Y - ship.grid.Y) * 200000));
 					__instance.desiredDestination += PLAYER.currentShip.position;
@@ -2183,7 +2183,20 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(ConsoleThought), "navUpdate")] // AI for ally escorting player
+		/*
+		[HarmonyPatch(typeof(ShipAIManager), "stepAI")] // debuging AI
+		public class ShipAIManager_stepAI
+		{
+
+			[HarmonyPrefix]
+			private static void Prefix()
+			{
+				CONFIG.debugAI = true;
+			}
+		}
+		*/
+
+		[HarmonyPatch(typeof(ConsoleThought), "navUpdate")] // AI for ally escorting player, fixing AI bug
 		public class ConsoleThought_navUpdate
 		{
 			/*
@@ -2192,6 +2205,210 @@ namespace HarshWorld
 			ref float ___engagementTimer, ref ulong ___lastCheckOnHP, ref float ___alternateActionTimer, ref bool ___dronesOut, ref float ___errorRefresh, ref float ___beamErrorRefresh, ref float ___pathfidingUpdateTimer, ref float ___navigationTimer,
 			Ship ___aimTarget)
 			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+			if (__instance.state == ConsoleState.running) // bug fixing
+			{
+					___assesmentTimer += elapsed;
+					if (___assesmentTimer > 60f)
+					{
+						___assesmentTimer = 0f;
+						if (console != null)
+						{
+							console.ammoConservation = true;
+						}
+						__instance.assessed = false;
+						if (__instance.owner.team != null && __instance.owner.team.goalType != __instance.goalType)
+						{
+							__instance.goalType = __instance.owner.team.goalType;
+							__instance.state = ConsoleState.idle;
+						}
+						if (ship.dockingActive && ___closeAirlockCountdown < -1f)
+						{
+							___closeAirlockCountdown = 120f;
+						}
+					}
+					___engagementTimer += elapsed;
+					if (___engagementTimer > 5f)
+					{
+						___engagementTimer = 0f;
+						ulong num = ship.checkMassFast();
+						if (Math.Abs((long)(num - ___lastCheckOnHP)) >= 300L)
+						{
+							var args = new object[] { ship, console };
+							typeof(ConsoleThought).GetMethod("ReassesEngagement", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console) }, null).Invoke(__instance, args);
+							//__instance.ReassesEngagement(ship, console);
+							___lastCheckOnHP = num;
+						}
+					}
+					if (___closeAirlockCountdown > 0f && __instance.owner.faction != 2UL && session.GetType() != typeof(BattleSessionSC))
+					{
+						___closeAirlockCountdown -= elapsed;
+						if (___closeAirlockCountdown <= 0f)
+						{
+							___closeAirlockCountdown = -100f;
+							ship.toggleDocking(false);
+						}
+					}
+					else if (__instance.owner.faction == 2UL && session.GetType() != typeof(BattleSessionSC))
+					{
+						ship.toggleDocking(true);
+					}
+					var arg = new object[] { ship, console, true };
+					var assessed = (bool)typeof(ConsoleThought).GetMethod("handleInteriorAlert", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console), typeof(Boolean) }, null).Invoke(__instance, arg);
+					//if (!__instance.assessed && __instance.assesShip(ship, console, true))
+					if (!__instance.assessed && assessed)
+					{
+						__instance.state = ConsoleState.idle;
+					}
+					CrewInteriorAlert alert;
+					while (interiorAlerts.TryDequeue(out alert))
+					{
+						//__instance.handleInteriorAlert(alert, ship);
+						var args = new object[] { alert, ship };
+						typeof(ConsoleThought).GetMethod("handleInteriorAlert", flags, null, new Type[] { typeof(CrewInteriorAlert), typeof(Ship) }, null).Invoke(__instance, args);
+
+					}
+					var args2 = new object[] { session, ship, console, elapsed };
+					typeof(ConsoleThought).GetMethod("UpdateCombatState", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float) }, null).Invoke(__instance, args2);
+					//__instance.UpdateCombatState(session, ship, console, elapsed);
+					if (___alternateActionTimer > 100f)
+					{
+						___alternateActionTimer = 0f;
+						__instance.state = ConsoleState.idle;
+						___dronesOut = false;
+					}
+					ship.throttle = 0.7f;
+					___errorRefresh += elapsed;
+					if (___errorRefresh >= 0.9f)
+					{
+						___errorRefresh = (float)(RANDOM.NextDouble() * 0.1);
+						__instance.newError = true;
+					}
+					___beamErrorRefresh += elapsed;
+					if (___beamErrorRefresh >= 6f)
+					{
+						___beamErrorRefresh = (float)(RANDOM.NextDouble() * 1.0);
+						__instance.newBeamError = true;
+					}
+					___alternateActionTimer += elapsed;
+					___pathfidingUpdateTimer += elapsed;
+					___navigationTimer += elapsed;
+					var args3 = new object[] { session, ship, console, elapsed };
+					typeof(ConsoleThought).GetMethod("updateTargetsAndAggro", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float) }, null).Invoke(__instance, args3);
+					//__instance.updateTargetsAndAggro(session, ship, console, elapsed);
+					if (__instance.target != null)
+					{
+						if (__instance.target.faction == CONFIG.deadShipFaction)
+						{
+							__instance.target = null;
+							ship.aggroTarget = 0UL;
+						}
+						else
+						{
+							ship.aggroTarget = __instance.target.id;
+						}
+					}
+					else
+					{
+						ship.aggroTarget = 0UL;
+					}
+					if (___aimTarget != null && ___aimTarget.faction == CONFIG.deadShipFaction)
+					{
+						___aimTarget = null;
+					}
+
+					//bugged case
+					float num3 = Vector2.Distance(ship.position, this.desiredDestination);
+					if (this.AreEnemiesInAggroRange(ship, console) && num3 > ship.navRadius)
+					{
+						float num4 = this.CalculateCombatDistance(ship);
+						num3 = float.PositiveInfinity;
+						if (this.target != null)
+						{
+							num3 = (this.target.position - ship.position).Length();
+						}
+						this.moveUpdateData.Init();
+						this.moveUpdateData.bInDesiredRange = (num3 <= num4);
+						this.moveUpdateData.PathEnd = this.desiredDestination;
+						num3 = this.UpdateActualDestination(session, ship, num3);
+						if (this.pathfidingUpdateTimer > ConsoleThought.navigationUpdatePeriod)
+						{
+							this.pathfidingUpdateTimer = 0f;
+							this.navigationTimer = 0f;
+							this.UpdatePathfinding(session, ship, console, elapsed);
+						}
+						if (this.navigationTimer > ConsoleThought.navigationUpdatePeriod / 3f)
+						{
+							this.navigationTimer = 0f;
+							this.updateNavigationPath(session, ship, console, false);
+						}
+						ship.throttle = 0.99f;
+						bool flag2 = !session.LineTrace(ship.position, this.target.position); //this.target needs null check!
+						ship.velocity.Length();
+						Vector2 vector3 = this.actualDestination - ship.position;
+						vector3.Normalize();
+						Vector2 vector4 = ConsoleThought.calculateAvoidanceVector(ship);
+						float scaleFactor3 = Math.Min(vector3.Length(), 50f);
+						Vector2 worldDir2 = Vector2.Normalize(vector3) * scaleFactor3;
+						float num5 = Vector2.Dot(Vector2.Normalize(ship.velocity), vector3);
+						float scaleFactor4 = 1f - Math.Max(0.3f, num5);
+						if (this.moveUpdateData.bInDesiredRange && flag2)
+						{
+							ship.throttle = 0.99f;
+							ship.strafeMove(Vector2.Zero);
+							ship.aimMove(this.actualDestination);
+						}
+						else
+						{
+							ship.throttle = Math.Max(0.5f, (1f - vector4.Length()) * ship.throttle);
+							ship.aimMove(this.actualDestination);
+							if (num5 < 0.8f)
+							{
+								worldDir2 = 0.5f * -Vector2.Normalize(ship.velocity) * scaleFactor4;
+							}
+							else
+							{
+								worldDir2 = Vector2.Zero;
+							}
+							ship.strafeMove(worldDir2);
+						}
+						if (vector4 != Vector2.Zero)
+						{
+							ship.throttle = 0.5f;
+							if (flag2)
+							{
+								ship.throttle = 0.8f;
+							}
+							else if (this.moveUpdateData.bIsOnPath || this.moveUpdateData.bCanSeeDestination)
+							{
+								ship.throttle = 0.99f;
+								vector4 *= 0.3f;
+							}
+							if (num5 < 0.8f && (!this.moveUpdateData.bInDesiredRange || !flag2))
+							{
+								ship.strafeMove(-(Vector2.Normalize(ship.velocity) * scaleFactor4) + vector4);
+							}
+							else
+							{
+								ship.strafeMove(vector4);
+							}
+						}
+						this.FiringActions(session, ship, console, elapsed, true, true, true);
+						return false;
+					}
+					if (this.AreEnemiesInAggroRange(ship, console))
+					{
+						this.desiredDestination = this.GetRunAwayLoc(session, ship, console);
+						return false;
+					}
+					console.crew.goalCompleted();
+					console.crew = null;
+					this.state = ConsoleState.idle;
+					this.LeaveCombat();
+					return false;
+				}
+
+				//changing escort AI
 				if (__instance.owner.team.focus == PLAYER.currentShip.id && __instance.state == ConsoleState.escorting)
 				{
 					___assesmentTimer += elapsed;
@@ -2220,7 +2437,9 @@ namespace HarshWorld
 						ulong num = ship.checkMassFast();
 						if (Math.Abs((long)(num - ___lastCheckOnHP)) >= 300L)
 						{
-							__instance.ReassesEngagement(ship, console);
+							var args = new object[] { ship, console };
+							typeof(ConsoleThought).GetMethod("ReassesEngagement", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console) }, null).Invoke(__instance, args);
+							//__instance.ReassesEngagement(ship, console);
 							___lastCheckOnHP = num;
 						}
 					}
@@ -2237,16 +2456,24 @@ namespace HarshWorld
 					{
 						ship.toggleDocking(true);
 					}
-					if (!__instance.assessed && __instance.assesShip(ship, console, true))
+					var arg = new object[] { ship, console, true };
+					var assessed = (bool)typeof(ConsoleThought).GetMethod("handleInteriorAlert", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console), typeof(Boolean) }, null).Invoke(__instance, arg);
+					//if (!__instance.assessed && __instance.assesShip(ship, console, true))
+					if (!__instance.assessed && assessed)
 					{
 						__instance.state = ConsoleState.idle;
 					}
 					CrewInteriorAlert alert;
 					while (interiorAlerts.TryDequeue(out alert))
 					{
-						__instance.handleInteriorAlert(alert, ship);
+						//__instance.handleInteriorAlert(alert, ship);
+						var args = new object[] { alert, ship };
+						typeof(ConsoleThought).GetMethod("handleInteriorAlert", flags, null, new Type[] { typeof(CrewInteriorAlert), typeof(Ship) }, null).Invoke(__instance, args);
+
 					}
-					__instance.UpdateCombatState(session, ship, console, elapsed);
+					var args2 = new object[] { session, ship, console, elapsed };
+					typeof(ConsoleThought).GetMethod("UpdateCombatState", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float) }, null).Invoke(__instance, args2);
+					//__instance.UpdateCombatState(session, ship, console, elapsed);
 					if (___alternateActionTimer > 100f)
 					{
 						___alternateActionTimer = 0f;
@@ -2269,7 +2496,9 @@ namespace HarshWorld
 					___alternateActionTimer += elapsed;
 					___pathfidingUpdateTimer += elapsed;
 					___navigationTimer += elapsed;
-					__instance.updateTargetsAndAggro(session, ship, console, elapsed);
+					var args3 = new object[] { session, ship, console, elapsed };
+					typeof(ConsoleThought).GetMethod("updateTargetsAndAggro", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float) }, null).Invoke(__instance, args3);
+					//__instance.updateTargetsAndAggro(session, ship, console, elapsed);
 					if (__instance.target != null)
 					{
 						if (__instance.target.faction == CONFIG.deadShipFaction)
@@ -2290,6 +2519,7 @@ namespace HarshWorld
 					{
 						___aimTarget = null;
 					}
+
 					// Escorting AI
 
 					__instance.target = null;
@@ -2412,110 +2642,115 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(ConsoleThought __instance, ConcurrentQueue<CrewInteriorAlert> interiorAlerts, BattleSession session, Ship ship, CoOpSpRpG.Console console, float elapsed, ref Vector2 ___desiredTargetOffset)
 			{
-
-				if (__instance.state == ConsoleState.attacking || __instance.state == ConsoleState.running)
+				if (session != null && __instance.owner?.currentCosm != null)
 				{
-					if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
+					if (__instance.state == ConsoleState.attacking || __instance.state == ConsoleState.running)
 					{
-						if (session.allShips.ContainsKey(PLAYER.currentShip.id))
+						if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
 						{
-							if(__instance.owner.team.ignoreAggression == true)
+							if (session.allShips.ContainsKey(PLAYER.currentShip.id))
 							{
-								__instance.state = ConsoleState.escorting;
-								__instance.goalType = ConsoleGoalType.escort;
-								__instance.owner.team.focus = PLAYER.currentShip.id;
-							}
-							if (ship.boostStage >= 1 &&
-							Vector2.DistanceSquared(PLAYER.currentShip.position, ship.position) <
-							((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView) * ((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView)
-							)
-							{
-								if(__instance.owner.team.ignoreAggression == false)
-								{ 
-									ship.endBoost();
+								if (__instance.owner.team.ignoreAggression == true)
+								{
+									__instance.state = ConsoleState.escorting;
+									__instance.goalType = ConsoleGoalType.escort;
+									__instance.owner.team.focus = PLAYER.currentShip.id;
+								}
+								if (ship.boostStage >= 1 &&
+								Vector2.DistanceSquared(PLAYER.currentShip.position, ship.position) <
+								((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView) * ((PLAYER.currentShip.signitureRadius + (ship.scanRange / 1000f)) * PLAYER.currentShip.tempVis * ship.tempView)
+								)
+								{
+									if (__instance.owner.team.ignoreAggression == false)
+									{
+										ship.endBoost();
+
+									}
 
 								}
-
-							}
-							else if(ship.boostStage >= 1 || (PLAYER.currentShip.boostStage >= 1 && ship.boostStage < 1))
-							{
-								__instance.state = ConsoleState.escorting;
-								__instance.goalType = ConsoleGoalType.escort;
-								__instance.owner.team.focus = PLAYER.currentShip.id;
-								__instance.owner.team.ignoreAggression = true;
+								else if (ship.boostStage >= 1 || (PLAYER.currentShip.boostStage >= 1 && ship.boostStage < 1))
+								{
+									__instance.state = ConsoleState.escorting;
+									__instance.goalType = ConsoleGoalType.escort;
+									__instance.owner.team.focus = PLAYER.currentShip.id;
+									__instance.owner.team.ignoreAggression = true;
+								}
 							}
 						}
 					}
-				}
 
-				if (__instance.state == ConsoleState.escorting || __instance.state == ConsoleState.idle)
-				{
-					if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
+					if (__instance.state == ConsoleState.escorting || __instance.state == ConsoleState.idle)
 					{
-						if (__instance.owner.team.ignoreAggression == false)
+						if (__instance.owner.team != null && __instance.owner.faction == 2UL && PLAYER.currentShip != null && __instance.owner.currentCosm != PLAYER.currentShip.cosm)
 						{
-							__instance.goalType = ConsoleGoalType.kill_enemies_escort;
-							//__instance.goalType = ConsoleGoalType.kill_target
+							if (__instance.owner.team.ignoreAggression == false)
+							{
+								__instance.goalType = ConsoleGoalType.kill_enemies_escort;
+								//__instance.goalType = ConsoleGoalType.kill_target
+							}
+							else if (__instance.owner.team.focus != PLAYER.currentShip.id)
+							{
+								__instance.owner.team.focus = PLAYER.currentShip.id;
+							}
+							if (session.allShips.ContainsKey(__instance.owner.team.focus))
+							{
+								if (__instance.owner.team.focus != PLAYER.currentShip.id && (session.allShips[__instance.owner.team.focus].faction == ulong.MaxValue || (session.allShips[__instance.owner.team.focus].cosm?.crew?.Values?.First()?.team?.threats != null && !session.allShips[__instance.owner.team.focus].cosm.crew.Values.First().team.threats.Contains(2UL))))
+								{
+									__instance.owner.team.focus = PLAYER.currentShip.id;
+								}
+								if (session.allShips[__instance.owner.team.focus].boostStage >= 1 && ship.boostStage < 1)// && ship.engineEnergy > 0)
+								{
+									ship.startBoost();
+									__instance.owner.team.ignoreAggression = true;
+								}
+								if (session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1 && Vector2.DistanceSquared(session.allShips[__instance.owner.team.focus].position, ship.position) <
+								(ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView
+								*
+								((ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView)
+								)
+								{
+									ship.endBoost();
+								}
+							}
+							else if (!session.allShips.ContainsKey(PLAYER.currentShip.id) && (__instance.owner.team.focus == PLAYER.currentShip.id || __instance.owner.faction == 2UL))
+							{
+								if (ship.boostStage < 1)
+								{
+									ship.startBoost();
+									__instance.owner.team.ignoreAggression = true;
+								}
+								if (PLAYER.currentShip.boostStage >= 1 && ship.boostStage >= 1)
+								{
+									if (!PLAYER.currentShip.GetConvoy().ContainsKey(ship.id))
+									{
+										PLAYER.currentShip.GetConvoy().Add(ship.id, ship.grid);
+									}
+									else
+									{
+										PLAYER.currentShip.GetConvoy()[ship.id] = ship.grid;
+									}
+								}
+								if (PLAYER.currentShip.boostStage >= 1 && ship.boostStage >= 1)
+								{
+									__instance.desiredDestination = new Vector2((float)((PLAYER.currentShip.grid.X - ship.grid.X) * 200000), (float)((PLAYER.currentShip.grid.Y - ship.grid.Y) * 200000));
+									__instance.desiredDestination += PLAYER.currentShip.position;
+								}
+
+							}
+
 						}
-						else if (__instance.owner.team.focus != PLAYER.currentShip.id)
+					}
+					else if (PLAYER.currentShip != null && __instance.owner.faction == 2UL && __instance.state != ConsoleState.escorting && !session.allShips.ContainsKey(PLAYER.currentShip.id))
+					{
+						//ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
+						__instance.state = ConsoleState.escorting;
+						__instance.goalType = ConsoleGoalType.escort;
+						if (__instance.owner.team != null)
 						{
 							__instance.owner.team.focus = PLAYER.currentShip.id;
+							__instance.owner.team.ignoreAggression = true;
 						}
-						if (session.allShips.ContainsKey(__instance.owner.team.focus))
-						{
-							if (__instance.owner.team.focus != PLAYER.currentShip.id && (session.allShips[__instance.owner.team.focus].faction == ulong.MaxValue || (session.allShips[__instance.owner.team.focus].cosm?.crew?.Values?.First()?.team != null && !session.allShips[__instance.owner.team.focus].cosm.crew.Values.First().team.threats.Contains(2UL))))
-							{
-								__instance.owner.team.focus = PLAYER.currentShip.id;
-							}
-							if (session.allShips[__instance.owner.team.focus].boostStage >= 1 && ship.boostStage < 1)// && ship.engineEnergy > 0)
-							{
-								ship.startBoost();
-								__instance.owner.team.ignoreAggression = true;
-							}
-							if (session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1 && Vector2.DistanceSquared(session.allShips[__instance.owner.team.focus].position, ship.position) < 
-							(ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView
-							* 
-							((ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView)
-							)
-							{
-								ship.endBoost();
-							}
-						}
-						else if (!session.allShips.ContainsKey(PLAYER.currentShip.id) && (__instance.owner.team.focus == PLAYER.currentShip.id || __instance.owner.faction == 2UL ))
-						{
-							if(ship.boostStage < 1)
-							{
-								ship.startBoost();
-								__instance.owner.team.ignoreAggression = true;
-							}
-							if (PLAYER.currentShip.boostStage >= 1 && ship.boostStage >= 1)
-							{
-								if(!PLAYER.currentShip.GetConvoy().ContainsKey(ship.id))
-								{
-									PLAYER.currentShip.GetConvoy().Add(ship.id, ship.grid);
-								}
-								else
-								{
-									PLAYER.currentShip.GetConvoy()[ship.id] = ship.grid;
-								}
-							}
-							if (PLAYER.currentShip.boostStage >= 1 && ship.boostStage >= 1)
-							{
-								__instance.desiredDestination = new Vector2((float)((PLAYER.currentShip.grid.X - ship.grid.X) * 200000), (float)((PLAYER.currentShip.grid.Y - ship.grid.Y) * 200000));
-								__instance.desiredDestination += PLAYER.currentShip.position;
-							}
-
-						}
-
 					}
-				}
-				else if (__instance.owner.faction == 2UL && __instance.state != ConsoleState.escorting && !session.allShips.ContainsKey(PLAYER.currentShip.id))
-				{
-					//ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
-					__instance.state = ConsoleState.escorting;
-					__instance.goalType = ConsoleGoalType.escort;
-					__instance.owner.team.focus = PLAYER.currentShip.id;
-					__instance.owner.team.ignoreAggression = true;
 				}
 			}
 		}
@@ -2528,7 +2763,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Ship __instance)
 			{
-				if (__instance.id == PLAYER.currentShip.id)
+				if (PLAYER.currentShip != null && __instance.id == PLAYER.currentShip.id)
 				{			
 					try
 					{
