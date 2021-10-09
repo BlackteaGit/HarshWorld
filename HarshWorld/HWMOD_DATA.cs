@@ -124,7 +124,7 @@ namespace HarshWorld
 						}
 					}
 				}
-				if (Globals.Interruptions != null && MOD_DATA.modCon != null)
+				if (Globals.Interruptions != null && MOD_DATA.modCon != null) //saving interruptions
 				{
 					for (int i = 0; i < Globals.Interruptions.Count(); i++)
 					{

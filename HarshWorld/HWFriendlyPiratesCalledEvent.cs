@@ -81,7 +81,7 @@ namespace HarshWorld
 			}
 			return false;
 		}
-
+		/*
 		public static bool canBuildShip()
 		{
 			var hulls = CHARACTER_DATA.unlockedHulls();
@@ -116,7 +116,7 @@ namespace HarshWorld
 			}
 			return true;
 		}
-
+		*/
 		public static List<InventoryItem> getRandomScrapLoot()
 		{
 			int quantity = Squirrel3RNG.Next(0, 4);

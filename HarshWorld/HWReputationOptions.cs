@@ -106,11 +106,9 @@ namespace HarshWorld
 						var shipid = sessionships[i];
 						if (PLAYER.currentSession.allShips[shipid] != PLAYER.currentShip && PLAYER.currentSession.allShips[shipid].cosm?.crew.FirstOrDefault().Value?.team?.threats != null && PLAYER.currentSession.allShips[shipid].faction == ___representative.faction && PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Contains(2UL) && Vector2.DistanceSquared(PLAYER.currentSession.allShips[shipid].position, ___representative.currentCosm.ship.position) <= CONFIG.minViewDist * CONFIG.minViewDist)
 						{
-							PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Remove(2UL);	
-							var goaltostore = PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.goalType;
-							PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.goalType = ConsoleGoalType.none;
+							PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.threats.Remove(2UL);
 							PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.focus = PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.ownedShip;
-							PLAYER.currentSession.allShips[shipid].cosm.crew.First().Value.team.goalType = goaltostore;
+							PLAYER.currentSession.allShips[shipid].cosm.crew.Values.ToList().ForEach(e => e.conThoughts.SetGunnerIdle());
 						}
 					}
 				}

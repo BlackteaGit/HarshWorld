@@ -133,18 +133,26 @@ namespace HarshWorld
 				{
 					if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out Ship ship))
 					{
-						if (ship.id != PLAYER.currentShip.id && ship.cosm?.crew != null)
+
+						if (PLAYER.currentShip != null && ship.id == PLAYER.currentShip.id)
 						{
-							for(int c = 0; c < ship.cosm.crew.Values.ToList().Count; c++ )
+
+						}
+						else
+						{
+							if (ship.cosm?.crew != null)
 							{
-								if ( hasStolenResources(ship.cosm.crew.Values.ToList()[c]) || stealShip)
+								for (int c = 0; c < ship.cosm.crew.Values.ToList().Count; c++)
 								{
-									//win condition for besiegers, they consider looting player's homebase a success and no longer profitable and fly away
-									leave = true;
-									goto finished;
+									if (hasStolenResources(ship.cosm.crew.Values.ToList()[c]) || stealShip)
+									{
+										//win condition for besiegers, they consider looting player's homebase a success and no longer profitable and fly away
+										leave = true;
+										goto finished;
+									}
 								}
-                            }
-							
+
+							}
 						}
 					}
 				}

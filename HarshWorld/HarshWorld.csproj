@@ -52,8 +52,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WaywardExtensions.dll</HintPath>
     </Reference>
-    <Reference Include="WTF, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="WTF">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WTF.exe</HintPath>
     </Reference>
     <Reference Include="WTFModLoader, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">

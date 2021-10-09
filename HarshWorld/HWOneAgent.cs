@@ -56,8 +56,8 @@ namespace HarshWorld
 			};
 
 			dialogueTree.text = "Why am I not surprised? You have been blowing up ships left and right like a jackass...";
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.eventflags[GlobalFlag.PiratesCalledForShip] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !HWFriendlyPiratesCalledEvent.canBuildShip());
-			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.eventflags[GlobalFlag.PiratesCalledForShip] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !HWFriendlyPiratesCalledEvent.canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree, () => !Globals.eventflags[GlobalFlag.PiratesCalledForShip] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !Globals.canBuildShip());
+			tree.addOption("I lost my ship and I am out of materials to build a new one.", dialogueTree6, () => Globals.eventflags[GlobalFlag.PiratesCalledForShip] && (PLAYER.currentShip.docked == null || PLAYER.currentShip.docked.Count < 1) && !Globals.canBuildShip());
 			dialogueTree.addOption("Nevermind, I will solve this myself.", tree);
 
 			dialogueTree2.text = "Go to the shop, get yourself a mining tool and harvest some minerals from the crystal farm.";

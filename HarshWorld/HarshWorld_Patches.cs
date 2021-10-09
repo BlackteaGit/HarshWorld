@@ -46,7 +46,7 @@ namespace HarshWorld
 			private static void Prefix(WorldRev3 __instance, List<ulong> ___flotillas)
 			{
 			
-				if(Globals.initialized)
+				if(Globals.initialized && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 				{
 				//HWCONFIG.InterruptionFrequency = 250000;
 					if (Globals.Interruptions != null && Globals.Interruptions.Count() > 0 && HWCONFIG.InterruptionFrequency > 0)
@@ -1259,10 +1259,15 @@ namespace HarshWorld
 				int difficulty;
 				int shipsUnlocked;
 				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
-				{ 
+				{
 
-				difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-				shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+					//difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+					difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+					shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+					{
+						difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+					}
 				}
 				else
 				{
@@ -1273,8 +1278,8 @@ namespace HarshWorld
 				float armorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4), 40);
 				bool flag = gunQuality <= 0f;
 				bool flag2 = armorQuality > 0f;
-				gunQuality = MathHelper.Clamp(gunQuality, 10f, (float)Math.Max(shipsUnlocked + 10, difficulty * 4));
-				armorQuality = MathHelper.Clamp(armorQuality, 10f, (float)Math.Max(shipsUnlocked + 10, difficulty * 4));
+				gunQuality = MathHelper.Clamp(gunQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
+				armorQuality = MathHelper.Clamp(armorQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
 				gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
 				armorQuality = MathHelper.Clamp(armorQuality, 10f, 39.9f);
 				if (flag)
@@ -1303,15 +1308,20 @@ namespace HarshWorld
 			{
 				if (__instance.state != CrewState.dead)
 				{
-					int cost = HW_CHARACTER_DATA_Extensions.mostExpensiveDesign();
+					//int cost = HW_CHARACTER_DATA_Extensions.mostExpensiveDesign();
+					int cost = Globals.mostExpensiveBuildableDesign();
 					int difficulty = Globals.DifficultyFromCost(cost);
+					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+					{
+						difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+					}
 					int shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 					float MygunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4), 40);
 					float MyarmorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4), 40);
 					bool flag = MygunQuality <= 0f;
 					bool flag2 = MyarmorQuality > 0f;
-					MygunQuality = MathHelper.Clamp(MygunQuality, 10f, (float)Math.Max(shipsUnlocked + 10, difficulty * 4));
-					MyarmorQuality = MathHelper.Clamp(MyarmorQuality, 10f, (float)Math.Max(shipsUnlocked + 10, difficulty * 4));
+					MygunQuality = MathHelper.Clamp(MygunQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
+					MyarmorQuality = MathHelper.Clamp(MyarmorQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
 					gunQuality = Math.Max(gunQuality, MygunQuality); // only modify default input if it is lower quality then scaled
 					armorQuality = Math.Max(armorQuality, MyarmorQuality); // only modify default input if it is lower quality then scaled
 					gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
@@ -3230,7 +3240,6 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(ref bool __state, VNavigationRev3 __instance, Vector2 ___mousePos)
 			{
-				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
 				if (SCREEN_MANAGER.toolTip != null)
 				{
 					HWSCREEN_MANAGER.toolTip = null;

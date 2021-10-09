@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HarshWorld
 {
@@ -46,12 +47,14 @@ namespace HarshWorld
 		public static Dictionary<GlobalDouble, double> globaldoubles = new Dictionary<GlobalDouble, double>();
 		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
 		public static Dictionary<ulong, Tuple<string, GlobalInt>> globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
-		public static int difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+		//public static int difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+		public static int difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 		public static int shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 		public static bool initialized;
 		public static void Initialize()
 		{
-			difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			//difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 			shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
 			Interruptionbag = new Dictionary<string, Interruption>();
@@ -122,6 +125,68 @@ namespace HarshWorld
 				difficulty = 10;
 
 			return difficulty;
+		}
+
+		public static bool canBuildShip()
+		{
+			var hulls = CHARACTER_DATA.unlockedHulls();
+			foreach (string text in hulls)
+			{
+				var selectedDesigns = CHARACTER_DATA.storedDesigns(text);
+				foreach (string design in selectedDesigns)
+				{
+					var selectedCost = TILEBAG.designCost(CHARACTER_DATA.getBot(text, design));
+					if (canAffordShip(selectedCost))
+					{
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		public static int mostExpensiveBuildableDesign()
+		{
+			var hulls = CHARACTER_DATA.unlockedHulls();
+			List<int> affordable = new List<int>();
+			foreach (string text in hulls)
+			{
+				var selectedDesigns = HW_CHARACTER_DATA_Extensions.storedDesignsWithCost(text);
+				foreach (var design in selectedDesigns)
+				{
+					var selectedCost = TILEBAG.designCost(CHARACTER_DATA.getBot(text, design.Item1));
+					if (canAffordShip(selectedCost))
+					{
+						affordable.Add(design.Item2);
+					}
+				}
+			}
+			if (affordable.Count > 0)
+			{ 
+				return affordable.Max();
+			}
+			else
+			{ 
+				return 0;
+			}
+		}
+
+		private static bool canAffordShip(Dictionary<InventoryItemType, int> selectedCost)
+		{
+			if (PLAYER.debugMode)
+			{
+				return false;
+			}
+			foreach (InventoryItemType inventoryItemType in selectedCost.Keys)
+			{
+				int num = selectedCost[inventoryItemType];
+				long resource = CHARACTER_DATA.getResource(inventoryItemType);
+				if (resource < (long)num)
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 
 		public static Dictionary<string, int> getFactionRepDeeds(ulong faction)
@@ -200,7 +265,7 @@ namespace HarshWorld
 		public static int getAccumulatedReputation(ulong faction)
 		{
 			int accumulated = 0;
-			if (Globals.globalfactions.ContainsKey(faction))
+			if (PLAYER.currentGame != null && PLAYER.currentWorld != null && Globals.globalfactions.ContainsKey(faction))
 			{
 				foreach (var entry in Globals.getFactionRepDeeds(faction).Values)
 				{

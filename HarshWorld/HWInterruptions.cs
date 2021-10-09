@@ -242,6 +242,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.ambush_small_pirate_t1, interruptionTemplate); // 3 waves 5 ships Runner, Messager
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -288,6 +289,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.ambush_small_ssc_t1, interruptionTemplate); // 3 waves 7 ships Runner, Messager
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -308,6 +310,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.medium_circle, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.medium_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.medium_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.gold_medium_pirate_t1, interruptionTemplate); // 2 waves 6 ships Runner, Messager, Boulder, Vulture
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -327,6 +330,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.ithacit_small_ssc_t1, interruptionTemplate); // 2 waves 5 ships Messager, Runner
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -345,7 +349,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
-			interruptionTemplate.maxWaves = 2;
+			interruptionTemplate.maxWaves = 5;
 //needs testing
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.mo_iron_pirates_small_t1, interruptionTemplate); // initial wave 4 ships Hauler, Runner
 
@@ -422,6 +426,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.mo_gold_pirates_small_t1, interruptionTemplate);
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -449,7 +454,7 @@ namespace HarshWorld
 			}, 0.5f, ShufflePhrases(new List<List<string>> { GetRandomPirateInsults(Squirrel3RNG.Next(2)), GetRandomFightPhrases(Squirrel3RNG.Next(3, 7)) }));
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 1f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 1f);
-			interruptionTemplate.maxWaves = 2;
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.mo_ithacit_pirates_small_t1, interruptionTemplate);
 
 
@@ -472,6 +477,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.blood_pirates_t2, interruptionTemplate);  //
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -495,6 +501,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.blood_pirates_2_t2, interruptionTemplate);  //
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -520,6 +527,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.blood_pirates_3_t2, interruptionTemplate);  //
 
 			interruptionTemplate = new InterruptionTemplate();
@@ -543,6 +551,7 @@ namespace HarshWorld
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_cluster, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_crescent, 0.3f);
 			interruptionTemplate.configurations.Add(ElementSpawnerType.small_line, 0.3f);
+			interruptionTemplate.maxWaves = 5;
 			INTERRUPTION_BAG.AddTemplate(InterruptionType.blood_pirates_4_t2, interruptionTemplate);  //
 
 
@@ -1376,7 +1385,8 @@ namespace HarshWorld
 
 		public static InterruptionType GetRandomTemplate(ulong faction)
 		{
-			int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 			int difficulty = maxdifficulty;
 			int currentdifficulty;
 			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
@@ -1472,7 +1482,7 @@ namespace HarshWorld
 
 			if (faction == 4UL)
 			{
-				if (currentdifficulty <= 12)
+				if (currentdifficulty < 24)
 				{
 					switch (Squirrel3RNG.Next(5))
 					{
@@ -1496,7 +1506,7 @@ namespace HarshWorld
 							break;
 					}
 				}
-				if (currentdifficulty > 12)// && shipsUnlocked <= 20)
+				if (currentdifficulty >= 24)// && shipsUnlocked <= 20)
 				{
 					switch (Squirrel3RNG.Next(4))
 					{
@@ -1560,7 +1570,8 @@ namespace HarshWorld
 
 		public static InterruptionType GetRandomTemplate()
 		{
-			int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 			int difficulty = maxdifficulty;
 			int currentdifficulty;
 			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
@@ -1616,9 +1627,9 @@ namespace HarshWorld
 						break;
 				}
 			}
-			if (currentdifficulty > 12 && currentdifficulty <= 20)
+			if (currentdifficulty > 12 && currentdifficulty <= 24)
 			{
-				switch (Squirrel3RNG.Next(8))
+				switch (Squirrel3RNG.Next(4))
 				{
 					case 0:
 						result = InterruptionType.titanium_small_ssc_t2;
@@ -1632,27 +1643,14 @@ namespace HarshWorld
 					case 3:
 						result = InterruptionType.rhodium_medium_ssc_t2;
 						break;
-					case 4:
-						result = InterruptionType.blood_pirates_t2;
-						break;
-					case 5:
-						result = InterruptionType.blood_pirates_2_t2;
-						break;
-					case 6:
-						result = InterruptionType.blood_pirates_3_t2;
-						break;
-					case 7:
-						result = InterruptionType.blood_pirates_4_t2;
-						break;
-
 					default:
 						result = InterruptionType.titanium_small_ssc_t2;
 						break;
 				}
 			}
-			if (currentdifficulty > 20)
+			if (currentdifficulty > 24)
 			{
-				switch (Squirrel3RNG.Next(8))
+				switch (Squirrel3RNG.Next(12))
 				{
 					case 0:
 						result = InterruptionType.titanium_large_ssc_t25;
@@ -1678,6 +1676,20 @@ namespace HarshWorld
 					case 7:
 						result = InterruptionType.mo_gold_goliath_medium_ssc_t25;
 						break;
+					case 8:
+						result = InterruptionType.blood_pirates_t2;
+						break;
+					case 9:
+						result = InterruptionType.blood_pirates_2_t2;
+						break;
+					case 10:
+						result = InterruptionType.blood_pirates_3_t2;
+						break;
+					case 11:
+						result = InterruptionType.blood_pirates_4_t2;
+						break;
+
+
 					default:
 						result = InterruptionType.titanium_large_ssc_t25;
 						break;
@@ -1867,13 +1879,26 @@ namespace HarshWorld
 
 		private InterruptionTemplate AdjustDifficulty(InterruptionTemplate template)
 		{
-			int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 			int currentdifficulty = maxdifficulty;
 			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
 			{ 
 				currentdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
 			}
-
+			int shipstospawn = Math.Max(1, currentdifficulty / 3);
+			if (currentdifficulty == 5)
+			{
+				shipstospawn = 1 + Squirrel3RNG.Next(2);
+			}
+			if (currentdifficulty == 8)
+			{
+				shipstospawn = 2 + Squirrel3RNG.Next(2);
+			}
+			if (currentdifficulty == 10)
+			{
+				shipstospawn = 3 + Squirrel3RNG.Next(3);
+			}
 			/*
 			if(PLAYER.currentSession != null && PLAYER.currentSession.grid == this.grid)
 			{
@@ -1889,36 +1914,39 @@ namespace HarshWorld
 			if (template.initialWave != null && template.initialWave.Item1 != null)
 			{
 				List<int> temp = new List<int>();
-				if (currentdifficulty <= template.initialWave.Item1.shipIds.Count)
+				if (shipstospawn <= template.initialWave.Item1.shipIds.Count)
 				{
-					temp.AddRange(template.initialWave.Item1.shipIds.GetRange(0, currentdifficulty));
+					temp.AddRange(template.initialWave.Item1.shipIds.GetRange(0, shipstospawn));
 				}
 				else
 				{
 					temp.AddRange(template.initialWave.Item1.shipIds.GetRange(0, template.initialWave.Item1.shipIds.Count));
-					for(int i = 0; i < currentdifficulty - template.initialWave.Item1.shipIds.Count; i ++)
+					for(int i = 0; i < shipstospawn - template.initialWave.Item1.shipIds.Count; i ++)
 					{
 						temp.AddRange(template.initialWave.Item1.shipIds.GetRange(Squirrel3RNG.Next(template.initialWave.Item1.shipIds.Count), 1));
 					}
 				}
 				template.initialWave.Item1.shipIds = temp;
-				template.maxWaves = Math.Max(Math.Min(template.maxWaves, (int)Math.Ceiling((float)((currentdifficulty - 1) * HWCONFIG.GlobalDifficulty))), 1);
+				template.maxWaves = Math.Max(Math.Min(template.maxWaves, (int)Math.Ceiling((float)(((float)currentdifficulty / 2 - 1) * HWCONFIG.GlobalDifficulty))), 1);
 			}
 			else
 			{
-				template.maxWaves = Math.Max(Math.Min(template.maxWaves, (int)Math.Ceiling((float)(currentdifficulty * HWCONFIG.GlobalDifficulty))), 1);
+				var tempvawesvalue = (float)currentdifficulty / 2;
+				tempvawesvalue = tempvawesvalue * HWCONFIG.GlobalDifficulty;
+				int wavestospawn = (int)Math.Ceiling(tempvawesvalue);
+				template.maxWaves = Math.Max(Math.Min(template.maxWaves, wavestospawn), 1);
             }
 			for(int i = 0 ; i < template.shipWaves.Count; i++ )
 			{
 				List<int> temp = new List<int>();
-				if (currentdifficulty <= template.shipWaves.Keys.ToList()[i].shipIds.Count)
+				if (shipstospawn <= template.shipWaves.Keys.ToList()[i].shipIds.Count)
 				{
-					temp.AddRange(template.shipWaves.Keys.ToList()[i].shipIds.GetRange(0, currentdifficulty));
+					temp.AddRange(template.shipWaves.Keys.ToList()[i].shipIds.GetRange(0, shipstospawn));
 				}
 				else
 				{
 					temp.AddRange(template.shipWaves.Keys.ToList()[i].shipIds.GetRange(0, template.shipWaves.Keys.ToList()[i].shipIds.Count));
-					for (int j = 0; j < currentdifficulty - template.shipWaves.Keys.ToList()[i].shipIds.Count; j++)
+					for (int j = 0; j < shipstospawn - template.shipWaves.Keys.ToList()[i].shipIds.Count; j++)
 					{
 						temp.AddRange(template.shipWaves.Keys.ToList()[i].shipIds.GetRange(Squirrel3RNG.Next(template.shipWaves.Keys.ToList()[i].shipIds.Count), 1));
 					}
@@ -2913,7 +2941,7 @@ namespace HarshWorld
 						if (PLAYER.currentShip != null && ship.id == PLAYER.currentShip.id)
 						{
 							ship.Setinterrupted(false);
-							flag3 = Vector2.DistanceSquared(this.interdictionSpot, ship.position) < 10000f * 10000f;
+							flag3 = Vector2.DistanceSquared(this.interdictionSpot, ship.position) < 5000f * 5000f * 0.8f * Math.Max(HWCONFIG.GlobalDifficulty, 0.2f);
 							if (flag3)
 							{	
 								if(HWCONFIG.GlobalDifficulty > 0)
@@ -2925,7 +2953,7 @@ namespace HarshWorld
 						}
 					}
 					if(flag3)
-					PARTICLE.systems[10].addParticle(new Vector3(this.interdictionSpot.X, this.interdictionSpot.Y, 0f), 0.38f, 0.3f, 0f, 40000f, 1f, 4, 4);
+					PARTICLE.systems[10].addParticle(new Vector3(this.interdictionSpot.X, this.interdictionSpot.Y, 0f), 0.38f, 0.3f, 0f, 20000f * 0.8f * Math.Max(HWCONFIG.GlobalDifficulty, 0.2f), 1f, 4, 4);
 				}
 			}
 		}

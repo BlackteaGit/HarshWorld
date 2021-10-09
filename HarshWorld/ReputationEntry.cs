@@ -77,7 +77,7 @@ namespace HarshWorld
 
 		public override void mouseCheck(Rectangle mousePos, MouseAction mouseClick)
 		{
-			if (this.region.Intersects(mousePos) && this.isVisible)
+			if (this.region.Intersects(mousePos) && this.isVisible && PLAYER.currentGame != null && PLAYER.currentWorld != null)
 			{
 				SCREEN_MANAGER.toolTip = new ToolTip();
 				SCREEN_MANAGER.toolTip._position.X *= 2;
