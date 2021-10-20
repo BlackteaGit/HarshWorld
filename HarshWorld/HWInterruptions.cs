@@ -1386,12 +1386,12 @@ namespace HarshWorld
 		public static InterruptionType GetRandomTemplate(ulong faction)
 		{
 			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+			int maxdifficulty = Globals.mostExpensiveBuildableDesigndifficulty;
 			int difficulty = maxdifficulty;
 			int currentdifficulty;
-			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation && Globals.currentshipdifficulty > -1)
 			{
-				difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+				difficulty = Globals.currentshipdifficulty;
 			}
 			if(difficulty >= maxdifficulty)
 			{ 
@@ -1571,12 +1571,12 @@ namespace HarshWorld
 		public static InterruptionType GetRandomTemplate()
 		{
 			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+			int maxdifficulty = Globals.mostExpensiveBuildableDesigndifficulty;
 			int difficulty = maxdifficulty;
 			int currentdifficulty;
-			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation && Globals.currentshipdifficulty > -1)
 			{
-				difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+				difficulty = Globals.currentshipdifficulty;
 			}
 			if (difficulty >= maxdifficulty)
 			{
@@ -1880,11 +1880,11 @@ namespace HarshWorld
 		private InterruptionTemplate AdjustDifficulty(InterruptionTemplate template)
 		{
 			//int maxdifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-			int maxdifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+			int maxdifficulty = Globals.mostExpensiveBuildableDesigndifficulty;
 			int currentdifficulty = maxdifficulty;
-			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation && Globals.currentshipdifficulty > -1)
 			{ 
-				currentdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+				currentdifficulty = Globals.currentshipdifficulty;
 			}
 			int shipstospawn = Math.Max(1, currentdifficulty / 3);
 			if (currentdifficulty == 5)

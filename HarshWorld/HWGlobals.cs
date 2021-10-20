@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace HarshWorld
 {
-	public enum GlobalFlag : uint
+    public enum GlobalFlag : uint
 	{
 		PiratesCalledForShip,
 		PiratesCalledForShipHostile,
@@ -47,14 +47,24 @@ namespace HarshWorld
 		public static Dictionary<GlobalDouble, double> globaldoubles = new Dictionary<GlobalDouble, double>();
 		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
 		public static Dictionary<ulong, Tuple<string, GlobalInt>> globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
-		//public static int difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-		public static int difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+		public static int mostExpensiveDesigndifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+		public static int mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+		public static int currentshipdifficulty = -1;
 		public static int shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 		public static bool initialized;
 		public static void Initialize()
 		{
 			//difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-			difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+			mostExpensiveDesigndifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+			mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+			if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+			{
+				currentshipdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+			}
+			else
+			{
+				currentshipdifficulty = -1;
+			}
 			shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 			Interruptions = new InterruptionBasic[Math.Max(0, HWCONFIG.MaxInterruptions)];
 			Interruptionbag = new Dictionary<string, Interruption>();
@@ -356,11 +366,28 @@ namespace HarshWorld
 		}
 		public static void upscaleMonster(Monster m)
 		{
-			int shipsUnlocked;
+			int difficulty;
 			if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 			{
-				shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
-				float distance = 0;
+				difficulty = (int)Math.Round(MathHelper.Clamp(((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2 * HWCONFIG.GlobalDifficulty), 1f, 100f));
+				float distance;
+				float playerarmorquality = -2;
+				float playerweaponquality = -2;
+
+				if (PLAYER.avatar.heldArmor != null)
+					playerarmorquality = PLAYER.avatar.heldArmor.Quality;
+
+				if (PLAYER.avatar.heldItem != null && PLAYER.avatar.heldItem.GetType() == typeof(Gun))
+					playerweaponquality = (PLAYER.avatar.heldItem as Gun).Quality;
+
+				if (playerweaponquality > 1 && playerarmorquality > 1)
+				{
+					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2));
+				}
+				else
+				{
+					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1,playerarmorquality)));
+				}
 				if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
 				{
 					distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
@@ -372,8 +399,8 @@ namespace HarshWorld
 					distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
 				}
 				float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
-				shipsUnlocked = Math.Min(shipsUnlocked, shipsUnlocked /(int)Math.Max((multiplier / (Math.Max(multiplier, shipsUnlocked) / shipsUnlocked)), 1));
-				shipsUnlocked = Math.Min(HWCONFIG.MaxMonsterLevel, shipsUnlocked);
+				difficulty = Math.Min(difficulty, difficulty /(int)Math.Max((multiplier / (Math.Max(multiplier, difficulty) / difficulty)), 1));
+				difficulty = Math.Min(HWCONFIG.MaxMonsterLevel, difficulty);
 				//shipsUnlocked = 30; //for debugging
 
 				//int monsterHealthScaled = 100;
@@ -391,16 +418,16 @@ namespace HarshWorld
 
 				if(PLAYER.avatar.currentCosm?.monsters != null && PLAYER.avatar.currentCosm.monsters.Contains(m) && Squirrel3RNG.Next(PLAYER.avatar.currentCosm.monsters.Count) <= 10)
 				{ 
-				int points = shipsUnlocked * 4;
-				int healthpoints = Squirrel3RNG.Next(shipsUnlocked / 4, shipsUnlocked);
+				int points = difficulty * 4;
+				int healthpoints = Squirrel3RNG.Next(difficulty / 4, difficulty);
 				monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 20 * 1.5)));
-				shipsUnlocked = (points - healthpoints) / 4;
-				points = shipsUnlocked * 3;
-				int speedpoints = Squirrel3RNG.Next(shipsUnlocked / 3, shipsUnlocked);
+				difficulty = (points - healthpoints) / 4;
+				points = difficulty * 3;
+				int speedpoints = Squirrel3RNG.Next(difficulty / 3, difficulty);
 				monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 4)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 4) * 4))));
-				shipsUnlocked = (points - speedpoints) / 4;
-				points = shipsUnlocked * 2;
-				int damagepoints = Squirrel3RNG.Next(shipsUnlocked / 2, shipsUnlocked / 2 * 3);
+				difficulty = (points - speedpoints) / 4;
+				points = difficulty * 2;
+				int damagepoints = Squirrel3RNG.Next(difficulty / 2, difficulty / 2 * 3);
 				monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
 				points -= damagepoints;
 				monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 3), Math.Max(1, Convert.ToInt32(((float)points - 3) * 4)));

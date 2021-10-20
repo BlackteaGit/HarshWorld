@@ -13,21 +13,9 @@ using System.Data.SQLite;
 using System.IO;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-//using WTFModAdvanced;
 
 namespace HarshWorld
 {
-	/* test
-	public class HarshWorld_AdvancedPatches : IWTFModAdvanced
-	{
-		public ModLoadPriority Priority => ModLoadPriority.Low;
-		public void Initialize()
-		{
-			var IWTFModInstance = new HarshWorld_Patches();
-			IWTFModInstance.Initialize();
-		}
-	}
-	*/
 	public class HarshWorld_Patches : IWTFMod
 	{
 
@@ -78,7 +66,7 @@ namespace HarshWorld
 									var shipid = sessionships[i];
 									if (PLAYER.currentShip.id != shipid && PLAYER.currentSession.allShips[shipid].cosm != null && PLAYER.currentSession.allShips[shipid].cosm.alive && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipid].position) < ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView) * ((signature + (PLAYER.currentSession.allShips[shipid].scanRange / 1000f)) * PLAYER.currentShip.tempVis * PLAYER.currentSession.allShips[shipid].tempView)) //&& PLAYER.currentSession.allShips[shipid].faction != 2UL)
 									{
-										// random ambush, dependant on reputation
+										// random ambush, dependent on reputation
 										var spotedfaction = PLAYER.currentSession.allShips[shipid].faction;
 										var repmodifier = Globals.getAccumulatedReputation(spotedfaction) * 100;
 										var bountymodifier = Globals.globalints[GlobalInt.Bounty] * 10;
@@ -95,8 +83,9 @@ namespace HarshWorld
 												interrupted = true;
 											}
 										}
-										//cache? Th0se checks are expensive should not run with every update
+
 										// ambush if player has demanded goods in inventory
+										//cache? Those checks are expensive should not run with every update or game will freeze!
 										if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(200000 / Math.Min(HWCONFIG.InterruptionFrequency, 2000)), 2)) == 1 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
 										{
 											var demand = Globals.demand;
@@ -199,7 +188,7 @@ namespace HarshWorld
 							}
 
 							// spawn random ambush on traveling with Higgs drive
-							if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f)
+							if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f && CHARACTER_DATA.hasResearchExclusion(400712U))
 							{
 								if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
 								{
@@ -739,11 +728,32 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Monster __instance, int t) // scale monster stats
 			{
-				int shipsUnlocked;
+				int difficulty;
 				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 				{
-					shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+					//var shipsunlocked = CHARACTER_DATA.shipsUnlocked();
+					//var mostexpensivedesign = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+					//var mostExpensiveBuildableDesign = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+					difficulty = (int)Math.Round(MathHelper.Clamp(((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2 * HWCONFIG.GlobalDifficulty), 1f, 100f));
 					float distance = 0;
+					float playerarmorquality = -2;
+					float playerweaponquality = -2;
+
+					if (PLAYER.avatar.heldArmor != null)
+						playerarmorquality = PLAYER.avatar.heldArmor.Quality;
+
+					if (PLAYER.avatar.heldItem != null && PLAYER.avatar.heldItem.GetType() == typeof(Gun))
+						playerweaponquality = (PLAYER.avatar.heldItem as Gun).Quality;
+
+					if (playerweaponquality > 1 && playerarmorquality > 1)
+					{
+						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2));
+					}
+					else
+					{
+						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1, playerarmorquality)));
+					}
+
 					if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
 					{
 						distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
@@ -755,8 +765,8 @@ namespace HarshWorld
 						distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
 					}
 					float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
-					shipsUnlocked = Math.Min(shipsUnlocked, shipsUnlocked / (int)Math.Max((multiplier / (Math.Max(multiplier, shipsUnlocked) / shipsUnlocked)), 1));
-					shipsUnlocked = Math.Min(HWCONFIG.MaxMonsterLevel, shipsUnlocked);
+					difficulty = Math.Min(difficulty, difficulty / (int)Math.Max((multiplier / (Math.Max(multiplier, difficulty) / difficulty)), 1));
+					difficulty = Math.Min(HWCONFIG.MaxMonsterLevel, difficulty);
 					int monsterHealthScaled = 100;
 					float monsterSpeedScaled = 100f;
 					float monsterDetectRangeScaled = 400f;
@@ -764,16 +774,16 @@ namespace HarshWorld
 					float monsterAttackRangeScaled = 10f;
 					int monsterDamageScaled = 1;
 					int monsterThicknessScaled = 1;
-					int points = shipsUnlocked * 4;
-					int healthpoints = Squirrel3RNG.Next(shipsUnlocked / 4, shipsUnlocked);
+					int points = difficulty * 4;
+					int healthpoints = Squirrel3RNG.Next(difficulty / 4, difficulty);
 					monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 20 * 1.5)));
-					shipsUnlocked = (points - healthpoints) / 4;
-					points = shipsUnlocked * 3;
-					int speedpoints = Squirrel3RNG.Next(shipsUnlocked / 3, shipsUnlocked);
+					difficulty = (points - healthpoints) / 4;
+					points = difficulty * 3;
+					int speedpoints = Squirrel3RNG.Next(difficulty / 3, difficulty);
 					monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 4)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 4) * 4))));
-					shipsUnlocked = (points - speedpoints) / 4;
-					points = shipsUnlocked * 2;
-					int damagepoints = Squirrel3RNG.Next(shipsUnlocked / 2, shipsUnlocked / 2 * 3);
+					difficulty = (points - speedpoints) / 4;
+					points = difficulty * 2;
+					int damagepoints = Squirrel3RNG.Next(difficulty / 2, difficulty / 2 * 3);
 					monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
 					points -= damagepoints;
 					monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 3), Math.Max(1, Convert.ToInt32(((float)points - 3) * 4)));
@@ -855,352 +865,355 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Monster __instance, MicroCosm cosm)
 			{
-				if (__instance.animState == MonsterState.dying || __instance.dead)
+				if (Globals.initialized && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 				{
-					if (cosm != null && cosm.crew != null)
+					if (__instance.animState == MonsterState.dying || __instance.dead)
 					{
-						/*
-						float playerarmorquality = PLAYER.avatar.heldArmor.Quality;
-						int monsterHealth = __instance.healthMax;
-						float monsterSpeed = __instance.speed;
-						int monsterDamage = __instance.attackDamage;
-						int monsterThickness = __instance.thickness;
-						*/
-
-						InventoryItem Item = new InventoryItem();
-						InventoryItem Item2 = new InventoryItem();
-						int shipsUnlocked = CHARACTER_DATA.shipsUnlocked();
-						//shipsUnlocked = 30; //debugging
-
-
-						//scaling loot drop chance on distance to the homebse
-						float distance = 0;
-						if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
+						if (cosm != null && cosm.crew != null)
 						{
-							distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
-						}
-						else
-						{
-							Vector2 vector2 = new Vector2((float)(CONFIG.spHomeGrid.X - PLAYER.currentShip.grid.X), (float)(CONFIG.spHomeGrid.Y - PLAYER.currentShip.grid.Y)) * 200000f;
-							vector2 += PLAYER.currentGame.position;
-							distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
-						}
-						float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
-						int maxdropchance = 35;
-						maxdropchance /= (int)Math.Max((multiplier / (Math.Max(multiplier, maxdropchance) / maxdropchance)), 1);
+							/*
+							float playerarmorquality = PLAYER.avatar.heldArmor.Quality;
+							int monsterHealth = __instance.healthMax;
+							float monsterSpeed = __instance.speed;
+							int monsterDamage = __instance.attackDamage;
+							int monsterThickness = __instance.thickness;
+							*/
 
-						int selectItem = Squirrel3RNG.Next(1, 14);
-						if (selectItem == 1)
-						{
-							//weapon
-							float gunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
-							bool flag = gunQuality <= 0f;
-							gunQuality = MathHelper.Clamp(gunQuality, 10f, (float)shipsUnlocked + 10f);
-							gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
-							if (flag)
+							InventoryItem Item = new InventoryItem();
+							InventoryItem Item2 = new InventoryItem();
+							int shipsUnlocked = (int)Math.Round((float)((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2));
+							//shipsUnlocked = 30; //debugging
+
+
+							//scaling loot drop chance on distance to the homebse
+							float distance = 0;
+							if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
 							{
-								Item = new Gun(gunQuality, GunSpawnFlags.force_pistol);
+								distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
 							}
 							else
 							{
-								Item = new Gun(gunQuality, GunSpawnFlags.no_oneshot);
+								Vector2 vector2 = new Vector2((float)(CONFIG.spHomeGrid.X - PLAYER.currentShip.grid.X), (float)(CONFIG.spHomeGrid.Y - PLAYER.currentShip.grid.Y)) * 200000f;
+								vector2 += PLAYER.currentGame.position;
+								distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
 							}
-						}
-						if (selectItem == 2)
-						{
-							//armor
-							float armorQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
-							armorQuality = MathHelper.Clamp(armorQuality, 10f, (float)shipsUnlocked + 10f);
-							armorQuality = MathHelper.Clamp(armorQuality, 10f, 39.9f);
-							Item = new CrewArmor(armorQuality, ArmorSpawnFlags.none);
+							float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
+							int maxdropchance = 35;
+							maxdropchance /= (int)Math.Max((multiplier / (Math.Max(multiplier, maxdropchance) / maxdropchance)), 1);
 
-						}
-
-						if (selectItem == 3 && Squirrel3RNG.Next(20) == 1)
-						{
-							// repair gun
-							float repairgunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
-							repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, (float)shipsUnlocked + 10f);
-							repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, 39.9f) / 5;
-							Item = new RepairGun(repairgunQuality);
-						}
-						if (selectItem == 4 && Squirrel3RNG.Next(20) == 1)
-						{
-							// fire extinguisher
-							float extinguisherQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
-							extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, (float)shipsUnlocked + 10f);
-							extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, 39.9f) / 2;
-							Item = new Extinguisher(extinguisherQuality);
-						}
-
-						if (selectItem == 5 && Squirrel3RNG.Next(70) == 1)
-						{
-							//observant aura 
-							Item = new ObservantAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
-						}
-
-						if (selectItem == 6)
-						{
-							// artifact
-							if (Squirrel3RNG.Next(50) == 1)
-								Item = new ArtifactItem((float)(1.0 + Squirrel3RNG.NextDouble() * 24.0));
-						}
-						if (selectItem == 7 && Squirrel3RNG.Next(50) == 1) //rare crystals
-						{
-							switch (Squirrel3RNG.Next(10))
+							int selectItem = Squirrel3RNG.Next(1, 14);
+							if (selectItem == 1)
 							{
-								case 0:
-									Item = new CrystalGene(CrystalType.gold_bulk);
-									break;
-								case 1:
-									Item = new CrystalGene(CrystalType.gold_facet);
-									break;
-								case 2:
-									Item = new InventoryItem(InventoryItemType.crystal_spore);
-									break;
-								case 3:
-									Item = new CrystalGene(CrystalType.mitraxit_bulk);
-									break;
-								case 4:
-									Item = new CrystalGene(CrystalType.mitraxit_facet);
-									break;
-								case 5:
-									Item = new CrystalGene(CrystalType.rhodium_bulk);
-									break;
-								case 6:
-									Item = new CrystalGene(CrystalType.rhodium_facet);
-									break;
-								case 7:
-									Item = new CrystalGene(CrystalType.titanium_bulk);
-									break;
-								case 8:
-									Item = new CrystalGene(CrystalType.titanium_facet);
-									break;
-								case 9:
-									Item = new CrystalGene(CrystalType.iron_facet);
-									break;
-								default:
-									Item = new CrystalGene(CrystalType.iron_facet);
-									break;
-							}
-						}
-						if (selectItem == 8 && Squirrel3RNG.Next(50) == 1)
-						{ 
-							//core node
-							Item = new InventoryItem(InventoryItemType.core_node);
-							Item.stackSize = 1U;
-						}
-						if (selectItem == 9 && Squirrel3RNG.Next(70) == 1)
-						{
-							//stealth aura 
-							Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
-						}
-						if (selectItem == 10 && Squirrel3RNG.Next(70) == 1)
-						{
-							//plasma aura 
-							Item = new PlasmaScienceAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
-						}
-						if (selectItem == 11 && Squirrel3RNG.Next(70) == 1)
-						{
-							//sturdy aura 
-							Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
-						}
-						if (selectItem == 12 && Squirrel3RNG.Next(30) == 1)
-						{
-							//random tuning kit
-							Item = new TuningKit(Math.Min(Math.Max(1f, maxdropchance / 4f), 12f));
-						}
-
-						if (selectItem == 13 && Squirrel3RNG.Next(30) == 1)
-						{
-							//beam aura
-							Item = new BeamEnergyDistributer(Math.Min(Math.Max(1, shipsUnlocked / 4), Math.Min(Math.Max(1, maxdropchance / 4), 12)));
-						}
-
-
-						int selectItem2 = Squirrel3RNG.Next(1, 8);
-						if (selectItem2 == 1)
-						{
-							switch (Squirrel3RNG.Next(3))
-							{
-								case 0:
-									// Shirt1
-									Item2 = new Shirt(vanityItemType.crew_shirt);
-									break;
-								case 1:
-									// Shirt2
-									Item2 = new Shirt(vanityItemType.red_shirt);
-									break;
-								case 2:
-									// Shirt3
-									Item2 = new Shirt(vanityItemType.tank_top);
-									break;
-								default:
-									// Shirt1
-									Item2 = new Shirt(vanityItemType.crew_shirt);
-									break;
-							}
-						}
-						if (selectItem2 == 2)
-						{
-							// biomass
-							Item2 = new InventoryItem(InventoryItemType.biomass);
-							Item2.stackSize = 1U;
-						}
-						if (selectItem2 == 3)
-						{
-							// biomass
-							Item2 = new InventoryItem(InventoryItemType.biomass);
-							Item2.stackSize = 1U;
-						}
-						if (selectItem2 == 4)
-						{
-							// biomass
-							Item2 = new InventoryItem(InventoryItemType.biomass);
-							Item2.stackSize = 1U;
-						}
-						if (selectItem2 == 5)
-						{
-							// dirt
-							Item2 = new InventoryItem(InventoryItemType.dirt);
-						}
-						if (selectItem2 == 6)
-						{
-							//crystals
-
-							if (RANDOM.chance(0.1))
-							{
-								Item2 = new InventoryItem(InventoryItemType.crystal_spore);
-							}
-							if (RANDOM.chance(0.9))
-							{
-								switch (Squirrel3RNG.Next(16))
+								//weapon
+								float gunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								bool flag = gunQuality <= 0f;
+								gunQuality = MathHelper.Clamp(gunQuality, 10f, (float)shipsUnlocked + 10f);
+								gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
+								if (flag)
 								{
-									case 0:
-										Item2 = new CrystalGene(CrystalType.collector);
-										break;
-									case 1:
-										Item2 = new CrystalGene(CrystalType.collector);
-										break;
-									case 2:
-										Item2 = new CrystalGene(CrystalType.collector);
-										break;
-									case 3:
-										Item2 = new CrystalGene(CrystalType.collector);
-										break;
-									case 4:
-										{
-											Item2 = new CrystalGene(CrystalType.flower);
-											break;
-										}
-									case 5:
-										{
-											Item2 = new CrystalGene(CrystalType.root);
-											break;
-										}
-									case 6:
-										{
-											Item2 = new CrystalGene(CrystalType.growth);
-											break;
-										}
-									case 7:
-										Item2 = new CrystalGene(CrystalType.lense);
-										break;
-									default:
-										Item2 = new CrystalGene(CrystalType.iron_bulk);
-										break;
+									Item = new Gun(gunQuality, GunSpawnFlags.force_pistol);
+								}
+								else
+								{
+									Item = new Gun(gunQuality, GunSpawnFlags.no_oneshot);
 								}
 							}
-							else
+							if (selectItem == 2)
 							{
-								switch (Squirrel3RNG.Next(12))
+								//armor
+								float armorQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								armorQuality = MathHelper.Clamp(armorQuality, 10f, (float)shipsUnlocked + 10f);
+								armorQuality = MathHelper.Clamp(armorQuality, 10f, 39.9f);
+								Item = new CrewArmor(armorQuality, ArmorSpawnFlags.none);
+
+							}
+
+							if (selectItem == 3 && Squirrel3RNG.Next(20) == 1)
+							{
+								// repair gun
+								float repairgunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, (float)shipsUnlocked + 10f);
+								repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, 39.9f) / 5;
+								Item = new RepairGun(repairgunQuality);
+							}
+							if (selectItem == 4 && Squirrel3RNG.Next(20) == 1)
+							{
+								// fire extinguisher
+								float extinguisherQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, (float)shipsUnlocked + 10f);
+								extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, 39.9f) / 2;
+								Item = new Extinguisher(extinguisherQuality);
+							}
+
+							if (selectItem == 5 && Squirrel3RNG.Next(70) == 1)
+							{
+								//observant aura 
+								Item = new ObservantAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+							}
+
+							if (selectItem == 6)
+							{
+								// artifact
+								if (Squirrel3RNG.Next(50) == 1)
+									Item = new ArtifactItem((float)(1.0 + Squirrel3RNG.NextDouble() * 24.0));
+							}
+							if (selectItem == 7 && Squirrel3RNG.Next(50) == 1) //rare crystals
+							{
+								switch (Squirrel3RNG.Next(10))
 								{
 									case 0:
-										Item2 = new CrystalBranch(2);
+										Item = new CrystalGene(CrystalType.gold_bulk);
 										break;
 									case 1:
-										Item2 = new CrystalBranch(2);
+										Item = new CrystalGene(CrystalType.gold_facet);
 										break;
 									case 2:
-										Item2 = new CrystalBranch(3);
+										Item = new InventoryItem(InventoryItemType.crystal_spore);
 										break;
 									case 3:
-										Item2 = new CrystalGene(CrystalType.resonator);
+										Item = new CrystalGene(CrystalType.mitraxit_bulk);
 										break;
 									case 4:
-										Item2 = new CrystalGene(CrystalType.resonator);
+										Item = new CrystalGene(CrystalType.mitraxit_facet);
 										break;
 									case 5:
-										Item2 = new CrystalGene(CrystalType.resonator);
+										Item = new CrystalGene(CrystalType.rhodium_bulk);
 										break;
 									case 6:
-										Item2 = new CrystalGene(CrystalType.shell);
+										Item = new CrystalGene(CrystalType.rhodium_facet);
 										break;
 									case 7:
-										Item2 = new CrystalGene(CrystalType.shell);
+										Item = new CrystalGene(CrystalType.titanium_bulk);
 										break;
 									case 8:
-										Item2 = new CrystalGene(CrystalType.shell);
+										Item = new CrystalGene(CrystalType.titanium_facet);
 										break;
 									case 9:
-										Item2 = new CrystalGene(CrystalType.battery);
-										break;
-									case 10:
-										Item2 = new CrystalGene(CrystalType.battery);
-										break;
-									case 11:
-										Item2 = new CrystalGene(CrystalType.battery);
+										Item = new CrystalGene(CrystalType.iron_facet);
 										break;
 									default:
-										Item2 = new CrystalGene(CrystalType.resonator);
+										Item = new CrystalGene(CrystalType.iron_facet);
 										break;
 								}
 							}
-						}
-						if (selectItem2 == 7)
-						{
-							// mining laser
-							Item2 = new Digger();
-						}
-
-
-
-						for (int i = 0; i < cosm.crew.Values.Count; i++)
-						{
-							var crew = cosm.crew.Values.ToList()[i];
-							if (crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 2000f * 2000f && crew.isPlayer)
+							if (selectItem == 8 && Squirrel3RNG.Next(50) == 1)
 							{
-								if (Squirrel3RNG.Next(0, 100) <= maxdropchance)
+								//core node
+								Item = new InventoryItem(InventoryItemType.core_node);
+								Item.stackSize = 1U;
+							}
+							if (selectItem == 9 && Squirrel3RNG.Next(70) == 1)
+							{
+								//stealth aura 
+								Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+							}
+							if (selectItem == 10 && Squirrel3RNG.Next(70) == 1)
+							{
+								//plasma aura 
+								Item = new PlasmaScienceAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+							}
+							if (selectItem == 11 && Squirrel3RNG.Next(70) == 1)
+							{
+								//sturdy aura 
+								Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+							}
+							if (selectItem == 12 && Squirrel3RNG.Next(30) == 1)
+							{
+								//random tuning kit
+								Item = new TuningKit(Math.Min(Math.Max(1f, maxdropchance / 4f), 12f));
+							}
+
+							if (selectItem == 13 && Squirrel3RNG.Next(30) == 1)
+							{
+								//beam aura
+								Item = new BeamEnergyDistributer(Math.Min(Math.Max(1, shipsUnlocked / 4), Math.Min(Math.Max(1, maxdropchance / 4), 12)));
+							}
+
+
+							int selectItem2 = Squirrel3RNG.Next(1, 8);
+							if (selectItem2 == 1)
+							{
+								switch (Squirrel3RNG.Next(3))
 								{
-									if (PLAYER.avatar.currentCosm.ship != null)
+									case 0:
+										// Shirt1
+										Item2 = new Shirt(vanityItemType.crew_shirt);
+										break;
+									case 1:
+										// Shirt2
+										Item2 = new Shirt(vanityItemType.red_shirt);
+										break;
+									case 2:
+										// Shirt3
+										Item2 = new Shirt(vanityItemType.tank_top);
+										break;
+									default:
+										// Shirt1
+										Item2 = new Shirt(vanityItemType.crew_shirt);
+										break;
+								}
+							}
+							if (selectItem2 == 2)
+							{
+								// biomass
+								Item2 = new InventoryItem(InventoryItemType.biomass);
+								Item2.stackSize = 1U;
+							}
+							if (selectItem2 == 3)
+							{
+								// biomass
+								Item2 = new InventoryItem(InventoryItemType.biomass);
+								Item2.stackSize = 1U;
+							}
+							if (selectItem2 == 4)
+							{
+								// biomass
+								Item2 = new InventoryItem(InventoryItemType.biomass);
+								Item2.stackSize = 1U;
+							}
+							if (selectItem2 == 5)
+							{
+								// dirt
+								Item2 = new InventoryItem(InventoryItemType.dirt);
+							}
+							if (selectItem2 == 6)
+							{
+								//crystals
+
+								if (RANDOM.chance(0.1))
+								{
+									Item2 = new InventoryItem(InventoryItemType.crystal_spore);
+								}
+								if (RANDOM.chance(0.9))
+								{
+									switch (Squirrel3RNG.Next(16))
 									{
-										PLAYER.avatar.currentCosm.ship.threadDumpCargo(Item);
-										PLAYER.avatar.GetfloatyText().Enqueue("+ 1 loot item deployed into space");
+										case 0:
+											Item2 = new CrystalGene(CrystalType.collector);
+											break;
+										case 1:
+											Item2 = new CrystalGene(CrystalType.collector);
+											break;
+										case 2:
+											Item2 = new CrystalGene(CrystalType.collector);
+											break;
+										case 3:
+											Item2 = new CrystalGene(CrystalType.collector);
+											break;
+										case 4:
+											{
+												Item2 = new CrystalGene(CrystalType.flower);
+												break;
+											}
+										case 5:
+											{
+												Item2 = new CrystalGene(CrystalType.root);
+												break;
+											}
+										case 6:
+											{
+												Item2 = new CrystalGene(CrystalType.growth);
+												break;
+											}
+										case 7:
+											Item2 = new CrystalGene(CrystalType.lense);
+											break;
+										default:
+											Item2 = new CrystalGene(CrystalType.iron_bulk);
+											break;
 									}
 								}
 								else
 								{
-									if (PLAYER.avatar.currentCosm.ship != null)
+									switch (Squirrel3RNG.Next(12))
 									{
-										if (Squirrel3RNG.Next(0, 100) <= maxdropchance*2 + 10)
-										{
+										case 0:
+											Item2 = new CrystalBranch(2);
+											break;
+										case 1:
+											Item2 = new CrystalBranch(2);
+											break;
+										case 2:
+											Item2 = new CrystalBranch(3);
+											break;
+										case 3:
+											Item2 = new CrystalGene(CrystalType.resonator);
+											break;
+										case 4:
+											Item2 = new CrystalGene(CrystalType.resonator);
+											break;
+										case 5:
+											Item2 = new CrystalGene(CrystalType.resonator);
+											break;
+										case 6:
+											Item2 = new CrystalGene(CrystalType.shell);
+											break;
+										case 7:
+											Item2 = new CrystalGene(CrystalType.shell);
+											break;
+										case 8:
+											Item2 = new CrystalGene(CrystalType.shell);
+											break;
+										case 9:
+											Item2 = new CrystalGene(CrystalType.battery);
+											break;
+										case 10:
+											Item2 = new CrystalGene(CrystalType.battery);
+											break;
+										case 11:
+											Item2 = new CrystalGene(CrystalType.battery);
+											break;
+										default:
+											Item2 = new CrystalGene(CrystalType.resonator);
+											break;
+									}
+								}
+							}
+							if (selectItem2 == 7)
+							{
+								// mining laser
+								Item2 = new Digger();
+							}
 
-											if (Item2.type == InventoryItemType.biomass)
+
+
+							for (int i = 0; i < cosm.crew.Values.Count; i++)
+							{
+								var crew = cosm.crew.Values.ToList()[i];
+								if (crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 2000f * 2000f && crew.isPlayer)
+								{
+									if (Squirrel3RNG.Next(0, 100) <= maxdropchance)
+									{
+										if (PLAYER.avatar.currentCosm.ship != null)
+										{
+											PLAYER.avatar.currentCosm.ship.threadDumpCargo(Item);
+											PLAYER.avatar.GetfloatyText().Enqueue("+ 1 loot item deployed into space");
+										}
+									}
+									else
+									{
+										if (PLAYER.avatar.currentCosm.ship != null)
+										{
+											if (Squirrel3RNG.Next(0, 100) <= maxdropchance * 2 + 10)
 											{
-												uint num2 = 100U * Item2.stackSize;
-												CHARACTER_DATA.exp += unchecked((ulong)num2);
-												PLAYER.currentGame.team.grantExp(num2);
-												PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString(unchecked((ulong)(checked(100U * Item2.stackSize)))) + " exp");
-											}
-											else
-											{
-												PLAYER.avatar.currentCosm.ship.threadDumpCargo(Item2);
-												PLAYER.avatar.GetfloatyText().Enqueue("+ 1 loot item deployed into space");
+
+												if (Item2.type == InventoryItemType.biomass)
+												{
+													uint num2 = 100U * Item2.stackSize;
+													CHARACTER_DATA.exp += unchecked((ulong)num2);
+													PLAYER.currentGame.team.grantExp(num2);
+													PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString(unchecked((ulong)(checked(100U * Item2.stackSize)))) + " exp");
+												}
+												else
+												{
+													PLAYER.avatar.currentCosm.ship.threadDumpCargo(Item2);
+													PLAYER.avatar.GetfloatyText().Enqueue("+ 1 loot item deployed into space");
+												}
 											}
 										}
 									}
-								}
 
+								}
 							}
 						}
 					}
@@ -1208,7 +1221,7 @@ namespace HarshWorld
 			}
 		}
 
-		/*
+		//fixing monster animation bug (possible obsolete, just to be sure)
 		[HarmonyPatch(typeof(Monster), "animateMovement")]
 		public class Monster_animateMovement
 		{
@@ -1231,7 +1244,7 @@ namespace HarshWorld
 				return false;
 			}
 		}
-		*/
+		
 
 		[HarmonyPatch(typeof(Monster), "update")]
 		public class Monster_update
@@ -1239,7 +1252,7 @@ namespace HarshWorld
 			[HarmonyPrefix]
 			private static void Postfix(Monster __instance)
 			{
-				if(!__instance.Getscaled())
+				if(Globals.initialized && !__instance.Getscaled())
 				{
 					Globals.upscaleMonster(__instance);
                 }
@@ -1256,17 +1269,19 @@ namespace HarshWorld
 			private static void Postfix(Crew __instance) // randomizing and scaling all npc outfits
 			{
 
+				/*
 				int difficulty;
 				int shipsUnlocked;
 				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 				{
-
-					//difficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
-					difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 					shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
 					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
 					{
 						difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+					}
+					else
+					{
+						difficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
 					}
 				}
 				else
@@ -1280,6 +1295,68 @@ namespace HarshWorld
 				bool flag2 = armorQuality > 0f;
 				gunQuality = MathHelper.Clamp(gunQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
 				armorQuality = MathHelper.Clamp(armorQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
+				*/
+				int difficulty = 0;
+				int shipsUnlocked = 0;
+				float playerarmorquality = -2;
+				float playerweaponquality = -2;
+				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
+				{
+					if (PLAYER.avatar.heldArmor != null)
+						playerarmorquality = PLAYER.avatar.heldArmor.Quality;
+
+					if (PLAYER.avatar.heldItem != null && PLAYER.avatar.heldItem.GetType() == typeof(Gun))
+						playerweaponquality = (PLAYER.avatar.heldItem as Gun).Quality;
+
+					if(playerweaponquality <= -2 || playerarmorquality <= -2)
+					{ 
+						shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+						if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation && Globals.currentshipdifficulty > -1)
+						{
+							difficulty = Globals.currentshipdifficulty;
+						}
+						else
+						{
+							difficulty = Globals.mostExpensiveBuildableDesigndifficulty;
+						}
+					}
+				}
+				else
+				{
+					difficulty = Globals.mostExpensiveBuildableDesigndifficulty;
+					shipsUnlocked = Globals.shipsUnlocked;
+				}
+
+
+				float gunQuality;
+				float armorQuality;
+
+				if (playerarmorquality <= -2)
+				{
+					gunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4 - 5), 40);
+					gunQuality = MathHelper.Clamp(gunQuality, 10f, Math.Max(10, Math.Min(shipsUnlocked + 10, difficulty * 4 + 5)));
+				}
+				else
+				{
+					gunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(15, shipsUnlocked), difficulty * 4), 40);
+					gunQuality = MathHelper.Clamp(gunQuality, 10f, Math.Max(10, (int)Math.Round(playerarmorquality)));
+				}
+
+
+				if (playerweaponquality <= -2)
+				{ 
+					armorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4 - 5), 40);
+					armorQuality = MathHelper.Clamp(armorQuality, 10f, Math.Max(10, Math.Min(shipsUnlocked + 10, difficulty * 4 + 5)));
+				}
+				else
+				{
+					armorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(15, shipsUnlocked), difficulty * 4), 40);
+					armorQuality = MathHelper.Clamp(armorQuality, 10f, Math.Max(10,(int)Math.Round(playerweaponquality)));
+				}
+
+
+				bool flag = gunQuality <= 0f;
+				bool flag2 = armorQuality > 0f;
 				gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
 				armorQuality = MathHelper.Clamp(armorQuality, 10f, 39.9f);
 				if (flag)
@@ -1308,20 +1385,67 @@ namespace HarshWorld
 			{
 				if (__instance.state != CrewState.dead)
 				{
-					//int cost = HW_CHARACTER_DATA_Extensions.mostExpensiveDesign();
-					int cost = Globals.mostExpensiveBuildableDesign();
-					int difficulty = Globals.DifficultyFromCost(cost);
-					if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+					int difficulty = 0;
+					int shipsUnlocked = 0;
+					float playerarmorquality = -2;
+					float playerweaponquality = -2;
+					if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
 					{
-						difficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+						if (PLAYER.avatar.heldArmor != null)
+							playerarmorquality = PLAYER.avatar.heldArmor.Quality;
+
+						if (PLAYER.avatar.heldItem != null && PLAYER.avatar.heldItem.GetType() == typeof(Gun))
+							playerweaponquality = (PLAYER.avatar.heldItem as Gun).Quality;
+
+						if (playerweaponquality <= -2 || playerarmorquality <= -2)
+						{
+							shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
+							if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation && Globals.currentshipdifficulty > -1)
+							{
+								difficulty = Globals.currentshipdifficulty;
+							}
+							else
+							{
+								difficulty = Globals.mostExpensiveBuildableDesigndifficulty;
+							}
+						}
 					}
-					int shipsUnlocked = (int)Math.Round(MathHelper.Clamp(((float)CHARACTER_DATA.shipsUnlocked() * HWCONFIG.GlobalDifficulty), 1f, 100f));
-					float MygunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4), 40);
-					float MyarmorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4), 40);
+					else
+					{
+						difficulty = Globals.mostExpensiveBuildableDesigndifficulty;
+						shipsUnlocked = Globals.shipsUnlocked;
+					}
+
+					float MygunQuality;
+					float MyarmorQuality;
+
+
+					if (playerweaponquality <= -2)
+					{
+						MygunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4 - 5), 40);
+						MygunQuality = MathHelper.Clamp(MygunQuality, 10f, Math.Max(10, Math.Min(shipsUnlocked + 10, difficulty * 4 + 5)));
+					}
+					else
+					{
+						MygunQuality = Squirrel3RNG.Next(Math.Max(Math.Min(15, shipsUnlocked), difficulty * 4), 40);
+						MygunQuality = MathHelper.Clamp(MygunQuality, 10f, Math.Max(10, (int)Math.Round(playerweaponquality)));
+					}
+
+
+					if (playerarmorquality <= -2)
+					{
+						MyarmorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(30, shipsUnlocked) - 10, difficulty * 4 - 5), 40);
+						MyarmorQuality = MathHelper.Clamp(MyarmorQuality, 10f, Math.Max(10, Math.Min(shipsUnlocked + 10, difficulty * 4 + 5)));
+					}
+					else
+					{
+						MyarmorQuality = Squirrel3RNG.Next(Math.Max(Math.Min(15, shipsUnlocked), difficulty * 4), 40);
+						MyarmorQuality = MathHelper.Clamp(MyarmorQuality, 10f, Math.Max(10, (int)Math.Round(playerarmorquality)));
+					}
+
+
 					bool flag = MygunQuality <= 0f;
 					bool flag2 = MyarmorQuality > 0f;
-					MygunQuality = MathHelper.Clamp(MygunQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
-					MyarmorQuality = MathHelper.Clamp(MyarmorQuality, 10f, (float)Math.Min(shipsUnlocked + 10, difficulty * 4));
 					gunQuality = Math.Max(gunQuality, MygunQuality); // only modify default input if it is lower quality then scaled
 					armorQuality = Math.Max(armorQuality, MyarmorQuality); // only modify default input if it is lower quality then scaled
 					gunQuality = MathHelper.Clamp(gunQuality, 10f, 39.9f);
@@ -1977,6 +2101,9 @@ namespace HarshWorld
 					Globals.Interruptionbag = null;
 					Globals.GlobalDespawnQueue = null;
 					Globals.GlobalShipRemoveQueue = null;
+					Globals.mostExpensiveDesigndifficulty = 0;
+					Globals.mostExpensiveBuildableDesigndifficulty = 0;
+					Globals.currentshipdifficulty = -1;
 					Globals.offer = null;
 					Globals.demand = null;
 					Globals.globalints.Clear();
@@ -2106,14 +2233,14 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(CoOpSpRpG.Console), "tryUse")] // AI for ally taking control of a ship
+		[HarmonyPatch(typeof(CoOpSpRpG.Console), "tryUse")] 
 		public class Console_tryUse
 		{
 
 			[HarmonyPrefix]
 			private static void Prefix(CoOpSpRpG.Console __instance, Crew user)
 			{
-				if (!user.isPlayer || (__instance.crew != null && __instance.crew.isPlayer))
+				if (!user.isPlayer || (__instance.crew != null && __instance.crew.isPlayer)) // AI for ally taking control of a ship
 				{
 					if (__instance.crew == null || __instance.crew.state != CrewState.operating)
 					{
@@ -2141,6 +2268,19 @@ namespace HarshWorld
 								}
 							}
 						}
+					}
+				}
+				if (user == PLAYER.avatar || user.isPlayer) //updating current ship cost for difficulty ajustments
+				{
+					if (Globals.initialized)
+					{
+						Task.Run(async () =>
+						{
+							if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+							{
+								Globals.currentshipdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+							}
+						});
 					}
 				}
 			}
@@ -2193,7 +2333,7 @@ namespace HarshWorld
 			}
 		}
 
-		/*
+		
 		[HarmonyPatch(typeof(ShipAIManager), "stepAI")] // debuging AI
 		public class ShipAIManager_stepAI
 		{
@@ -2204,20 +2344,21 @@ namespace HarshWorld
 				CONFIG.debugAI = true;
 			}
 		}
-		*/
-
+		
+		
 		[HarmonyPatch(typeof(ConsoleThought), "navUpdate")] // AI for ally escorting player, fixing AI bug
 		public class ConsoleThought_navUpdate
 		{
-			/*
+
+		/*
 			[HarmonyPrefix]
 			private static bool Prefix(ConsoleThought __instance, ConcurrentQueue<CrewInteriorAlert> interiorAlerts, BattleSession session, Ship ship, CoOpSpRpG.Console console, float elapsed, ref float ___assesmentTimer, ref float ___closeAirlockCountdown,
 			ref float ___engagementTimer, ref ulong ___lastCheckOnHP, ref float ___alternateActionTimer, ref bool ___dronesOut, ref float ___errorRefresh, ref float ___beamErrorRefresh, ref float ___pathfidingUpdateTimer, ref float ___navigationTimer,
-			Ship ___aimTarget)
+			ref Ship ___aimTarget, float ___navigationUpdatePeriod)
 			{
 				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
-			if (__instance.state == ConsoleState.running) // bug fixing
-			{
+				if (__instance.state == ConsoleState.running) // bug fixing
+				{
 					___assesmentTimer += elapsed;
 					if (___assesmentTimer > 60f)
 					{
@@ -2264,7 +2405,8 @@ namespace HarshWorld
 						ship.toggleDocking(true);
 					}
 					var arg = new object[] { ship, console, true };
-					var assessed = (bool)typeof(ConsoleThought).GetMethod("handleInteriorAlert", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console), typeof(Boolean) }, null).Invoke(__instance, arg);
+					var dmethod = typeof(ConsoleThought).GetMethod("assesShip", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console), typeof(Boolean) }, null);
+					var assessed = (bool)dmethod.Invoke(__instance, arg);
 					//if (!__instance.assessed && __instance.assesShip(ship, console, true))
 					if (!__instance.assessed && assessed)
 					{
@@ -2328,50 +2470,82 @@ namespace HarshWorld
 					}
 
 					//bugged case
-					float num3 = Vector2.Distance(ship.position, this.desiredDestination);
-					if (this.AreEnemiesInAggroRange(ship, console) && num3 > ship.navRadius)
+					float num3 = Vector2.Distance(ship.position, __instance.desiredDestination);
+					var arg1 = new object[] { ship, console};
+					var myflag1 = (bool)typeof(ConsoleThought).GetMethod("AreEnemiesInAggroRange", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console) }, null).Invoke(__instance, arg1);
+					//if (__instance.AreEnemiesInAggroRange(ship, console) && num3 > ship.navRadius)
+					if (myflag1 && num3 > ship.navRadius)
 					{
-						float num4 = this.CalculateCombatDistance(ship);
+						var arg2 = new object[] { ship };
+						float num4 = (float)typeof(ConsoleThought).GetMethod("CalculateCombatDistance", flags, null, new Type[] { typeof(Ship) }, null).Invoke(__instance, arg2);
+						//float num4 = __instance.CalculateCombatDistance(ship);
 						num3 = float.PositiveInfinity;
-						if (this.target != null)
+						if (__instance.target != null)
 						{
-							num3 = (this.target.position - ship.position).Length();
+							num3 = (__instance.target.position - ship.position).Length();
 						}
-						this.moveUpdateData.Init();
-						this.moveUpdateData.bInDesiredRange = (num3 <= num4);
-						this.moveUpdateData.PathEnd = this.desiredDestination;
-						num3 = this.UpdateActualDestination(session, ship, num3);
-						if (this.pathfidingUpdateTimer > ConsoleThought.navigationUpdatePeriod)
+
+						Type moveUpdateDataType = typeof(ConsoleThought).Assembly.GetType("CoOpSpRpG.MovementUpdateData");
+						var moveUpdateData = typeof(ConsoleThought).GetField("moveUpdateData", flags).GetValue(__instance);
+						//var arg8 = new object[] {};
+						var dmethod2 = moveUpdateDataType.GetMethod("Init", flags, null, Type.EmptyTypes, null);
+						dmethod2.Invoke(moveUpdateData, null);
+						//__instance.moveUpdateData.Init();
+
+						bool bInDesiredRange = (num3 <= num4);
+						moveUpdateDataType.GetField("bInDesiredRange", flags).SetValue(moveUpdateData, bInDesiredRange);
+						//__instance.moveUpdateData.bInDesiredRange = (num3 <= num4);
+
+						moveUpdateDataType.GetField("PathEnd", flags).SetValue(moveUpdateData, __instance.desiredDestination);
+						//__instance.moveUpdateData.PathEnd = __instance.desiredDestination;
+
+						arg2 = new object[] { session, ship, num3 };
+						num3 = (float)typeof(ConsoleThought).GetMethod("UpdateActualDestination", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(float) }, null).Invoke(__instance, arg2);
+//						num3 = __instance.UpdateActualDestination(session, ship, num3);
+
+						if (___pathfidingUpdateTimer > ___navigationUpdatePeriod)
 						{
-							this.pathfidingUpdateTimer = 0f;
-							this.navigationTimer = 0f;
-							this.UpdatePathfinding(session, ship, console, elapsed);
+							___pathfidingUpdateTimer = 0f;
+							___navigationTimer = 0f;
+							var args7 = new object[] { session, ship, console, elapsed};
+							typeof(ConsoleThought).GetMethod("UpdatePathfinding", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float) }, null).Invoke(__instance, args7);
+							//__instance.UpdatePathfinding(session, ship, console, elapsed);
 						}
-						if (this.navigationTimer > ConsoleThought.navigationUpdatePeriod / 3f)
+						if (___navigationTimer > ___navigationUpdatePeriod / 3f)
 						{
-							this.navigationTimer = 0f;
-							this.updateNavigationPath(session, ship, console, false);
+							___navigationTimer = 0f;
+							var args8 = new object[] { session, ship, console, false };
+							typeof(ConsoleThought).GetMethod("updateNavigationPath", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(bool) }, null).Invoke(__instance, args8);
+
+							//__instance.updateNavigationPath(session, ship, console, false);
 						}
 						ship.throttle = 0.99f;
-						bool flag2 = !session.LineTrace(ship.position, this.target.position); //this.target needs null check!
+						bool flag2 = false;
+						if (__instance.target != null)
+						{
+							flag2 = !session.LineTrace(ship.position, __instance.target.position); //this.target needs null check!
+						}
 						ship.velocity.Length();
-						Vector2 vector3 = this.actualDestination - ship.position;
+						Vector2 vector3 = __instance.actualDestination - ship.position;
 						vector3.Normalize();
-						Vector2 vector4 = ConsoleThought.calculateAvoidanceVector(ship);
+						var arg4 = new object[] { ship };
+						Vector2 vector4 = (Vector2)typeof(ConsoleThought).GetMethod("calculateAvoidanceVector", flags, null, new Type[] { typeof(Ship) }, null).Invoke(__instance, arg4);
+						//Vector2 vector4 = ConsoleThought.calculateAvoidanceVector(ship);
 						float scaleFactor3 = Math.Min(vector3.Length(), 50f);
 						Vector2 worldDir2 = Vector2.Normalize(vector3) * scaleFactor3;
 						float num5 = Vector2.Dot(Vector2.Normalize(ship.velocity), vector3);
 						float scaleFactor4 = 1f - Math.Max(0.3f, num5);
-						if (this.moveUpdateData.bInDesiredRange && flag2)
+
+						if (bInDesiredRange && flag2)
 						{
 							ship.throttle = 0.99f;
 							ship.strafeMove(Vector2.Zero);
-							ship.aimMove(this.actualDestination);
+							ship.aimMove(__instance.actualDestination);
 						}
 						else
 						{
 							ship.throttle = Math.Max(0.5f, (1f - vector4.Length()) * ship.throttle);
-							ship.aimMove(this.actualDestination);
+							ship.aimMove(__instance.actualDestination);
 							if (num5 < 0.8f)
 							{
 								worldDir2 = 0.5f * -Vector2.Normalize(ship.velocity) * scaleFactor4;
@@ -2382,6 +2556,8 @@ namespace HarshWorld
 							}
 							ship.strafeMove(worldDir2);
 						}
+						var firstflag = (bool)moveUpdateDataType.GetField("bIsOnPath", flags).GetValue(moveUpdateData);
+						var secondflag = (bool)moveUpdateDataType.GetField("bCanSeeDestination", flags).GetValue(moveUpdateData);
 						if (vector4 != Vector2.Zero)
 						{
 							ship.throttle = 0.5f;
@@ -2389,12 +2565,13 @@ namespace HarshWorld
 							{
 								ship.throttle = 0.8f;
 							}
-							else if (this.moveUpdateData.bIsOnPath || this.moveUpdateData.bCanSeeDestination)
+							//else if (__instance.moveUpdateData.bIsOnPath || __instance.moveUpdateData.bCanSeeDestination)
+							else if (firstflag || secondflag)
 							{
 								ship.throttle = 0.99f;
 								vector4 *= 0.3f;
 							}
-							if (num5 < 0.8f && (!this.moveUpdateData.bInDesiredRange || !flag2))
+							if (num5 < 0.8f && (!bInDesiredRange || !flag2))
 							{
 								ship.strafeMove(-(Vector2.Normalize(ship.velocity) * scaleFactor4) + vector4);
 							}
@@ -2403,21 +2580,34 @@ namespace HarshWorld
 								ship.strafeMove(vector4);
 							}
 						}
-						this.FiringActions(session, ship, console, elapsed, true, true, true);
+						var args5 = new object[] { session, ship, console, elapsed, true, true, true };
+						typeof(ConsoleThought).GetMethod("FiringActions", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console), typeof(float), typeof(bool), typeof(bool), typeof(bool) }, null).Invoke(__instance, args5);
+						//__instance.FiringActions(session, ship, console, elapsed, true, true, true);
 						return false;
 					}
-					if (this.AreEnemiesInAggroRange(ship, console))
+					var arg3 = new object[] { ship, console };
+					var myflag3 = (bool)typeof(ConsoleThought).GetMethod("AreEnemiesInAggroRange", flags, null, new Type[] { typeof(Ship), typeof(CoOpSpRpG.Console) }, null).Invoke(__instance, arg3);
+					//if (__instance.AreEnemiesInAggroRange(ship, console))
+					if (myflag3)
 					{
-						this.desiredDestination = this.GetRunAwayLoc(session, ship, console);
+						var arg6 = new object[] { session, ship, console };
+						__instance.desiredDestination = (Vector2)typeof(ConsoleThought).GetMethod("GetRunAwayLoc", flags, null, new Type[] { typeof(BattleSession), typeof(Ship), typeof(CoOpSpRpG.Console) }, null).Invoke(__instance, arg6);
+						//__instance.desiredDestination = __instance.GetRunAwayLoc(session, ship, console);
 						return false;
 					}
 					console.crew.goalCompleted();
 					console.crew = null;
-					this.state = ConsoleState.idle;
-					this.LeaveCombat();
+					__instance.state = ConsoleState.idle;
+					if (__instance.isInCombat && __instance.combatDuration > 10f)
+					{
+						__instance.isInCombat = false;
+						__instance.isRunningAway = false;
+					}
+					//__instance.LeaveCombat();
 					return false;
 				}
-
+				return true;
+			}/*
 				//changing escort AI
 				if (__instance.owner.team.focus == PLAYER.currentShip.id && __instance.state == ConsoleState.escorting)
 				{
@@ -2974,7 +3164,64 @@ namespace HarshWorld
 					}
 				}
 			}
+
+			[HarmonyPostfix]
+			private static void Postfix(ref string opt, Ship ___selected)
+			{
+				if (Globals.initialized)
+				{
+					if (opt == "Scrap" || opt == "Unload cargo")
+					{
+						Task.Run(async () =>
+						{
+							Globals.mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+						});
+					}
+				}
+			}
 		}
+
+		[HarmonyPatch(typeof(LogisticsScreenRev3), "TrySubstractResources")]
+		public class LogisticsScreenRev3_TrySubstractResources
+		{
+
+			[HarmonyPostfix]
+			private static void Postfix(bool __result)
+			{
+				if (Globals.initialized && __result)
+				{
+					Task.Run(async () =>
+					{
+						Globals.mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+					});
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(DockSpot), "receiveCrew")]
+		public class DockSpot_receiveCrew
+		{
+			[HarmonyPostfix]
+			private static void Postfix(DockSpot __instance, Crew c)
+			{
+				if (c == PLAYER.avatar)
+				{
+					if (Globals.initialized)
+					{
+						Task.Run(async () =>
+						{
+							Globals.mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
+							if (PLAYER.currentShip != null && PLAYER.currentShip.cosm != null && !PLAYER.currentShip.cosm.isStation)
+							{
+								Globals.currentshipdifficulty = Globals.DifficultyFromCost((int)Hull.getCost(PLAYER.currentShip.botD));
+							}
+
+						});
+					}
+				}
+			}
+		}
+
 
 		[HarmonyPatch(typeof(GameFile), "update")] // update loop for quest events.
 		public class GameFile_update
@@ -3459,6 +3706,10 @@ namespace HarshWorld
 							}
 						}
 					}
+					Task.Run(async () =>
+					{
+						Globals.mostExpensiveDesigndifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
+					});
 				}
 			}
 		}
@@ -3544,5 +3795,5 @@ namespace HarshWorld
 							*/
 
 
-						}
+	}
 }
