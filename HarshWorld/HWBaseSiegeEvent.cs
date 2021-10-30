@@ -695,7 +695,7 @@ namespace HarshWorld
 													}
 													break;
 												}
-												if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out var ship)) ;
+												if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out var ship))
 												{
 
 													DockSpot dockSpot = null;
@@ -743,7 +743,7 @@ namespace HarshWorld
 											{
 												for (i = 0; i < InterruptionInstance.activeShips.Count; i++)
 												{
-													if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out var ship)) ;
+													if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out var ship))
 													{
 														if (POIdockSpot != null && ship.docking != null && ship.docking.Count != 0 && ship.cosm?.crew?.Values?.FirstOrDefault()?.team != null && ship.cosm.alive)
 														{

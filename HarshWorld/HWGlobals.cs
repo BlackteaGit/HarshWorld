@@ -382,12 +382,15 @@ namespace HarshWorld
 
 				if (playerweaponquality > 1 && playerarmorquality > 1)
 				{
-					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2));
+					difficulty = (int)Math.Round((difficulty * (1 + ((Math.Max(1, playerweaponquality) + Math.Max(1, playerarmorquality)) / 2 / 70))));
+					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2 * 1.1f));
 				}
 				else
 				{
-					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1,playerarmorquality)));
+					difficulty = (int)Math.Round((difficulty * (1 + (Math.Max(1, playerweaponquality) / 70))));
+					difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1, playerarmorquality * 1.1f)));
 				}
+
 				if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
 				{
 					distance = Vector2.Distance(PLAYER.currentShip.position, PLAYER.currentGame.position);
@@ -398,8 +401,10 @@ namespace HarshWorld
 					vector2 += PLAYER.currentGame.position;
 					distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
 				}
-				float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
-				difficulty = Math.Min(difficulty, difficulty /(int)Math.Max((multiplier / (Math.Max(multiplier, difficulty) / difficulty)), 1));
+
+
+				float multiplier = Math.Max(6155714f / Math.Max(distance * (1 + ((Math.Max(1, playerweaponquality) + Math.Max(1, playerarmorquality)) / 2 / 50)), 1), 1);
+				difficulty = Math.Min(difficulty, difficulty / (int)Math.Max((multiplier / (Math.Max(multiplier, difficulty) / difficulty)), 1));
 				difficulty = Math.Min(HWCONFIG.MaxMonsterLevel, difficulty);
 				//shipsUnlocked = 30; //for debugging
 
@@ -418,19 +423,22 @@ namespace HarshWorld
 
 				if(PLAYER.avatar.currentCosm?.monsters != null && PLAYER.avatar.currentCosm.monsters.Contains(m) && Squirrel3RNG.Next(PLAYER.avatar.currentCosm.monsters.Count) <= 10)
 				{ 
-				int points = difficulty * 4;
-				int healthpoints = Squirrel3RNG.Next(difficulty / 4, difficulty);
-				monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 20 * 1.5)));
-				difficulty = (points - healthpoints) / 4;
-				points = difficulty * 3;
-				int speedpoints = Squirrel3RNG.Next(difficulty / 3, difficulty);
-				monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 4)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 4) * 4))));
-				difficulty = (points - speedpoints) / 4;
-				points = difficulty * 2;
-				int damagepoints = Squirrel3RNG.Next(difficulty / 2, difficulty / 2 * 3);
-				monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
-				points -= damagepoints;
-				monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 3), Math.Max(1, Convert.ToInt32(((float)points - 3) * 4)));
+					int points = difficulty * 4;
+					int healthpoints = Squirrel3RNG.Next(difficulty / 4, difficulty);
+					monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20 * 2), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 22 * 3)));
+					difficulty = (points - healthpoints) / 4;
+					points = difficulty * 3;
+					int speedpoints = Squirrel3RNG.Next(difficulty / 3, difficulty);
+					if(Squirrel3RNG.Next(10) == 1)
+						monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 5)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 5) * 3))));
+					difficulty = (points - speedpoints) / 4;
+					points = difficulty * 2;
+					int damagepoints = Squirrel3RNG.Next(difficulty / 2, difficulty / 2 * 3);
+					if (Squirrel3RNG.Next(5) == 1)
+						monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
+					points -= damagepoints;
+					if (Squirrel3RNG.Next(5) == 1)
+						monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 2), Math.Max(1, Convert.ToInt32(((float)points - 3) * 5)));
 				}
 
 				m.health = Math.Max(m.health, monsterHealthScaled);

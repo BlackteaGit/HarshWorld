@@ -34,13 +34,15 @@
     <Reference Include="0Harmony, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Lib.Harmony.2.0.4\lib\net472\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="MonoGame.Framework">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Wayward Terran Frontier\MonoGame.Framework.dll</HintPath>
+    <Reference Include="MonoGame.Framework, Version=3.5.1.1679, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>G:\SteamLibrary\steamapps\common\Zero Falls\MonoGame.Framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Wayward Terran Frontier\System.Data.SQLite.dll</HintPath>
+    <Reference Include="System.Data.SQLite, Version=1.0.109.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>G:\SteamLibrary\steamapps\common\Zero Falls\System.Data.SQLite.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -50,14 +52,15 @@
     <Reference Include="System.Xml" />
     <Reference Include="WaywardExtensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WaywardExtensions.dll</HintPath>
+      <HintPath>G:\SteamLibrary\steamapps\common\Zero Falls\WaywardExtensions.dll</HintPath>
     </Reference>
-    <Reference Include="WTF">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WTF.exe</HintPath>
-    </Reference>
-    <Reference Include="WTFModLoader, Version=0.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="WTF, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Zero Falls\WTFModLoader.dll</HintPath>
+      <HintPath>G:\SteamLibrary\steamapps\common\Zero Falls\WTF.exe</HintPath>
+    </Reference>
+    <Reference Include="WTFModLoader, Version=0.4.1.2, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>G:\SteamLibrary\steamapps\common\Zero Falls\WTFModLoader.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

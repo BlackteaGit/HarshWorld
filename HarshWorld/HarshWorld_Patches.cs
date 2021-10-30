@@ -734,7 +734,7 @@ namespace HarshWorld
 					//var shipsunlocked = CHARACTER_DATA.shipsUnlocked();
 					//var mostexpensivedesign = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
 					//var mostExpensiveBuildableDesign = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
-					difficulty = (int)Math.Round(MathHelper.Clamp(((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2 * HWCONFIG.GlobalDifficulty), 1f, 100f));
+					difficulty = (int)Math.Round(MathHelper.Clamp((float)((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3.2) / 2 * HWCONFIG.GlobalDifficulty), 1f, 100f));
 					float distance = 0;
 					float playerarmorquality = -2;
 					float playerweaponquality = -2;
@@ -747,11 +747,13 @@ namespace HarshWorld
 
 					if (playerweaponquality > 1 && playerarmorquality > 1)
 					{
-						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2));
+						difficulty = (int)Math.Round((difficulty * (1 + ((Math.Max(1, playerweaponquality) + Math.Max(1, playerarmorquality)) / 2 / 70))));
+						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, (playerweaponquality + playerarmorquality) / 2 * 1.1f));
 					}
 					else
 					{
-						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1, playerarmorquality)));
+						difficulty = (int)Math.Round((difficulty * (1 + (Math.Max(1, playerweaponquality) / 70))));
+						difficulty = (int)Math.Round(MathHelper.Clamp(difficulty, 1f, Math.Max(1, playerarmorquality * 1.1f)));
 					}
 
 					if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
@@ -764,7 +766,9 @@ namespace HarshWorld
 						vector2 += PLAYER.currentGame.position;
 						distance = Vector2.Distance(PLAYER.currentShip.position, vector2);
 					}
-					float multiplier = Math.Max(6155714f / Math.Max(distance, 1), 1);
+
+
+					float multiplier = Math.Max(6155714f / Math.Max(distance * (1 + ((Math.Max(1, playerweaponquality) + Math.Max(1, playerarmorquality))/2/50)), 1), 1);
 					difficulty = Math.Min(difficulty, difficulty / (int)Math.Max((multiplier / (Math.Max(multiplier, difficulty) / difficulty)), 1));
 					difficulty = Math.Min(HWCONFIG.MaxMonsterLevel, difficulty);
 					int monsterHealthScaled = 100;
@@ -776,17 +780,20 @@ namespace HarshWorld
 					int monsterThicknessScaled = 1;
 					int points = difficulty * 4;
 					int healthpoints = Squirrel3RNG.Next(difficulty / 4, difficulty);
-					monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 20 * 1.5)));
+					monsterHealthScaled += Squirrel3RNG.Next(Math.Max(0, (healthpoints - 4) * 20 * 2), Math.Max(10, Convert.ToInt32(((float)healthpoints - 4) * 22 * 3)));
 					difficulty = (points - healthpoints) / 4;
 					points = difficulty * 3;
 					int speedpoints = Squirrel3RNG.Next(difficulty / 3, difficulty);
-					monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 4)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 4) * 4))));
+					if (Squirrel3RNG.Next(10) == 1)
+						monsterSpeedScaled *= 1f + (0.04f * Squirrel3RNG.Next(Math.Max(1, (speedpoints - 5)), Math.Max(2, Convert.ToInt32(((float)speedpoints - 5) * 3))));
 					difficulty = (points - speedpoints) / 4;
 					points = difficulty * 2;
 					int damagepoints = Squirrel3RNG.Next(difficulty / 2, difficulty / 2 * 3);
-					monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
+					if (Squirrel3RNG.Next(5) == 1)
+						monsterDamageScaled += Squirrel3RNG.Next(Math.Max(0, (damagepoints - 3) * 3), Math.Max(1, Convert.ToInt32(((float)damagepoints - 3) * 4)));
 					points -= damagepoints;
-					monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 3), Math.Max(1, Convert.ToInt32(((float)points - 3) * 4)));
+					if (Squirrel3RNG.Next(5) == 1)
+						monsterThicknessScaled += Squirrel3RNG.Next(Math.Max(0, (points - 3) * 2), Math.Max(1, Convert.ToInt32(((float)points - 3) * 5)));
 
 					if (MONSTERBAG.monsterHealth.ContainsKey(t))
 					{
@@ -879,13 +886,13 @@ namespace HarshWorld
 							int monsterThickness = __instance.thickness;
 							*/
 
-							InventoryItem Item = new InventoryItem();
-							InventoryItem Item2 = new InventoryItem();
-							int shipsUnlocked = (int)Math.Round((float)((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2));
+							InventoryItem Item = null;
+							InventoryItem Item2 = null;
+							int shipsUnlocked = (int)Math.Round((float)((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3.5) / 2));
 							//shipsUnlocked = 30; //debugging
 
 
-							//scaling loot drop chance on distance to the homebse
+							//scaling loot drop chance on distance to the homebase
 							float distance = 0;
 							if (PLAYER.currentSession.grid == CONFIG.spHomeGrid)
 							{
@@ -915,7 +922,7 @@ namespace HarshWorld
 								}
 								else
 								{
-									Item = new Gun(gunQuality, GunSpawnFlags.no_oneshot);
+									Item = new Gun(gunQuality, GunSpawnFlags.none);
 								}
 							}
 							if (selectItem == 2)
@@ -928,7 +935,7 @@ namespace HarshWorld
 
 							}
 
-							if (selectItem == 3 && Squirrel3RNG.Next(20) == 1)
+							if (selectItem == 3 && Squirrel3RNG.Next(10) == 1)
 							{
 								// repair gun
 								float repairgunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
@@ -936,7 +943,7 @@ namespace HarshWorld
 								repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, 39.9f) / 5;
 								Item = new RepairGun(repairgunQuality);
 							}
-							if (selectItem == 4 && Squirrel3RNG.Next(20) == 1)
+							if (selectItem == 4 && Squirrel3RNG.Next(10) == 1)
 							{
 								// fire extinguisher
 								float extinguisherQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
@@ -945,7 +952,7 @@ namespace HarshWorld
 								Item = new Extinguisher(extinguisherQuality);
 							}
 
-							if (selectItem == 5 && Squirrel3RNG.Next(70) == 1)
+							if (selectItem == 5 && Squirrel3RNG.Next(35) == 1)
 							{
 								//observant aura 
 								Item = new ObservantAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
@@ -954,10 +961,10 @@ namespace HarshWorld
 							if (selectItem == 6)
 							{
 								// artifact
-								if (Squirrel3RNG.Next(50) == 1)
+								if (Squirrel3RNG.Next(20) == 1)
 									Item = new ArtifactItem((float)(1.0 + Squirrel3RNG.NextDouble() * 24.0));
 							}
-							if (selectItem == 7 && Squirrel3RNG.Next(50) == 1) //rare crystals
+							if (selectItem == 7 && Squirrel3RNG.Next(25) == 1) //rare crystals
 							{
 								switch (Squirrel3RNG.Next(10))
 								{
@@ -996,41 +1003,41 @@ namespace HarshWorld
 										break;
 								}
 							}
-							if (selectItem == 8 && Squirrel3RNG.Next(50) == 1)
+							if (selectItem == 8 && Squirrel3RNG.Next(35) == 1)
 							{
 								//core node
 								Item = new InventoryItem(InventoryItemType.core_node);
 								Item.stackSize = 1U;
 							}
-							if (selectItem == 9 && Squirrel3RNG.Next(70) == 1)
+							if (selectItem == 9 && Squirrel3RNG.Next(35) == 1)
 							{
 								//stealth aura 
 								Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 							}
-							if (selectItem == 10 && Squirrel3RNG.Next(70) == 1)
+							if (selectItem == 10 && Squirrel3RNG.Next(35) == 1)
 							{
 								//plasma aura 
 								Item = new PlasmaScienceAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 							}
-							if (selectItem == 11 && Squirrel3RNG.Next(70) == 1)
+							if (selectItem == 11 && Squirrel3RNG.Next(35) == 1)
 							{
 								//sturdy aura 
 								Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 							}
-							if (selectItem == 12 && Squirrel3RNG.Next(30) == 1)
+							if (selectItem == 12 && Squirrel3RNG.Next(15) == 1)
 							{
 								//random tuning kit
 								Item = new TuningKit(Math.Min(Math.Max(1f, maxdropchance / 4f), 12f));
 							}
 
-							if (selectItem == 13 && Squirrel3RNG.Next(30) == 1)
+							if (selectItem == 13 && Squirrel3RNG.Next(20) == 1)
 							{
 								//beam aura
 								Item = new BeamEnergyDistributer(Math.Min(Math.Max(1, shipsUnlocked / 4), Math.Min(Math.Max(1, maxdropchance / 4), 12)));
 							}
 
 
-							int selectItem2 = Squirrel3RNG.Next(1, 8);
+							int selectItem2 = Squirrel3RNG.Next(1, 13);
 							if (selectItem2 == 1)
 							{
 								switch (Squirrel3RNG.Next(3))
@@ -1174,17 +1181,62 @@ namespace HarshWorld
 								// mining laser
 								Item2 = new Digger();
 							}
-
-
+							if (selectItem2 == 8)
+							{
+								// neutralino shard
+								Item2 = new InventoryItem(InventoryItemType.neutralino_shard);
+							}
+							if (selectItem2 == 9)
+							{
+								// crystal shard
+								Item2 = new InventoryItem(InventoryItemType.crystal_shard);
+							}
+							if (selectItem2 == 10 && Squirrel3RNG.Next(15) == 1)
+							{
+								// repair gun
+								float repairgunQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, (float)shipsUnlocked + 5f);
+								repairgunQuality = MathHelper.Clamp(repairgunQuality, 1f, 39.9f) / 5;
+								Item2 = new RepairGun(repairgunQuality);
+							}
+							if (selectItem2 == 11 && Squirrel3RNG.Next(15) == 1)
+							{
+								// fire extinguisher
+								float extinguisherQuality = Squirrel3RNG.Next(Math.Min(30, shipsUnlocked) - 10, 40);
+								extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, (float)shipsUnlocked + 5f);
+								extinguisherQuality = MathHelper.Clamp(extinguisherQuality, 10f, 39.9f) / 2;
+								Item2 = new Extinguisher(extinguisherQuality);
+							}
+							if (selectItem2 == 12 && Squirrel3RNG.Next(10) == 1)
+							{
+								//auras
+								int rnd = Squirrel3RNG.Next(1, 9);
+								if (rnd == 1)
+									Item2 = new BulletEnhancer(checked(1 + Squirrel3RNG.Next(2))); //wussBulletAura
+								if (rnd == 2)
+									Item2 = new EmergencyDisplacementOrb((float)(Squirrel3RNG.NextDouble() * 6.0)); //wussDodgeAura
+								if (rnd == 3)
+									Item2 = new EmergencyDisplacementOrb((float)(2.0 + Squirrel3RNG.NextDouble() * 6.0));//medDodgeAura
+								if (rnd == 4)
+									Item2 = new NanoAura(Squirrel3RNG.Next(6), checked(Squirrel3RNG.Next(7) + 6)); //higherQualityNanoAura
+								if (rnd == 5)
+									Item2 = new NanoAura(Squirrel3RNG.Next(6), checked(Squirrel3RNG.Next(4) + 3)); //medQualityNanoAura
+								if (rnd == 6)
+									Item2 = new NanoAura(Squirrel3RNG.Next(5), Squirrel3RNG.Next(4));//lowQualityNanoAura
+								if (rnd == 7)
+									Item2 = new DoubleShotCapacitor((float)(Squirrel3RNG.NextDouble() * 4.0)); //doubleShotAura
+								if (rnd == 8)
+									Item2 = new MovementModAura((float)(Squirrel3RNG.NextDouble() * 4.0));//accelAura
+							}
 
 							for (int i = 0; i < cosm.crew.Values.Count; i++)
 							{
 								var crew = cosm.crew.Values.ToList()[i];
 								if (crew.state != CrewState.dead && Vector2.DistanceSquared(crew.position, __instance.position) < 2000f * 2000f && crew.isPlayer)
 								{
-									if (Squirrel3RNG.Next(0, 100) <= maxdropchance)
+									if (Squirrel3RNG.Next(0, 80) <= maxdropchance)
 									{
-										if (PLAYER.avatar.currentCosm.ship != null)
+										if (PLAYER.avatar.currentCosm.ship != null && Item != null)
 										{
 											PLAYER.avatar.currentCosm.ship.threadDumpCargo(Item);
 											PLAYER.avatar.GetfloatyText().Enqueue("+ 1 loot item deployed into space");
@@ -1192,7 +1244,7 @@ namespace HarshWorld
 									}
 									else
 									{
-										if (PLAYER.avatar.currentCosm.ship != null)
+										if (PLAYER.avatar.currentCosm.ship != null && Item2 != null)
 										{
 											if (Squirrel3RNG.Next(0, 100) <= maxdropchance * 2 + 10)
 											{
