@@ -188,7 +188,7 @@ namespace HarshWorld
 							}
 
 							// spawn random ambush on traveling with Higgs drive
-							if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1 && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f && CHARACTER_DATA.hasResearchExclusion(400712U))
+							if (!interrupted && Squirrel3RNG.Next(1, Math.Max((int)(80000 / HWCONFIG.InterruptionFrequency), 2)) == 1  && PLAYER.currentShip.boostStage > 2 && PLAYER.currentShip.position.X < 89000f && PLAYER.currentShip.position.X > -89000f && PLAYER.currentShip.position.Y < 89000f && PLAYER.currentShip.position.Y > -89000f && (CHARACTER_DATA.hasResearchExclusion(400712U) || CHARACTER_DATA.hasModule(new Color(145, 135, 24))))
 							{
 								if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
 								{
@@ -417,7 +417,7 @@ namespace HarshWorld
 			}
 		}
 
-		[HarmonyPatch(typeof(NonPlayerShip), "tryBuyBudget")] //counting every purchase attempt of to asses their market value
+		[HarmonyPatch(typeof(NonPlayerShip), "tryBuyBudget")] //counting every purchase attempt of to assets their market value
 		public class NonPlayerShip__tryBuyBudget
 		{
 
