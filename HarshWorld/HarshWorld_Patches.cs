@@ -3648,13 +3648,16 @@ namespace HarshWorld
 			private static void Postfix(TargetOverlay __instance, Actor target)
 			{
 				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
-				var targetobject = typeof(TargetOverlay).GetField("targetType", flags).GetValue(__instance);
 				HWReputationOptions.targetFaction = "Transponder: Unknown";
+				if (PLAYER.currentSession  == null || PLAYER.currentWorld == null || PLAYER.currentSession.GetType() == typeof(BattleSessionG) || PLAYER.currentSession.GetType() == typeof(BattleSessionSA) || PLAYER.currentSession.GetType() == typeof(BattleSessionTA) || PLAYER.currentSession.grid != target.grid)
+				{
+					return;
+                }
+				var targetobject = typeof(TargetOverlay).GetField("targetType", flags).GetValue(__instance);
 				var targettype = (ulong)Convert.ChangeType(targetobject, typeof(ulong));
-				var targetsession = PLAYER.currentWorld.getSession(target.grid);
 				if (targettype <= 1)
 				{
-					if (targetsession.allShips.TryGetValue(target.id, out var ship))
+					if (PLAYER.currentSession.allShips.TryGetValue(target.id, out var ship))
 					{
 						if (Globals.globalfactions.ContainsKey(ship.faction))
 						{
@@ -3675,30 +3678,31 @@ namespace HarshWorld
 					}
 					else
 					{ 
-						for (int i = 0; i < targetsession.stations.Count; i++)
+						for (int i = 0; i < PLAYER.currentSession.stations.Count; i++)
 						{
-							if(targetsession.stations[i].id == target.id)
+							if(PLAYER.currentSession.stations[i].id == target.id)
 							{
-								if (Globals.globalfactions.ContainsKey(targetsession.stations[i].faction))
+								if (Globals.globalfactions.ContainsKey(PLAYER.currentSession.stations[i].faction))
 								{
-									HWReputationOptions.targetFaction = "Transponder: " + Globals.globalfactions[targetsession.stations[i].faction].Item1;
+									HWReputationOptions.targetFaction = "Transponder: " + Globals.globalfactions[PLAYER.currentSession.stations[i].faction].Item1;
 								}
-								else if(targetsession.stations[i].faction == 2UL)
+								else if(PLAYER.currentSession.stations[i].faction == 2UL)
 								{
 									HWReputationOptions.targetFaction = "Transponder: Allies";
 								}
-								else if (targetsession.stations[i].faction == 9UL)
+								else if (PLAYER.currentSession.stations[i].faction == 9UL)
 								{
 									HWReputationOptions.targetFaction = "Transponder: Civillian";
 								}
-								else if (targetsession.stations[i].faction == ulong.MaxValue)
+								else if (PLAYER.currentSession.stations[i].faction == ulong.MaxValue)
 								{
 									HWReputationOptions.targetFaction = "Transponder: No Signal";
 								}
 							}
-                        }
+						}
 					}
 				}
+
 			}
 		}
 
