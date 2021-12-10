@@ -484,8 +484,7 @@ namespace HarshWorld
 						{
 							var cargoPod4 = session.cargo[i];
 							float num = Vector2.DistanceSquared(cargoPod4.position, __instance.position);
-							bool flag3 = num < 30f * 30f;
-							if (flag3)
+							if (num < 60f * 60f)
 							{
 								for (int j = 0; j < cargoPod4.items.Count; j++)
 								{
@@ -516,10 +515,24 @@ namespace HarshWorld
 												{
 													CHARACTER_DATA.coreNodes += unchecked((ulong)inventoryItem2.stackSize);
 													SCREEN_MANAGER.alerts.Enqueue("Core node gained");
+													SCREEN_MANAGER.widgetChat.AddMessage("You gained a code node. You now have " + CHARACTER_DATA.coreNodes.ToString(), MessageTarget.Ship);
+												}
+												else if (inventoryItem2.type == InventoryItemType.gauntlet_scrap)
+												{
+													if (PLAYER.currentWorld != null && PLAYER.currentWorld.GetType() == typeof(WorldRev3))
+													{
+														WorldRev3 worldRev = PLAYER.currentWorld as WorldRev3;
+														if (worldRev.gauntlet != null)
+														{
+															worldRev.gauntlet.scrap += inventoryItem2.stackSize;
+															__instance.floatyText.Enqueue("+" + SCREEN_MANAGER.formatCreditString((ulong)inventoryItem2.stackSize) + " scrap");
+														}
+													}
 												}
 												else
 												{
 													__instance.cosm.threadDumpCargo(inventoryItem2);
+													__instance.floatyText.Enqueue("+" + inventoryItem2.type.ToString());
 												}
 											}
 										}
@@ -537,10 +550,10 @@ namespace HarshWorld
 								}
 								break;
 							}
-							bool flag9 = num < 120f * 120f;
-							if (flag9)
+							else if (num < 250f * 250f)
 							{
-								Vector2 value = Vector2.Normalize(__instance.position - cargoPod4.position) * 55f * elapsed;
+								float scaleFactor = 250f * 250f - num;
+								Vector2 value = Vector2.Normalize(__instance.position - cargoPod4.position) * scaleFactor * elapsed;
 								cargoPod4.position += value;
 							}
 						}
@@ -576,7 +589,6 @@ namespace HarshWorld
 
 					}
 				}
-
 				return false;
 			}
 		}
@@ -2955,14 +2967,27 @@ namespace HarshWorld
 									ship.startBoost();
 									__instance.owner.team.ignoreAggression = true;
 								}
-								if (session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1 && Vector2.DistanceSquared(session.allShips[__instance.owner.team.focus].position, ship.position) <
+								if (Vector2.DistanceSquared(session.allShips[__instance.owner.team.focus].position, ship.position) <
 								(ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView
 								*
 								((ship.signitureRadius + (session.allShips[__instance.owner.team.focus].scanRange / 1000f)) * ship.tempVis * session.allShips[__instance.owner.team.focus].tempView)
 								)
 								{
-									ship.endBoost();
+									if(session.allShips[__instance.owner.team.focus].boostStage < 1 && ship.boostStage >= 1)
+									{ 
+										ship.endBoost();
+									}
+									
 								}
+								else 
+								{
+									if (ship.boostStage < 1)
+									{ 
+										ship.startBoost();
+										__instance.owner.team.ignoreAggression = true;
+									}
+								}
+
 							}
 							else if (!session.allShips.ContainsKey(PLAYER.currentShip.id) && (__instance.owner.team.focus == PLAYER.currentShip.id || __instance.owner.faction == 2UL))
 							{
@@ -3015,75 +3040,114 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Ship __instance)
 			{
+				if (PLAYER.currentSession == null || PLAYER.currentWorld == null || PLAYER.currentSession.GetType() == typeof(BattleSessionG) || PLAYER.currentSession.GetType() == typeof(BattleSessionSA) || PLAYER.currentSession.GetType() == typeof(BattleSessionTA))
+				{
+					return;
+				}
 				if (PLAYER.currentShip != null && __instance.id == PLAYER.currentShip.id)
 				{			
 					try
 					{
 						foreach (var shipId in __instance.GetConvoy().Keys)
 						{
-							if (!PLAYER.currentSession.allShips.ContainsKey(shipId))
+							if (!PLAYER.currentSession.recurseIterateShipExists(shipId))
 							{
 								if (PLAYER.currentSession.neighbors.ToList().TrueForAll(session => session != null && !session.allShips.ContainsKey(shipId) || session == null))
 								{
-									var session = PLAYER.currentWorld.getSession(PLAYER.currentShip.GetConvoy()[shipId]);
-									if (session.allShips.TryGetValue(shipId, out Ship ship) && ship != null)
+									var weakrefsession = new WeakReference(PLAYER.currentWorld.getSession(PLAYER.currentShip.GetConvoy()[shipId]));
+									if (weakrefsession.IsAlive)
 									{
-										ship.endBoost();
-										ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
-										session.allShips.Remove(ship.id);
-										ship.grid.X = PLAYER.currentShip.grid.X;
-										ship.grid.Y = PLAYER.currentShip.grid.Y;
-										ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
-										if (ship.cosm?.crew?.Values?.First()?.team != null && ship.cosm.alive)
+										var session = weakrefsession.Target as BattleSession;
+										if (session.allShips.TryGetValue(shipId, out Ship ship) && ship != null)
 										{
-											ship.cosm.crew.Values.First().team.destination = ship.position + PLAYER.currentShip.position;
+											ship.endBoost();
+											ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
+											session.allShips.Remove(ship.id);
+											ship.grid.X = PLAYER.currentShip.grid.X;
+											ship.grid.Y = PLAYER.currentShip.grid.Y;
+											ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
+											if (ship.cosm?.crew?.Values?.First()?.team != null && ship.cosm.alive)
+											{
+												ship.cosm.crew.Values.First().team.destination = ship.position + PLAYER.currentShip.position;
+											}
+											PLAYER.currentSession.addLocalShip(ship, SessionEntry.flyin);
 										}
-										PLAYER.currentSession.addLocalShip(ship, SessionEntry.flyin);
 									}
 								}
 								else
 								{
-									var session = PLAYER.currentWorld.getSession(PLAYER.currentShip.GetConvoy()[shipId]);	
-									if (session.allShips.TryGetValue(shipId, out Ship ship) && ship != null)
+									var weakrefsession = new WeakReference(PLAYER.currentWorld.getSession(PLAYER.currentShip.GetConvoy()[shipId]));
+									if (weakrefsession.IsAlive)
 									{
-										ship.endBoost();
-										ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
-										session.allShips.Remove(ship.id);
-										ship.grid.X = PLAYER.currentShip.grid.X;
-										ship.grid.Y = PLAYER.currentShip.grid.Y;
-										ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
-										if (ship.cosm?.crew?.Values?.First()?.team != null && ship.cosm.alive)
+										var session = weakrefsession.Target as BattleSession;
+										if (session.allShips.TryGetValue(shipId, out Ship ship) && ship != null)
 										{
-											ship.cosm.crew.Values.First().team.destination = ship.position + PLAYER.currentShip.position;
-										}
-										PLAYER.currentSession.addLocalShip(ship, SessionEntry.flyin);
-									}
-									else
-									{				
-										foreach (var crew in PLAYER.currentGame.team.crew)
-										{
-											if (crew?.currentCosm?.ship != null && crew.currentCosm.ship.id == shipId)
+											ship.endBoost();
+											ship.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
+											session.allShips.Remove(ship.id);
+											ship.grid.X = PLAYER.currentShip.grid.X;
+											ship.grid.Y = PLAYER.currentShip.grid.Y;
+											ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
+											if (ship.cosm?.crew?.Values?.First()?.team != null && ship.cosm.alive)
 											{
-												var session2 = PLAYER.currentWorld.getSession(crew.currentCosm.ship.grid);
-												if (session2.allShips.TryGetValue(shipId, out Ship ship3) && ship3 != null)
+												ship.cosm.crew.Values.First().team.destination = ship.position + PLAYER.currentShip.position;
+											}
+											PLAYER.currentSession.addLocalShip(ship, SessionEntry.flyin);
+										}
+										else
+										{
+											foreach (var crew in PLAYER.currentGame.team.crew)
+											{
+												if (crew?.currentCosm?.ship != null && crew.currentCosm.ship.id == shipId)
 												{
-													ship3.endBoost();
-													ship3.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
-													session2.allShips.Remove(ship3.id);
-													ship3.grid.X = PLAYER.currentShip.grid.X;
-													ship3.grid.Y = PLAYER.currentShip.grid.Y;
-													ship3.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
-													if (ship3.cosm?.crew?.Values?.First()?.team != null && ship3.cosm.alive)
+													var weakrefsession2 = new WeakReference(PLAYER.currentWorld.getSession(PLAYER.currentShip.GetConvoy()[shipId]));
+													if (weakrefsession2.IsAlive)
 													{
-														ship3.cosm.crew.Values.First().team.destination = ship3.position + PLAYER.currentShip.position;
+														var session2 = weakrefsession2.Target as BattleSession;
+														if (session2.allShips.TryGetValue(shipId, out Ship ship3) && ship3 != null)
+														{
+															ship3.endBoost();
+															ship3.position = PLAYER.currentShip.position + RANDOM.squareVector(CONFIG.minViewDist);
+															session2.allShips.Remove(ship3.id);
+															ship3.grid.X = PLAYER.currentShip.grid.X;
+															ship3.grid.Y = PLAYER.currentShip.grid.Y;
+															ship3.rotationAngle = SCREEN_MANAGER.VectorToAngle(PLAYER.currentShip.position);
+															if (ship3.cosm?.crew?.Values?.First()?.team != null && ship3.cosm.alive)
+															{
+																ship3.cosm.crew.Values.First().team.destination = ship3.position + PLAYER.currentShip.position;
+															}
+															PLAYER.currentSession.addLocalShip(ship3, SessionEntry.flyin);
+														}
+														break;
 													}
-													PLAYER.currentSession.addLocalShip(ship3, SessionEntry.flyin);
 												}
-												break;
 											}
 										}
-                                    }
-
+									}
+								}
+							}
+							else
+							{
+								 if(!PLAYER.currentSession.allShips.Keys.Contains(shipId))
+								 { 
+									foreach (Ship ship2 in PLAYER.currentSession.recurseIterateAllShips())
+									{
+										if (ship2.id == shipId && ship2.boostStage < 1)
+										{
+											ship2.startBoost();
+										}
+									}
+								 }
+								 else
+								 {
+									if (PLAYER.currentSession.allShips[shipId].boostStage < 1 && Vector2.DistanceSquared(PLAYER.currentShip.position, PLAYER.currentSession.allShips[shipId].position) <
+										   (PLAYER.currentSession.allShips[shipId].signitureRadius + (PLAYER.currentShip.scanRange / 1000f)) * PLAYER.currentSession.allShips[shipId].tempVis * PLAYER.currentShip.tempView
+										   *
+										   ((PLAYER.currentSession.allShips[shipId].signitureRadius + (PLAYER.currentShip.scanRange / 1000f)) * PLAYER.currentSession.allShips[shipId].tempVis * PLAYER.currentShip.tempView)
+										   )
+									{
+										PLAYER.currentSession.allShips[shipId].startBoost();
+									}
 								}
 							}
 						}
