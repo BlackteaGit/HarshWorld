@@ -76,11 +76,25 @@ namespace HarshWorld
 											{ 
 												HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(spotedfaction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
 												interrupted = true;
+												string faction = "unknown";
+												if (Globals.globalfactions.ContainsKey(spotedfaction))
+												{
+													faction = Globals.globalfactions[spotedfaction].Item1;
+												}
+												SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using travel drive. Your reputation with this faction is not high enough to avoid conflict.", MessageTarget.Ship);
+
 											}
 											else if(PLAYER.currentGame.completedQuests.Contains("phase_1_end"))
 											{
 												HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(), PLAYER.currentShip.position, PLAYER.currentShip.grid));
 												interrupted = true;
+												string faction = "unknown";
+												if (Globals.globalfactions.ContainsKey(spotedfaction))
+												{
+													faction = Globals.globalfactions[spotedfaction].Item1;
+												}
+												SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using travel drive. Your reputation with this faction is not high enough to avoid conflict.", MessageTarget.Ship);
+
 											}
 										}
 
@@ -129,6 +143,12 @@ namespace HarshWorld
 															};
 															HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, true));
 															interrupted = true;
+															string faction = "unknown";
+															if (Globals.globalfactions.ContainsKey(4UL))
+															{
+																faction = Globals.globalfactions[4UL].Item1;
+															}
+																SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using travel drive. Your " + Tooltip + " cargo is being scanned.", MessageTarget.Ship);
 															break;
 														}
 													}
@@ -156,6 +176,12 @@ namespace HarshWorld
 														};
 														HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(owner), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
 														interrupted = true;
+														string faction = "unknown";
+														if (Globals.globalfactions.ContainsKey(owner))
+														{
+															faction = Globals.globalfactions[owner].Item1;
+														}
+														SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using travel drive. Your ship's transponder signal resembles this faction transponder signature.", MessageTarget.Ship);
 														break;
 													}
 												}
@@ -179,6 +205,13 @@ namespace HarshWorld
 														};
 													HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(3UL), PLAYER.currentShip.position, PLAYER.currentShip.grid, conversations, false));
 													interrupted = true;
+													string faction = "unknown";
+													if (Globals.globalfactions.ContainsKey(3UL))
+													{
+														faction = Globals.globalfactions[3UL].Item1;
+													}
+													SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using travel drive. Your ship's transponder signal resembles this faction transponder signature.", MessageTarget.Ship);
+
 												}
 											}
 										}
@@ -197,6 +230,13 @@ namespace HarshWorld
 									{ 
 										HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(faction), PLAYER.currentShip.position, PLAYER.currentShip.grid));
 										interrupted = true;
+										string factionname = "unknown";
+										if (Globals.globalfactions.ContainsKey(faction))
+										{
+											factionname = Globals.globalfactions[faction].Item1;
+										}
+										SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + factionname + " faction ship. Your ship's signature was exposed while using Higg's drive. Your reputation with this faction is not high enough to avoid conflict.", MessageTarget.Ship);
+
 									}
 								}
 								else
@@ -205,6 +245,13 @@ namespace HarshWorld
 									{
 										HWSPAWNMANAGER.addInterruption(new Interruption(INTERRUPTION_BAG.GetRandomTemplate(4UL), PLAYER.currentShip.position, PLAYER.currentShip.grid));
 										interrupted = true;
+										string faction = "unknown";
+										if (Globals.globalfactions.ContainsKey(4UL))
+										{
+											faction = Globals.globalfactions[4UL].Item1;
+										}
+										SCREEN_MANAGER.widgetChat.AddMessage("Interdiction field detected. Your ship has been spotted by a " + faction + " faction ship. Your ship's signature was exposed while using Higg's drive. Your reputation with this faction is not high enough to avoid conflict.", MessageTarget.Ship);
+
 									}
 								}
 							}
@@ -552,7 +599,7 @@ namespace HarshWorld
 							}
 							else if (num < 250f * 250f)
 							{
-								float scaleFactor = 250f * 250f - num;
+								float scaleFactor = 250f - (float)Math.Sqrt(num);
 								Vector2 value = Vector2.Normalize(__instance.position - cargoPod4.position) * scaleFactor * elapsed;
 								cargoPod4.position += value;
 							}
