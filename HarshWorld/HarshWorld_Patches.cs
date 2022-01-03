@@ -396,6 +396,8 @@ namespace HarshWorld
 						}
 						list.Clear();
 					}
+
+
 					if (Globals.Interruptions != null)
 					{
 						for (int i = 0; i < Globals.Interruptions.Count(); i++)
@@ -411,23 +413,11 @@ namespace HarshWorld
 							}
 						}
 					}
+
 				}
 			}
 		}
-		/*
-		[HarmonyPatch(typeof(SHIPBAG), "loadShips")]
-		public class SHIPBAG_loadShips //ship lodouts
-		{
-
-			[HarmonyPostfix]
-			private static void Postfix(ref Dictionary<int, TurretType[]> ___aiLoadouts, ref Dictionary<int, float> ___aiValues, ref Dictionary<int, Texture2D> ___aiTops, ref Dictionary<int, Texture2D> ___aiBots, ref Dictionary<int, int> ___shaderLayers, ref Dictionary<int, Texture2D> ___aiNorms, ref Dictionary<int, Texture2D> ___aiSpecs, ref Dictionary<int, Texture2D> ___aiEmits, ref Dictionary<int, bool> ___aiEmpty)
-			{
-				// Blood_eagle
-				___aiLoadouts[90] = new TurretType[] { TurretType.t_b_machinegun1, TurretType.t_b_machinegun1, TurretType.m_b_380mmautocannon, TurretType.m_b_380mmautocannon, TurretType.m_b_cluster, TurretType.m_b_cluster, TurretType.h_b_antimatter, TurretType.h_b_antimatter, TurretType.h_b_railgun_charged, TurretType.h_b_railgun_charged, TurretType.h_b_railgun_charged, TurretType.h_b_railgun_charged, TurretType.m_b_cluster, TurretType.m_b_cluster, TurretType.t_b_machinegun1, TurretType.t_b_machinegun1 };
-			}
-		}
-		*/
-
+		
 		[HarmonyPatch(typeof(MicroCosm), "updateCrew")] //updatig floaty text of the Crew
 		public class MicroCosm__updateCrew
 		{
@@ -924,7 +914,7 @@ namespace HarshWorld
 				
 			}
 		}
-
+	
 		[HarmonyPatch(typeof(Monster), "applyDamage")] // making monsters drop items on death.
 		public class Monster_applyDamage
 		{
@@ -1071,17 +1061,19 @@ namespace HarshWorld
 							if (selectItem == 9 && Squirrel3RNG.Next(35) == 1)
 							{
 								//stealth aura 
-								Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+								//Item = new DeadeyeAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+								Item = new StealthAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 							}
 							if (selectItem == 10 && Squirrel3RNG.Next(35) == 1)
 							{
 								//plasma aura 
-								Item = new PlasmaScienceAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+								Item = new AbsorbShotSpeed(Math.Max(1f, shipsUnlocked / 5f));
 							}
 							if (selectItem == 11 && Squirrel3RNG.Next(35) == 1)
 							{
 								//sturdy aura 
-								Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+								//Item = new SturdyAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
+								Item = new StealthAura(Math.Max(1f, shipsUnlocked / 5f), Math.Min(Math.Max(1, maxdropchance / 7), 5));
 							}
 							if (selectItem == 12 && Squirrel3RNG.Next(15) == 1)
 							{
@@ -1331,6 +1323,7 @@ namespace HarshWorld
 				}
 			}
 		}
+	
 
 		//fixing monster animation bug (possible obsolete, just to be sure)
 		[HarmonyPatch(typeof(Monster), "animateMovement")]
@@ -1839,6 +1832,23 @@ namespace HarshWorld
 					{
 						__result = false;
 					}
+				}
+			}
+		}
+
+		//fixing: followers sometimes not firing at monsters
+		[HarmonyPatch(typeof(Crew), "attack")]
+		public class Crew_attack
+		{
+
+			[HarmonyPrefix]
+			private static void Prefix(Crew __instance)
+			{
+				BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
+				{
+					//__instance.selectGun();
+					typeof(Crew).GetMethod("selectGun", flags, null, Type.EmptyTypes, null).Invoke(__instance, null);
+					return;
 				}
 			}
 		}

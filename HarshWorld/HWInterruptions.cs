@@ -2277,7 +2277,7 @@ namespace HarshWorld
 					{
 						PLAYER.currentSession.allShips.TryGetValue(despawning.Item1, out var ship);
 						QuewedShipsToRecycle.Enqueue(ship);
-						PLAYER.currentSession.allShips.Remove(despawning.Item1);
+						//PLAYER.currentSession.allShips.Remove(despawning.Item1);
 					}
 				}
 			}
