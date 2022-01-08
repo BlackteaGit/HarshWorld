@@ -50,7 +50,7 @@ namespace HarshWorld
 		}
 		public static void interruptionUpdate (float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
-			if (Globals.eventflags[GlobalFlag.PiratesCalledForShip] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session, InterruptionInstance))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
+			if (PLAYER.currentShip != null && Globals.eventflags[GlobalFlag.PiratesCalledForShip] == false && ((PLAYER.currentShip.docked != null && PLAYER.currentShip.docked.Count > 0) || ShipsOutOfRange(session, InterruptionInstance))) //despawn condition for friendly pirates event using InterruptionType.friendly_pirates_call
 			{
 				foreach (var tupleship in InterruptionInstance.activeShips)
 				{

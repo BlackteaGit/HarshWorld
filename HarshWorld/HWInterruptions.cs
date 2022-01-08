@@ -3135,13 +3135,12 @@ namespace HarshWorld
 				}
 				checked
 				{
-					if (!this.assetsSpawned)
+					if (!this.assetsSpawned && PLAYER.currentShip != null)
 					{
 
-						if (PLAYER.currentShip != null)
-						{
-							PLAYER.currentShip.endBoost();
-						}
+
+						PLAYER.currentShip.endBoost();
+
 
 						if (this.activeShips.Count() != 0 || this.wavesQueued != 0 || this.initWaveQueued == true)
 						{
@@ -3168,7 +3167,7 @@ namespace HarshWorld
 						this.spawnStamp = SCREEN_MANAGER.GameTimeRef.TotalGameTime;
 					}
 				}
-				if (this.waves != null && this.waves.Count != 0 && this.wavesQueued > 0 && this.spawnPoints.Count<Vector2>() > 0 && (this.accumulatedSignature > 0f /*|| PLAYER.avatar.currentCosm.isStation*/) && this.currentWave < this.maxWaves)
+				if (PLAYER.currentShip != null && this.waves != null && this.waves.Count != 0 && this.wavesQueued > 0 && this.spawnPoints.Count<Vector2>() > 0 && (this.accumulatedSignature > 0f /*|| PLAYER.avatar.currentCosm.isStation*/) && this.currentWave < this.maxWaves)
 				{
 					if (this.activeShips.Count<Tuple<ulong, List<String>>>() < 2 || (this.initialWave != null && this.initialWave.Item1 != null)) // enqueue reinforcements if less then 2 ships remain or there was an initial Wave to spawn.
 					{

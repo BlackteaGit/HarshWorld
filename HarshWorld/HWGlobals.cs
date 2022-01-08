@@ -367,7 +367,7 @@ namespace HarshWorld
 		public static void upscaleMonster(Monster m)
 		{
 			int difficulty;
-			if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
+			if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null && PLAYER.currentShip != null)
 			{
 				difficulty = (int)Math.Round(MathHelper.Clamp(((Math.Max(CHARACTER_DATA.shipsUnlocked(), Globals.mostExpensiveDesigndifficulty * 3) + Globals.mostExpensiveBuildableDesigndifficulty * 3) / 2 * HWCONFIG.GlobalDifficulty), 1f, 100f));
 				float distance;

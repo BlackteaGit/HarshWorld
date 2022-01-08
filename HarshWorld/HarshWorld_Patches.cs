@@ -778,7 +778,7 @@ namespace HarshWorld
 			private static void Postfix(Monster __instance, int t) // scale monster stats
 			{
 				int difficulty;
-				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
+				if (PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null && PLAYER.currentShip != null)
 				{
 					//var shipsunlocked = CHARACTER_DATA.shipsUnlocked();
 					//var mostexpensivedesign = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
@@ -921,7 +921,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Monster __instance, MicroCosm cosm)
 			{
-				if (Globals.initialized && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null)
+				if (Globals.initialized && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null && PLAYER.currentShip != null)
 				{
 					if (__instance.animState == MonsterState.dying || __instance.dead)
 					{
@@ -1578,7 +1578,7 @@ namespace HarshWorld
 			[HarmonyPostfix]
 			private static void Postfix(Crew __instance)
 			{
-				if (Globals.initialized)
+				if (Globals.initialized && PLAYER.currentGame != null)
 				{
 					if (PLAYER.avatar != null && !__instance.isPlayer && __instance.faction != PLAYER.avatar.faction) // npcs will drop some of their gear on death
 					{
@@ -1652,7 +1652,7 @@ namespace HarshWorld
 								}
 							}
 						}
-						else if (PLAYER.currentSession.corpses.Contains(__instance))
+						else if (PLAYER.currentSession.corpses.Contains(__instance) && PLAYER.currentShip != null)
 						{
 							for (int i = 0; i < PLAYER.currentWorld.economy.nodes.Count; i++)
 							{
@@ -3668,7 +3668,7 @@ namespace HarshWorld
 				{
 					SCREEN_MANAGER.toolTip = HWSCREEN_MANAGER.toolTip;
 				}
-				if(Globals.initialized)
+				if(Globals.initialized && PLAYER.currentConsole != null && PLAYER.currentShip != null)
 				{ 
 					if (__state && PLAYER.currentConsole.target != null && PLAYER.currentConsole.target.GetType() == typeof(Ship))
 					{
