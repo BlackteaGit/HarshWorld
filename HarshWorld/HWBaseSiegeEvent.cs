@@ -1412,7 +1412,7 @@ namespace HarshWorld
 			{
 				foreach (var crew in PLAYER.currentShip.cosm.crew.Values)
 				{
-					if (crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && !crew.team.threats.Contains(PLAYER.avatar.faction))
+					if (crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.team?.threats != null && !crew.team.threats.Contains(PLAYER.avatar.faction))
 					{
 						intruder = crew;
 						break;
