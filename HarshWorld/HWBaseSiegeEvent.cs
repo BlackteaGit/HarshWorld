@@ -723,7 +723,7 @@ namespace HarshWorld
 											if (POIdockSpot != null && POIdockSpot.docked == null && buildShip)
 											{
 //TODO>>build ship from players resources>>>
-												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
+												if (crew?.team?.threats != null && crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
 												intrudersSurrenderDialogue(crew);
@@ -788,7 +788,7 @@ namespace HarshWorld
 											if (POIdockSpot != null && POIdockSpot.docked == null && buildShip)
 											{
 //TODO>>build ship from players resources>>>
-												if (crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
+												if (crew?.team?.threats != null && crew.team.threats.Contains(PLAYER.avatar.faction)) //if building a ship is impossible intruders will give up and become neutral
 													crew.team.threats.Remove(PLAYER.avatar.faction);
 												//SCREEN_MANAGER.widgetChat.AddMessage("Intruders can't find a ship to escape and surrender.", MessageTarget.Ship);
 												intrudersSurrenderDialogue(crew);
@@ -1285,7 +1285,10 @@ namespace HarshWorld
 						{
 							foreach (var crew in ship.cosm.crew.Values)
 							{
-								crew.team.goalType = ConsoleGoalType.warp_jump;
+								if (crew.team != null)
+								{
+									crew.team.goalType = ConsoleGoalType.warp_jump;
+								}
 							}
 						}
                     }
@@ -1295,7 +1298,10 @@ namespace HarshWorld
 						{
 							foreach (var crew in ship.cosm.crew.Values)
 							{
-								crew.team.goalType = ConsoleGoalType.kill_enemies;
+								if (crew.team != null)
+								{
+									crew.team.goalType = ConsoleGoalType.kill_enemies;
+								}
 							}
 						}
 					}
@@ -1309,13 +1315,16 @@ namespace HarshWorld
 							foreach (var crew in ship.cosm.crew.Values)
 							{
 								// interrupt any fights going on and get the ships to the station
-								crew.team.threats.Clear();
-								crew.team.threats.Add(2UL);
-								ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
-								crew.team.destination = eventposition;
-								crew.team.goalType = ConsoleGoalType.warp_jump;
-								InterruptionInstance.activeEffects.Add(new ActiveEffect("WarpIn", ship.position, 3f, 0f));
-								ship.velocity *= -1;
+								if (crew.team != null)
+								{
+									crew.team.threats.Clear();
+									crew.team.threats.Add(2UL);
+									ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
+									crew.team.destination = eventposition;
+									crew.team.goalType = ConsoleGoalType.warp_jump;
+									InterruptionInstance.activeEffects.Add(new ActiveEffect("WarpIn", ship.position, 3f, 0f));
+									ship.velocity *= -1;
+								}
 							}
 							//DEBUG message>>>>>>>>>>	
 							//SCREEN_MANAGER.widgetChat.AddMessage("Ship signature detected entering sensor range.", MessageTarget.Ship);
@@ -1325,10 +1334,13 @@ namespace HarshWorld
 					{
 						foreach (var crew in ship.cosm.crew.Values)
 						{
-							ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
-							crew.team.destination = eventposition;
-							crew.team.goalType = ConsoleGoalType.warp_jump;
-							ship.velocity *= -1;
+							if (crew.team != null)
+							{
+								ship.rotationAngle = SCREEN_MANAGER.VectorToAngle(eventposition - ship.position);
+								crew.team.destination = eventposition;
+								crew.team.goalType = ConsoleGoalType.warp_jump;
+								ship.velocity *= -1;
+							}
 						}
 					}
 					else if (ship.engineEnergy <= 0 && leaving && InterruptionInstance.interdictTimer >= 2f)//ship.velocity.Equals(new Vector2(0, 0)))
@@ -1345,9 +1357,12 @@ namespace HarshWorld
 						var direction = Vector2.Transform(InterruptionInstance.spawnPoints[RANDOM.getRandomNumber(InterruptionInstance.spawnPoints.Count<Vector2>())], InterruptionInstance.rotationMatrix);
 						foreach (var crew in ship.cosm.crew.Values)
 						{
-							crew.team.destination = ship.position + (ship.position + direction); //setting a destination to fly away
-							crew.team.goalType = ConsoleGoalType.warp_jump;
-							crew.team.threats.Clear();
+							if(crew.team != null)
+							{ 
+								crew.team.destination = ship.position + (ship.position + direction); //setting a destination to fly away
+								crew.team.goalType = ConsoleGoalType.warp_jump;
+								crew.team.threats.Clear();
+							}
 							/*
 							if (crew.team.threats.Contains(PLAYER.avatar.faction))
 								crew.team.threats.Remove(PLAYER.avatar.faction);  // hostile npcs will become friendly again.
@@ -1377,7 +1392,7 @@ namespace HarshWorld
 			{
 				foreach (var crew in PLAYER.currentShip.cosm.crew.Values)
 				{
-					if(crew.state != CrewState.dead && crew.team.threats.Contains(PLAYER.avatar.faction))
+					if(crew?.team?.threats != null && crew.state != CrewState.dead && crew.team.threats.Contains(PLAYER.avatar.faction))
 					{
 						intruders++;
 					}
@@ -1393,7 +1408,7 @@ namespace HarshWorld
 						{
 							foreach (var crew in station.cosm.crew.Values)
 							{
-								if (crew.state != CrewState.dead && crew.team.threats.Contains(PLAYER.avatar.faction))
+								if (crew?.team?.threats != null && crew.state != CrewState.dead && crew.team.threats.Contains(PLAYER.avatar.faction))
 								{
 									intruders++;
 								}
@@ -1412,7 +1427,7 @@ namespace HarshWorld
 			{
 				foreach (var crew in PLAYER.currentShip.cosm.crew.Values)
 				{
-					if (crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.team?.threats != null && !crew.team.threats.Contains(PLAYER.avatar.faction))
+					if (crew?.team?.threats != null && crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && !crew.team.threats.Contains(PLAYER.avatar.faction))
 					{
 						intruder = crew;
 						break;
@@ -1429,7 +1444,7 @@ namespace HarshWorld
 						{
 							foreach (var crew in station.cosm.crew.Values)
 							{
-								if (crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && !crew.team.threats.Contains(PLAYER.avatar.faction))
+								if (crew?.team?.threats != null && crew.state != CrewState.dead && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && !crew.team.threats.Contains(PLAYER.avatar.faction))
 								{
 									intruder = crew;
 									break;
@@ -1492,7 +1507,7 @@ namespace HarshWorld
 				for (int i = 0; i < PLAYER.avatar.currentCosm.crew.Values.Count; i++)
 				{
 					var crew = PLAYER.avatar.currentCosm.crew.Values.ToList()[i];
-					if (!crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
+					if (crew?.team?.threats != null && !crew.isPlayer && crew.faction != PLAYER.avatar.faction && crew.state != CrewState.dead)
 					{
 						if (crew.team.threats.Contains(PLAYER.avatar.faction))
 						{
