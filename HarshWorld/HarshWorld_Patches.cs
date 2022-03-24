@@ -2261,6 +2261,7 @@ namespace HarshWorld
 							PLAYER.currentShip.tempMissileHard = 1f;
 							PLAYER.currentShip.tempTurReload = 1f;
 							PLAYER.currentShip.tempTurTraverse = 1f;
+							PLAYER.currentShip.faction = 2UL;													
 							__instance.group = 0;
 							if (PLAYER.currentShip.turrets == null || __instance.turrets == null || PLAYER.currentShip.turrets.ToList().TrueForAll(Element => Element == null)) // new turrets assigned only once. Or assign new turrets to current console
 							{

@@ -94,6 +94,7 @@ namespace HarshWorld
 
 		public static void interruptionUpdate(float elapsed, BattleSession session, Interruption InterruptionInstance)
 		{
+
 			bool leave = false;
 			if (interruption == null)
 			{
@@ -118,7 +119,7 @@ namespace HarshWorld
             }
             //winnining conditions
             //all ships and intruders are killed
-            if (InterruptionInstance.activeShips.Count() == 0 && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false && !intrudersonboard)
+            if ((InterruptionInstance.activeShips.Count() == 0 || !session.allShips.Keys.Contains(InterruptionInstance.activeShips[0].Item1)) && (InterruptionInstance.wavesQueued == 0 || InterruptionInstance.currentWave >= InterruptionInstance.maxWaves) && InterruptionInstance.initWaveQueued == false && !intrudersonboard)
 			{
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false;
 			}
@@ -127,24 +128,29 @@ namespace HarshWorld
 				buildShip = true; //No active besieger ships left, some crew is still on the homebase, try to build a ship from players resources.
 			}
 
+			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && !Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && !intrudersonboard && seconddeath) //all intruders are killed or left the station after phase3
+			{
+				if(!leaving)
+				leave = true;
+			}
+
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && !intrudersonboard) //all intruders are killed or left the station after phase2 and some have stolen goods in inventory
 			{
 				for(int i = 0; i < InterruptionInstance.activeShips.Count; i++)
 				{
 					if (session.allShips.TryGetValue(InterruptionInstance.activeShips[i].Item1, out Ship ship))
 					{
-
 						if (PLAYER.currentShip != null && ship.id == PLAYER.currentShip.id)
 						{
 
 						}
 						else
 						{
-							if (ship.cosm?.crew != null)
+							if (!leaving && ship.cosm?.crew != null)
 							{
 								for (int c = 0; c < ship.cosm.crew.Values.ToList().Count; c++)
 								{
-									if (hasStolenResources(ship.cosm.crew.Values.ToList()[c]) || stealShip)
+									if (stealShip || hasStolenResources(ship.cosm.crew.Values.ToList()[c]))
 									{
 										//win condition for besiegers, they consider looting player's homebase a success and no longer profitable and fly away
 										leave = true;
@@ -159,12 +165,32 @@ namespace HarshWorld
 				finished:;
             }
 
+			if (tip == null && leave) //restoring state flags after game load if saved in phase 3 (after lockdown)
+			{
+				seconddeath = true;
+				tip = new ToolTip();
+				tip.tip = "Defend your homestation";
+				tip.setDescription("Do not let the intruders escape with your resources.");
+				try
+				{
+					if (SCREEN_MANAGER.questJournal != null)
+					{
+						SCREEN_MANAGER.questJournal.LoadQuests();
+					}
+				}
+				catch
+				{
+				}
+			}
+
 			if (tip == null) //initialasing quest description with phase 1 (before lockdown)
 			{
 				tip = new ToolTip();
 				tip.tip = "Defend your homestation";
 				tip.setDescription("Find out what the intruders want and get rid of them.");
 			}
+
+			
 
 			// updating event if win/lose conditions not met
 			if (Globals.eventflags[GlobalFlag.Sige1EventActive] && PLAYER.currentGame != null && PLAYER.currentWorld != null && PLAYER.currentSession != null && PLAYER.avatar != null && !leave)
@@ -226,7 +252,7 @@ namespace HarshWorld
 				leaving = true;
 			}
 
-			if (!Globals.eventflags[GlobalFlag.Sige1EventActive] || (ShipsOutOfRange(session, InterruptionInstance) && leave)) //despawn conditions
+			if (!Globals.eventflags[GlobalFlag.Sige1EventActive] || (ShipsOutOfRange(session, InterruptionInstance) && (leave||leaving))) //despawn conditions
 			{
 				foreach (var tupleship in InterruptionInstance.activeShips)
 				{
@@ -278,6 +304,16 @@ namespace HarshWorld
 				Globals.eventflags[GlobalFlag.Sige1EventActive] = false; //if other despawning conditions active
 				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
 				HWSPAWNMANAGER.DespawnInterruptionAsync(InterruptionInstance.id).SafeFireAndForget();
+				try
+				{
+					if (SCREEN_MANAGER.questJournal != null)
+					{
+						SCREEN_MANAGER.questJournal.LoadQuests();
+					}
+				}
+				catch
+				{
+				}
 			}
 
 		}
@@ -289,18 +325,25 @@ namespace HarshWorld
 					 * Please don't judge, LOL
 					 */
 
+
+			var debug1 = seconddeath;
+			var debug2 = thirddeath;
 			if (Globals.eventflags[GlobalFlag.Sige1EventLockdown])
 			{
 				PROCESS_REGISTER.currentCosm.interiorLightType = InteriorLightType.battlestations; //restoring lockdown on gameload
 			}
-
+			float delay = 0;
 			bool hackingsuccess = false;
 			intruderTimer += elapsed;
-			if (InterruptionInstance.activeShips.Count > 0 && intruderTimer >= Math.Min(InterruptionInstance.activeShips.Count * 20f, 160f)) //spawning intruders
+
+			if (seconddeath)
+				delay = Math.Max(210 / Math.Max(InterruptionInstance.activeShips.Count, 1), 80f);
+
+			if (InterruptionInstance.activeShips.Count > 0 && intruderTimer >= Math.Max(Math.Max(160 / InterruptionInstance.activeShips.Count, delay), 20f) && !leaving) //spawning intruders
 			{
 				
 				if (HWCONFIG.GlobalDifficulty > 0 && PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations
-				&& Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] == false && seconddeath == false && PLAYER.currentShip.cosm.crew.Count() < Squirrel3RNG.Next(12,17)) //spawning only in 1st phase
+				&& Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] == false && PLAYER.currentShip.cosm.crew.Count() < Squirrel3RNG.Next(12,17))
 				{
 					if (SCREEN_MANAGER.dialogue == null && !PROCESS_REGISTER.currentCosm.klaxonOverride)
 					{
@@ -360,12 +403,16 @@ namespace HarshWorld
 					PROCESS_REGISTER.currentCosm.klaxonOverride = false;
 				}
 			}
-			else //reset to phase 1 (before lockdown) if all intruders are killed
+			else if(!leaving) //reset to phase 3 if all intruders are killed and event ending conditions are not met.
 			{
 				PROCESS_REGISTER.currentCosm.klaxonOverride = false;
 				unlockAirlocks = true; //exit phase 2
 				Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = false;
-				seconddeath = false;
+			}
+			else if(leaving)
+			{
+				PROCESS_REGISTER.currentCosm.klaxonOverride = false;
+				unlockAirlocks = true; //exit phase 2
 			}
 
 			if (!seconddeath && PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations) //restoring state flags after game load if saved in phase 2 (lockdown)
@@ -396,7 +443,7 @@ namespace HarshWorld
 				}
 			}
 
-			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the intruders escape with your resources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
+			if (seconddeath && PROCESS_REGISTER.currentCosm.klaxonOverride == true && tip.description != "Do not let the intruders escape with your resources.") //restoring state flags after game load if saved in phase 3 (after lockdown)
 			{
 				tip.tip = "Defend your homestation";
 				tip.setDescription("Do not let the intruders escape with your resources.");
@@ -415,7 +462,7 @@ namespace HarshWorld
 
 			if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] && PLAYER.avatar.state != CrewState.dead)
 			{
-				if (PLAYER.animateRespawn)
+				if (PLAYER.animateRespawn || PLAYER.avatar.state == CrewState.dead)
 				{
 					if (PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations && (!seconddeath || thirddeath) && PROCESS_REGISTER.currentCosm.klaxonOverride == true) //progressing to phase 2 (lockdown)
 					{
@@ -444,7 +491,7 @@ namespace HarshWorld
 							}
 						}
 						tip.tip = "Defend your homestation";
-						tip.setDescription("Kill the intruders before they can steal your resources and hack the airlocks open. Or make them leave by destroying their ships.");
+						tip.setDescription("Kill the intruders before they can steal your resources and hack the airlocks open. And make them leave by destroying their ships.");
 					}
 				}
 			}
@@ -458,6 +505,7 @@ namespace HarshWorld
 
 					if (module.type == ModuleType.cloning_vat)
 					{
+						POIcloneVats = (module as CloningVat).tiles[0];
 						CVPos = (module as CloningVat).spawnOffset;
 						break;
 					}
@@ -518,6 +566,10 @@ namespace HarshWorld
 				{
 					if (crew.team.threats.Contains(PLAYER.avatar.faction) && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) < 100000f * 100000f) //goals for hostile intruders
 					{
+						if(crew.team.threats.Contains(PLAYER.avatar.faction) && hasStolenResources(crew))
+						{
+							seconddeath = true;   //restoring flags after game reload
+                        }
 						if (!Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //state before player died once
 						{
 							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal) //default setting
@@ -527,7 +579,7 @@ namespace HarshWorld
 							else
 							{
 								Globals.eventflags[GlobalFlag.Sige1EventPlayerDead] = true;
-								if (hasStolenResources(crew) || stealShip)
+								if (stealShip || hasStolenResources(crew))
 								{
 									crew.setGoal(POIAirlock);
 								}
@@ -540,12 +592,12 @@ namespace HarshWorld
 						if (Globals.eventflags[GlobalFlag.Sige1EventPlayerDead]) //player died once, phase 1 completed
 						{
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && (hasStolenResources(crew) || stealShip) && testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //default setting
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal  && testLOS(crew, PLAYER.avatar.position, crew.currentCosm) && (stealShip || hasStolenResources(crew)))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //default setting
 							{
 								crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && playerdistanceToCV > 45000 && (hasStolenResources(crew) || stealShip) && testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //player is in lockdown and not in CV room
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && playerdistanceToCV > 45000  && testLOS(crew, PLAYER.avatar.position, crew.currentCosm) && (stealShip || hasStolenResources(crew)))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) <= 150000) //player is in lockdown and not in CV room
 							{
 								crew.attackTarget(PLAYER.avatar);//set goal to move towards player
 							}
@@ -554,7 +606,7 @@ namespace HarshWorld
 							{
 								if (targetModule == null)
 								{
-									if (!hasStolenResources(crew) && !stealShip)
+									if (!stealShip && !hasStolenResources(crew))
 									{
 										targetModule = POICargobay;
 										crew.setGoal(targetModule); //reset to stealing items every time player is respawning
@@ -571,12 +623,12 @@ namespace HarshWorld
 								}
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && crew.state == CrewState.attacking && (hasStolenResources(crew) || stealShip) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.normal && crew.state == CrewState.attacking && (stealShip || hasStolenResources(crew)) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
 							{
 								crew.setGoal(POIAirlock);
 							}
 
-							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && crew.state == CrewState.attacking && (hasStolenResources(crew) || stealShip) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
+							if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations && crew.state == CrewState.attacking && (stealShip || hasStolenResources(crew)) && crew.target != crew.position && !testLOS(crew, PLAYER.avatar.position, crew.currentCosm))// && Vector2.DistanceSquared(crew.position, PLAYER.avatar.position) > 150000)
 							{
 								crew.setGoal(POIConsole);
 							}
@@ -585,7 +637,7 @@ namespace HarshWorld
 							{
 								if (targetModule == null)
 								{
-									if (!hasStolenResources(crew) && !stealShip)
+									if (!stealShip && !hasStolenResources(crew))
 									{
 										targetModule = POICargobay;
 										crew.setGoal(targetModule);
@@ -602,7 +654,7 @@ namespace HarshWorld
 								}
 							}
 
-							if (crew.state != CrewState.attacking && (crew.target == crew.position || crew.state == CrewState.idle || crew.state == CrewState.operating) && POICargobay != null && POIConsole != null && POIAirlock != null) //check if at target position of his current goal
+							if (((crew.state != CrewState.attacking && crew.target == crew.position) || crew.state == CrewState.idle || crew.state == CrewState.operating) && POICargobay != null && POIConsole != null && POIAirlock != null) //check if at target position of his current goal
 							{
 								//calculating current position of the crewmember relative to POIs
 								CBPos = new Vector2((float)(POICargobay.X % crew.currentCosm.width * 16), (float)(POICargobay.X / crew.currentCosm.width * 16));
@@ -753,7 +805,7 @@ namespace HarshWorld
 																PLAYER.currentShip.connectShips(ship, POIdockSpot.pivotTile, ship.docking.First<DockSpot>().pivotTile);
 																ship.cosm.crew.Values.First().team.goalType = ConsoleGoalType.none;
 																crew.GetfloatyText().Enqueue("docking initiated");
-																if (hasStolenResources(crew) || stealShip)
+																if (stealShip || hasStolenResources(crew))
 																{
 																	crew.setGoal(POIAirlock);
 																}
@@ -794,7 +846,7 @@ namespace HarshWorld
 												intrudersSurrenderDialogue(crew);
 
 											}
-											if (hasStolenResources(crew) || stealShip)
+											if (stealShip || hasStolenResources(crew))
 											{
 												crew.setGoal(POIAirlock);
 											}
@@ -829,7 +881,7 @@ namespace HarshWorld
 									{
 										if (PROCESS_REGISTER.currentCosm.interiorLightType == InteriorLightType.battlestations)
 										{
-											if (hasStolenResources(crew) || stealShip)
+											if (stealShip || hasStolenResources(crew))
 											{
 												crew.setGoal(POIConsole);
 											}
@@ -852,7 +904,7 @@ namespace HarshWorld
 								//condition if crew is standing outside of the any POI and has no POI assigned to walk to
 								if (targetModule == null) //after loading the game
 								{
-									if (!hasStolenResources(crew) && !stealShip)
+									if (!stealShip && !hasStolenResources(crew))
 									{
 										targetModule = POICargobay;
 										crew.setGoal(targetModule);
@@ -900,13 +952,14 @@ namespace HarshWorld
 											{
 												targetModule = POIAirlock;
 												crew.setGoal(targetModule);
+												seconddeath = true;
 											}
 										}
 									}
 								}
 								else
 								{
-									if (hasStolenResources(crew) || stealShip)
+									if (stealShip || hasStolenResources(crew))
 									{
 										if (POIdockSpot != null && POIdockSpot.docked != null && PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations)
 										{
@@ -949,7 +1002,7 @@ namespace HarshWorld
 							{
 								if (targetModule == null) //after loading the game
 								{
-									if (!hasStolenResources(crew) && !stealShip)
+									if (!stealShip && !hasStolenResources(crew))
 									{
 										targetModule = POICargobay;
 										crew.setGoal(targetModule);
@@ -960,6 +1013,7 @@ namespace HarshWorld
 										{
 											targetModule = POIAirlock;
 											crew.setGoal(targetModule);
+											seconddeath = true;
 										}
 										else
 										{
@@ -989,7 +1043,7 @@ namespace HarshWorld
 													else
 													{
 														targetModule = POIAirlock;
-														crew.setGoal(targetModule);
+														crew.setGoal(targetModule);												
 													}
 												}
 											}
@@ -997,17 +1051,19 @@ namespace HarshWorld
 											{
 												targetModule = POIAirlock;
 												crew.setGoal(targetModule);
+												seconddeath = true;
 											}
 										}
 									}
 								}
 								else
 								{
-									if (hasStolenResources(crew) || stealShip)
+									if (stealShip || hasStolenResources(crew))
 									{
 										if (POIdockSpot != null && POIdockSpot.docked != null && PROCESS_REGISTER.currentCosm.interiorLightType != InteriorLightType.battlestations)
 										{
 											crew.setGoal(POIAirlock);
+											seconddeath = true;
 										}
 										else //no docked ship
 										{
@@ -1031,6 +1087,7 @@ namespace HarshWorld
 												else
 												{
 													crew.setGoal(POIAirlock);
+													seconddeath = true;
 												}
 											}
 										}
@@ -1114,21 +1171,21 @@ namespace HarshWorld
 			if (crew.heldItem != null && crew.heldItem.GetType() == typeof(Gun))
 			{
 				float n = (crew.heldItem as Gun).range;
-				float n2 = Vector2.Distance(crew.position, target);
-				if (n2 > n)
+				float n2 = Vector2.DistanceSquared(crew.position, target);
+				if (n2 > n * n)
 				{
 					return false;
 				}
 			}
 			float num = 0f;
-			float num2 = Vector2.Distance(crew.position, target);
+			float num2 = Vector2.DistanceSquared(crew.position, target);
 			if (num2 == 0f)
 			{
 				return true;
 			}
 			Vector2 value = Vector2.Normalize(target - crew.position) * 8f;
 			Vector2 vector = crew.position;
-			while (num < num2)
+			while (num * num < num2)
 			{
 				vector += value;
 				num += 8f;
@@ -1148,6 +1205,11 @@ namespace HarshWorld
 
 		private static bool hasStolenResources(Crew crew) //checking if crew has some stolen goods in inventory, encumbering (reducing speed) if that is the case
 		{
+
+			if(crew.speed == 100f)
+			{
+				return true;
+			}
 			if (crew.inventory == null)
 			{
 				if (crew.speed != 175f)
@@ -1156,16 +1218,27 @@ namespace HarshWorld
 				}
 				return false;
 			}
-			for (int i = 0; i < crew.inventory.Length; i++)
-			{
-				if (crew.inventory[i] != null && crew.inventory[i].type != InventoryItemType.grey_goo && crew.inventory[i].type != InventoryItemType.repair_gun && crew.inventory[i].type != InventoryItemType.fire_extinguisher
-				&& crew.inventory[i].type != InventoryItemType.fire_extinguisher_2 && crew.inventory[i].type != InventoryItemType.gun)
+			if(crew.inventory.Length > 4)
+			{ 
+				for (int i = 4; i < crew.inventory.Length; i++)
 				{
-					if (crew.speed == 175f)
+					if (crew.inventory[i] == null)
 					{
-						crew.speed = 100f;
+						if (crew.speed != 175f)
+						{
+							crew.speed = 175f;
+						}
+						return false;
 					}
-					return true;
+					if (crew.inventory[i] != null && crew.inventory[i].type != InventoryItemType.grey_goo && crew.inventory[i].type != InventoryItemType.repair_gun && crew.inventory[i].type != InventoryItemType.fire_extinguisher
+					&& crew.inventory[i].type != InventoryItemType.fire_extinguisher_2 && crew.inventory[i].type != InventoryItemType.gun)
+					{
+						if (crew.speed == 175f)
+						{
+							crew.speed = 100f;
+						}
+						return true;
+					}
 				}
 			}
 			if (crew.speed != 175f)
@@ -1404,7 +1477,7 @@ namespace HarshWorld
 				{
 					foreach (Station station in HomeBaseSession.stations)
 					{
-						if (station.id == PLAYER.currentGame.homeBaseId && station.cosm?.crew != null && station.cosm.alive)
+						if (station.id == PLAYER.currentGame.homeBaseId && station.cosm?.crew != null)
 						{
 							foreach (var crew in station.cosm.crew.Values)
 							{
@@ -1413,6 +1486,11 @@ namespace HarshWorld
 									intruders++;
 								}
 							}
+							SCREEN_MANAGER.widgetChat.AddMessage("You activated the ship's security systems to prevent intrudes from entering.", MessageTarget.Ship);
+						}
+						else if (station.id == PLAYER.currentGame.homeBaseId && station.faction == 4UL)
+						{
+							return 1;
 						}
 					}
 				}
@@ -1517,6 +1595,16 @@ namespace HarshWorld
 				}
 				//resetting all static flags to defaults
 				initialize();
+				try
+				{
+					if (SCREEN_MANAGER.questJournal != null)
+					{
+						SCREEN_MANAGER.questJournal.LoadQuests();
+					}
+				}
+				catch
+				{
+				}
 			}
 			return false;
 		}

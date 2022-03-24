@@ -42,10 +42,10 @@ namespace HarshWorld
 		public static ConcurrentQueue<Tuple<ulong, Point>> GlobalShipRemoveQueue = new ConcurrentQueue<Tuple<ulong, Point>>();
 		public static Dictionary<InventoryItemType, int> offer = new Dictionary<InventoryItemType, int>();
 		public static Dictionary<InventoryItemType, int> demand = new Dictionary<InventoryItemType, int>();
-		public static Dictionary<GlobalFlag, bool> eventflags = new Dictionary<GlobalFlag, bool>();
-		public static Dictionary<GlobalInt, int> globalints = new Dictionary<GlobalInt, int>();
-		public static Dictionary<GlobalDouble, double> globaldoubles = new Dictionary<GlobalDouble, double>();
-		public static Dictionary<GlobalString, string> globalstrings = new Dictionary<GlobalString, string>();
+		public static ConcurrentDictionary<GlobalFlag, bool> eventflags = new ConcurrentDictionary<GlobalFlag, bool>();
+		public static ConcurrentDictionary<GlobalInt, int> globalints = new ConcurrentDictionary<GlobalInt, int>();
+		public static ConcurrentDictionary<GlobalDouble, double> globaldoubles = new ConcurrentDictionary<GlobalDouble, double>();
+		public static ConcurrentDictionary<GlobalString, string> globalstrings = new ConcurrentDictionary<GlobalString, string>();
 		public static Dictionary<ulong, Tuple<string, GlobalInt>> globalfactions = new Dictionary<ulong, Tuple<string, GlobalInt>>();
 		public static int mostExpensiveDesigndifficulty = Globals.DifficultyFromCost(HW_CHARACTER_DATA_Extensions.mostExpensiveDesign());
 		public static int mostExpensiveBuildableDesigndifficulty = Globals.DifficultyFromCost(Globals.mostExpensiveBuildableDesign());
@@ -85,26 +85,26 @@ namespace HarshWorld
 			//globalfactions.Add(9UL, new Tuple<string, GlobalInt>("Civilian",));
 			//globalfactions.Add(ulong.MaxValue, new Tuple<string, GlobalInt>("Abandoned Wreck",));
 
-			eventflags = new Dictionary<GlobalFlag, bool>();
-			eventflags.Add(GlobalFlag.PiratesCalledForShip, false);
-			eventflags.Add(GlobalFlag.PiratesCalledForShipHostile, false);
-			eventflags.Add(GlobalFlag.Sige1EventActive, false);
-			eventflags.Add(GlobalFlag.Sige1EventSpawnDialogueActive, false);
-			eventflags.Add(GlobalFlag.Sige1EventPlayerDead, false);
-			eventflags.Add(GlobalFlag.Sige1EventLockdown, false);
-			eventflags.Add(GlobalFlag.PiratesCalledForDefense, false);
+			eventflags = new ConcurrentDictionary<GlobalFlag, bool>();
+			eventflags.TryAdd(GlobalFlag.PiratesCalledForShip, false);
+			eventflags.TryAdd(GlobalFlag.PiratesCalledForShipHostile, false);
+			eventflags.TryAdd(GlobalFlag.Sige1EventActive, false);
+			eventflags.TryAdd(GlobalFlag.Sige1EventSpawnDialogueActive, false);
+			eventflags.TryAdd(GlobalFlag.Sige1EventPlayerDead, false);
+			eventflags.TryAdd(GlobalFlag.Sige1EventLockdown, false);
+			eventflags.TryAdd(GlobalFlag.PiratesCalledForDefense, false);
 
-			globalints = new Dictionary<GlobalInt, int>();
-			globalints.Add(GlobalInt.Bounty, 0);
-			globalints.Add(GlobalInt.FriendlyPiratesRep, 0);
-			globalints.Add(GlobalInt.PiratesRep, 0);
-			globalints.Add(GlobalInt.SSCRep, 0);
-			globalints.Add(GlobalInt.FreelancersRep, 0);
+			globalints = new ConcurrentDictionary<GlobalInt, int>();
+			globalints.TryAdd(GlobalInt.Bounty, 0);
+			globalints.TryAdd(GlobalInt.FriendlyPiratesRep, 0);
+			globalints.TryAdd(GlobalInt.PiratesRep, 0);
+			globalints.TryAdd(GlobalInt.SSCRep, 0);
+			globalints.TryAdd(GlobalInt.FreelancersRep, 0);
 
-			globaldoubles = new Dictionary<GlobalDouble, double>();
-			globaldoubles.Add(GlobalDouble.ModVersion, 0.72d);
+			globaldoubles = new ConcurrentDictionary<GlobalDouble, double>();
+			globaldoubles.TryAdd(GlobalDouble.ModVersion, 0.72d);
 
-			globalstrings = new Dictionary<GlobalString, string>();
+			globalstrings = new ConcurrentDictionary<GlobalString, string>();
 
 			HWBaseSiegeEvent.initialize();
 			SCREEN_MANAGER.widgetChat = new WidgetChat();
