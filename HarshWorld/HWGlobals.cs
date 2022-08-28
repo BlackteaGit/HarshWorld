@@ -329,7 +329,7 @@ namespace HarshWorld
 		 * 
 		 *try
             {
-               var modentry = WTFModLoader.WTFModLoader._modManager.Mods.Find(mod => mod.ModMetadata.Name == "HarshWorld.HarshWorld_Patches");
+               var modentry = WTFModLoader.WTFModLoader._modManager.ActiveMods.Find(mod => mod.ModMetadata.Name == "HarshWorld.HarshWorld_Patches");
                if(modentry?.ModInstance != null)
                {
                    BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;

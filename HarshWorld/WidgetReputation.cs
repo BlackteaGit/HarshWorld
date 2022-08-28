@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -35,18 +36,23 @@ namespace HarshWorld
 
 		public void Resize()
 		{
+			
 		}
 
 		private void CreateElemenets()
 		{
+			BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static;
 			int tempwidth = 130;
 			int height = 45;
 			int posX = 325;
 			int posY = 0;
-			new Color(174, 250, 255, 210);
+			List<GuiElement> targetobject = typeof(WidgetResources).GetField("baseCanvas", flags).GetValue(SCREEN_MANAGER.widgetResources) as List<GuiElement>;
+			Canvas buttons = targetobject.Find(x => x.name == "button under") as Canvas;
+			posX = buttons.width + 179;
 			if (!CONFIG.openMP)
 			{
-				posX = 278;
+				//posX = 278;
+				posX = buttons.width + 132;
 			}
 			this.baseCanvas.Add(new Canvas("underlay", SCREEN_MANAGER.white, posX, posY, 0, 0, tempwidth, height, SortType.none, transparentBlack));
 			GuiElement guiElement = this.baseCanvas.Last<GuiElement>();
@@ -74,7 +80,7 @@ namespace HarshWorld
 			Color color = new Color(127, 161, 164, 255);
 			this.CloseStation(null);
 			int width = 130;
-			this.baseCanvas.Add(new ScrollCanvas("Reputation scroll", SCREEN_MANAGER.white, posX, 48, 0, 0, width, 230, SortType.vertical));
+			this.baseCanvas.Add(new ScrollCanvas("Reputation scroll", SCREEN_MANAGER.white, posX, posY + 48, 0, 0, width, 230, SortType.vertical));
 			this.reputationCanvas = (ScrollCanvas)this.baseCanvas.Last<GuiElement>();
 			this.reputationCanvas.baseColor = new Color(9, 12, 12, 120);
 			this.reputationCanvas.setVisibilityInstantSelf(false);
