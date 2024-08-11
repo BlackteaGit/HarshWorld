@@ -542,7 +542,7 @@ namespace HarshWorld
 											{
 												uint num2 = 100U * inventoryItem2.stackSize;
 												CHARACTER_DATA.exp += unchecked((ulong)num2);
-												PLAYER.currentGame.team.grantExp(num2);
+												PLAYER.currentGame.team.grantExp(__instance,num2);
 												__instance.floatyText.Enqueue("+" + SCREEN_MANAGER.formatCreditString(unchecked((ulong)(checked(100U * inventoryItem2.stackSize)))) + " exp");
 											}
 											else
@@ -1311,7 +1311,7 @@ namespace HarshWorld
 												{
 													uint num2 = 100U * Item2.stackSize;
 													CHARACTER_DATA.exp += unchecked((ulong)num2);
-													PLAYER.currentGame.team.grantExp(num2);
+													PLAYER.currentGame.team.grantExp(PLAYER.avatar.currentCosm.ship, num2);
 													PLAYER.avatar.GetfloatyText().Enqueue("+" + SCREEN_MANAGER.formatCreditString(unchecked((ulong)(checked(100U * Item2.stackSize)))) + " exp");
 												}
 												else
